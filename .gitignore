@@ -1,0 +1,51 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# --- Virtual environments / conda ---
+.venv/
+venv/
+env/
+envs/
+.conda/
+conda-meta/
+
+# --- Secrets ---
+.env
+.env.*
+!.env.example
+
+# --- Project outputs ---
+# Worlds are regenerable from a seed; never commit them, and never let a
+# holdout world reach the repo where it could be inspected.
+worlds/
+results/
+*.db
+*.sqlite
+*.sqlite3
+
+# --- macOS ---
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# --- Editors ---
+.idea/
+.vscode/
+*.swp
