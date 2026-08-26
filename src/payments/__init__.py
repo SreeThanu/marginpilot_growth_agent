@@ -16,5 +16,16 @@ Boundary rules (CLAUDE.md)
 * Which orders execute live in test mode and which are simulated is recorded per
   experiment in the audit trail and stated in ``docs/razorpay_scope.md``.
 
-Not implemented yet — Day 8.
+Built Day 8, and deliberately small — this is the actuator, not the project.
+
+``razorpay_client`` offers two implementations of one Protocol: the real SDK
+(test mode only, live keys refused at construction) and a mock with the
+identical interface. ``webhooks`` verifies signatures and keys attribution on
+the payment id so duplicate delivery produces exactly one attribution.
+``reconciliation`` resolves any order whose webhook never arrived, leaving no
+orphans. ``attribution`` executes a defined subset through the API and records
+in the audit trail which orders moved real money and which were simulated.
+
+**No Razorpay test credentials were available in this build, so everything ran
+against the mock.** See ``docs/razorpay_scope.md``.
 """

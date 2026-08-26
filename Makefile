@@ -3,7 +3,7 @@
 # Day 2: `worlds` and `test` are wired. The rest are declared now so the interface
 # is fixed before the code exists, and echo their build day until implemented.
 
-.PHONY: worlds demo eval audit test
+.PHONY: worlds demo eval audit adversarial test
 
 PYTHON ?= python
 WORLDS_DIR ?= worlds
@@ -24,6 +24,10 @@ eval:
 ## Print the full decision chain for one experiment: make audit EXPERIMENT=<id>
 audit:
 	$(PYTHON) -m src.audit $(EXPERIMENT) --db $(AUDIT_DB)
+
+## Run the seven adversarial scenarios; each must produce a logged refusal
+adversarial:
+	$(PYTHON) -m src.eval.adversarial
 
 ## Run the test suite
 test:
