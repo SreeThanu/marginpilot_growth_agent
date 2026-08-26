@@ -22,5 +22,11 @@ streamlit==1.62.0
 pytest==9.1.1
 python-dotenv==1.2.3
 
-# LLM client — used only inside src/agent/
+# LLM clients — used only inside src/agent/.
+#
+# Two, not one. CLAUDE.md's original skeleton called for a single client; the
+# project has no Anthropic credentials available, so the agent runs on Gemini's
+# free tier while the Claude path stays in the codebase. The reasoner is
+# interface-swappable and which model produced a result is recorded with it.
 anthropic==1.0.0
+google-genai==2.20.0

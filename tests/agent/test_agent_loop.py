@@ -126,3 +126,87 @@ def test_the_llm_reasoner_refuses_to_run_without_credentials(monkeypatch) -> Non
     monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
     with pytest.raises(RuntimeError, match="credentials"):
         ClaudeReasoner()
+
+
+# --------------------------------------------------------------------------- #
+# Provider swappability, and rate limits that are not decisions
+# --------------------------------------------------------------------------- #
+
+
+def test_the_gemini_reasoner_refuses_to_run_without_credentials(monkeypatch) -> None:
+    from src.agent.reasoner import GeminiReasoner
+
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    monkeypatch.setattr("src.agent.reasoner.load_dotenv", lambda *a, **k: None)
+    with pytest.raises(RuntimeError, match="GEMINI_API_KEY"):
+        GeminiReasoner()
+
+
+def test_both_model_reasoners_implement_the_same_interface() -> None:
+    """The provider is swappable; the interface is not."""
+    from src.agent.reasoner import ClaudeReasoner, GeminiReasoner, HeuristicReasoner
+
+    required = {"assess", "diagnose", "choose_campaign", "name"}
+    for cls in (ClaudeReasoner, GeminiReasoner, HeuristicReasoner):
+        assert required <= set(dir(cls)), f"{cls.__name__} is missing part of the interface"
+
+
+def test_a_rate_limit_is_never_recorded_as_a_decision() -> None:
+    """A 429 is an infrastructure failure. An agent that "skipped" because the
+    API was busy would be scored as having exercised restraint."""
+    from src.agent.reasoner import GeminiReasoner, RateLimitExceededError
+
+    class Busy:
+        class models:
+            @staticmethod
+            def generate_content(**kwargs):
+                from google.genai import errors
+
+                raise errors.ClientError(429, {"error": {"message": "quota"}})
+
+    reasoner = GeminiReasoner(_client=Busy(), max_retries=2, requests_per_minute=6000)
+    world, truth = generate(1)
+    view = merchant_view(world)
+
+    with pytest.raises(RateLimitExceededError):
+        reasoner.assess(view, budget_remaining_inr=1e6, experiments_remaining=1, history=[])
+
+    # And the agent loop propagates it rather than logging a skip.
+    with pytest.raises(RateLimitExceededError):
+        MarginPilotAgent(reasoner).run(
+            view, GroundTruthExecutor(world, truth, view.observed_margin)
+        )
+
+
+def test_an_empty_model_reply_is_an_error_not_a_skip() -> None:
+    from src.agent.reasoner import GeminiReasoner, ReasonerError
+
+    class Empty:
+        class models:
+            @staticmethod
+            def generate_content(**kwargs):
+                class R:
+                    text = ""
+                    candidates = []
+                return R()
+
+    reasoner = GeminiReasoner(_client=Empty(), requests_per_minute=6000)
+    world, _ = generate(1)
+    with pytest.raises(ReasonerError):
+        reasoner.assess(
+            merchant_view(world), budget_remaining_inr=1e6, experiments_remaining=1, history=[]
+        )
+
+
+def test_the_rate_limiter_paces_requests() -> None:
+    import time
+
+    from src.agent.reasoner import _RateLimiter
+
+    limiter = _RateLimiter(requests_per_minute=60)  # one per second
+    assert limiter.min_interval_s == 1.0
+    limiter.wait()
+    start = time.monotonic()
+    limiter.wait()
+    assert time.monotonic() - start >= 0.9

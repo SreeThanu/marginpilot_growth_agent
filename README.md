@@ -105,6 +105,14 @@ So the agent can afford about **one experiment per merchant**. Its job is not to
 
 That is what the comparison against `Baseline 5` measures. The ablation works through a fixed hypothesis set in a preset order, paying four times for information a well-chosen single experiment buys once. Every strategy declares an explicit experiment allowance, so those four experiments are its own choice and its own cost, not something granted for free. If reading a merchant's situation cannot tell the agent which single question to ask, the LLM adds nothing over the fixed order — and the results section will say so.
 
+## The model, and why it is swappable
+
+The agent runs on **`gemini-2.5-flash`**. That is a availability decision, not a quality one: no Anthropic credentials were available in the build environment, and an agent that cannot run cannot be evaluated.
+
+A `ClaudeReasoner` targeting `claude-opus-5` ships alongside it and implements the same interface. The reasoner sits behind one Protocol with shared prompts and shared parsing, so the provider is a one-line swap — and everything that matters stays outside it either way. Randomization, the experiment horizon, the scaling rule and every money-adjacent action are enforced by the deterministic layer regardless of which model is reasoning, or whether one is present at all.
+
+Which model produced a result is recorded with that result. A number produced by `gemini-2.5-flash` is evidence about `gemini-2.5-flash`, not about LLM agents in general.
+
 ## Reasoning vs. authority
 
 The single most important design rule in this codebase: **the LLM reasons, the deterministic layer decides anything involving money.**

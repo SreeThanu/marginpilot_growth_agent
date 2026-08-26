@@ -365,6 +365,24 @@ Day 6 was re-aimed on this basis: MarginPilot's primary decision is restraint, a
 
 **The corpus was not changed in response to this.** Widening response strength would have made selection matter again, but doing so *after* discovering that selection is degenerate is post-hoc tuning toward a more flattering result — still pre-holdout, but exactly the pattern the pre-registration discipline exists to prevent. The known limitation in §4d stands and the corpus is frozen.
 
+## 4f. Model choice — dated, 28 August 2026
+
+**The agent runs on `gemini-2.5-flash`.** Not a quality judgement: no Anthropic credentials were available in the build environment, and an agent that cannot be run cannot be evaluated. Gemini's free tier could be, so it is what the reported results come from.
+
+`ClaudeReasoner` (targeting `claude-opus-5`) stays in the codebase and implements the same interface. Keeping it is the point rather than a leftover — the reasoner is swappable behind one Protocol, the prompts and parsing are shared, and the authority boundary downstream is identical. What changes with the provider is the reasoning; what does not change is that randomisation, the horizon, the scaling rule and every money-adjacent action stay outside the model's reach.
+
+**Which model produced a result is recorded with the result.** "An LLM decided this" is not a claim; "*this* model decided this" is. A result produced by `gemini-2.5-flash` may not be reported as evidence about Claude, or about LLM agents generally.
+
+Three constraints follow from the free tier and are handled in `src/agent/reasoner.py`:
+
+- **Pacing.** Requests are spaced to stay under 15 RPM. Discovering the limit by hitting it costs a retry *and* a longer wait.
+- **Backoff.** 429s and 5xx retry with exponential backoff and jitter.
+- **A rate limit is never a decision.** Exhausted retries raise `RateLimitExceededError`, and an empty or unparseable reply raises `ReasonerError`. Neither is recorded as a skip. An agent scored as having "exercised restraint" because the API was busy would be a fabricated result, and `tests/agent/test_agent_loop.py` asserts the loop propagates both rather than logging a decision.
+
+Neither model client falls back to `HeuristicReasoner` when credentials are missing — both raise. The heuristic exists so the loop and CI run offline, and any evaluation using it measures the pipeline rather than the reasoning.
+
+**Deviation from the original skeleton, recorded:** CLAUDE.md's Day-1 spec called for `requirements.txt` to carry one LLM client library. It now carries two, for the reason above.
+
 ## 5. What this model does *not* claim
 
 - It is not a calibrated model of any real merchant. It is a generator of plausible retail economies whose parameter ranges are anchored where literature exists and openly labelled where it does not.

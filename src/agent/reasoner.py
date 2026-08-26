@@ -5,22 +5,36 @@ reasoner returns an :class:`~src.agent.hypothesis.Assessment` — run this
 question, or decline to spend — and every money-adjacent consequence of that
 answer is enforced downstream by the experiment engine and the scaling rule.
 
-Two implementations:
+Three implementations behind one Protocol:
 
-* :class:`ClaudeReasoner` — the real one, calling Claude.
+* :class:`ClaudeReasoner` — Claude Opus 5.
+* :class:`GeminiReasoner` — Gemini 2.5 Flash, on the free tier.
 * :class:`HeuristicReasoner` — a deterministic stand-in with no model behind it,
-  so the loop, the tests and CI run offline. It is **not** a substitute for the
-  LLM in any result: it cannot read the merchant's situation, and any evaluation
-  using it measures the pipeline, not the reasoning.
+  so the loop, the tests and CI run offline. It is **not** a substitute for a
+  model in any result: it cannot read the merchant's situation, and any
+  evaluation using it measures the pipeline, not the reasoning.
+
+That the provider is swappable is a property worth having and worth showing:
+the same prompts, the same parsing and the same downstream authority boundary
+serve both. Which model produced a result is recorded with the result, because
+"an LLM decided this" is not a claim — "*this* model decided this" is.
+
+Neither model client falls back to the heuristic when credentials are missing.
+Both raise. A run labelled with a model's name must actually have come from that
+model, or the results table is fiction.
 """
 
 from __future__ import annotations
 
 import json
 import os
+import random
 import re
-from dataclasses import dataclass
+import time
+from dataclasses import dataclass, field
 from typing import Any, Protocol, Sequence, runtime_checkable
+
+from dotenv import load_dotenv
 
 from src.agent.hypothesis import (
     AgentHypothesis,
@@ -32,8 +46,53 @@ from src.agent.hypothesis import (
 )
 from src.eval.contracts import MerchantView
 
-#: CLAUDE.md pins the model choice to the current flagship.
+#: CLAUDE.md pins the Claude model choice to the current flagship.
 DEFAULT_MODEL = "claude-opus-5"
+
+#: Gemini model. 2.5 Flash is the free tier's reasoning-capable model; the
+#: project has no Anthropic credentials, and an agent that cannot run cannot be
+#: evaluated. Recorded in docs/simulator.md with the reasoning.
+DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
+
+#: Free-tier request ceiling. Exceeding it returns 429s that would otherwise be
+#: mistaken for model behaviour.
+GEMINI_FREE_TIER_RPM = 15
+
+
+class RateLimitExceededError(RuntimeError):
+    """Raised when a provider rate limit survives every retry.
+
+    A distinct type on purpose. A 429 is an infrastructure failure, not a
+    decision, and must never be recorded as one — an agent that "skipped"
+    because the API was busy would be scored as having exercised restraint.
+    """
+
+
+class ReasonerError(RuntimeError):
+    """The model replied, but not with something usable."""
+
+
+@dataclass
+class _RateLimiter:
+    """Paces requests to stay under a per-minute ceiling.
+
+    Spacing requests evenly is cheaper than discovering the limit by hitting it:
+    a 429 costs a retry and a wait either way, and the wait is longer.
+    """
+
+    requests_per_minute: int
+    _last_call: float = 0.0
+
+    @property
+    def min_interval_s(self) -> float:
+        return 60.0 / max(self.requests_per_minute, 1)
+
+    def wait(self) -> None:
+        elapsed = time.monotonic() - self._last_call
+        remaining = self.min_interval_s - elapsed
+        if self._last_call and remaining > 0:
+            time.sleep(remaining)
+        self._last_call = time.monotonic()
 
 SYSTEM_PROMPT = """You are MarginPilot, an autonomous growth agent for an Indian \
 direct-to-consumer merchant.
@@ -209,6 +268,7 @@ class ClaudeReasoner:
     def __post_init__(self) -> None:
         if self._client is not None:
             return
+        load_dotenv()
         if not (os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")):
             raise RuntimeError(
                 "ClaudeReasoner needs Anthropic credentials (ANTHROPIC_API_KEY or an "
@@ -255,6 +315,128 @@ class ClaudeReasoner:
         chosen = str(payload.get("intervention_id", ""))
         if chosen not in available:
             raise ValueError(f"chose unavailable intervention {chosen!r}")
+        return {"intervention_id": chosen, "rationale": str(payload.get("rationale", ""))}
+
+    def diagnose(
+        self, view: MerchantView, hypothesis: AgentHypothesis, outcome: dict[str, Any]
+    ) -> Diagnosis:
+        payload = self._ask(build_diagnosis_prompt(view, hypothesis, outcome))
+        return Diagnosis(
+            what_was_predicted=str(payload.get("what_was_predicted", hypothesis.prediction)),
+            what_happened=str(payload.get("what_happened", "")),
+            why_it_differed=str(payload.get("why_it_differed", "")),
+            what_this_rules_out=str(payload.get("what_this_rules_out", "")),
+        )
+
+
+
+@dataclass
+class GeminiReasoner:
+    """The same agent, on Gemini 2.5 Flash.
+
+    Identical prompts, identical parsing, identical downstream authority
+    boundary — only the provider differs. Free-tier request pacing and 429
+    backoff live here because a rate limit is an infrastructure event that must
+    never reach the loop looking like a decision.
+    """
+
+    name: str = "marginpilot_gemini"
+    model: str = DEFAULT_GEMINI_MODEL
+    requests_per_minute: int = GEMINI_FREE_TIER_RPM
+    max_retries: int = 5
+    max_output_tokens: int = 8192
+    #: Zero temperature so a re-run of the same merchant gives the same
+    #: decision. The diagnostics compare paired runs, and a sampling difference
+    #: would be indistinguishable from a reasoning difference.
+    temperature: float = 0.0
+    _client: Any = None
+    _limiter: _RateLimiter = field(default_factory=lambda: _RateLimiter(GEMINI_FREE_TIER_RPM))
+
+    def __post_init__(self) -> None:
+        self._limiter = _RateLimiter(self.requests_per_minute)
+        if self._client is not None:
+            return
+        load_dotenv()
+        api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+        if not api_key:
+            raise RuntimeError(
+                "GeminiReasoner needs GEMINI_API_KEY (in .env or the environment). "
+                "Refusing to fall back to a heuristic: a run labelled as a model's "
+                "reasoning must actually be that model's."
+            )
+        from google import genai
+
+        self._client = genai.Client(api_key=api_key)
+
+    def _ask(self, prompt: str) -> dict[str, Any]:
+        """One request, paced and retried. Raises rather than guessing."""
+        from google.genai import errors, types
+
+        config = types.GenerateContentConfig(
+            system_instruction=SYSTEM_PROMPT,
+            temperature=self.temperature,
+            max_output_tokens=self.max_output_tokens,
+            # The prompts already specify a JSON object; asking the API to
+            # enforce the MIME type removes the most common parse failure.
+            response_mime_type="application/json",
+        )
+
+        last_error: Exception | None = None
+        for attempt in range(self.max_retries):
+            self._limiter.wait()
+            try:
+                response = self._client.models.generate_content(
+                    model=self.model, contents=prompt, config=config
+                )
+            except errors.ClientError as exc:  # 4xx, including 429
+                if getattr(exc, "code", None) != 429:
+                    raise
+                last_error = exc
+            except errors.ServerError as exc:  # 5xx — transient
+                last_error = exc
+            else:
+                text = (response.text or "").strip()
+                if not text:
+                    # An empty body is usually a safety block or a truncated
+                    # response; either way there is no decision to record.
+                    raise ReasonerError(
+                        f"empty reply from {self.model} "
+                        f"(finish_reason={getattr(response.candidates[0], 'finish_reason', None) if response.candidates else None})"
+                    )
+                return _extract_json(text)
+
+            # Exponential backoff with jitter. Free-tier limits are per-minute,
+            # so the sleep is measured in seconds, not milliseconds.
+            delay = min(2**attempt * self._limiter.min_interval_s, 60.0)
+            time.sleep(delay + random.uniform(0, 1.0))
+
+        raise RateLimitExceededError(
+            f"{self.model} rate limit survived {self.max_retries} retries: {last_error}. "
+            "This is an infrastructure failure, not a decision, and is not recorded as one."
+        )
+
+    def assess(
+        self,
+        view: MerchantView,
+        *,
+        budget_remaining_inr: float,
+        experiments_remaining: int,
+        history: Sequence[dict[str, Any]],
+    ) -> Assessment:
+        prompt = build_assessment_prompt(
+            view,
+            budget_remaining_inr=budget_remaining_inr,
+            experiments_remaining=experiments_remaining,
+            history=history,
+        )
+        return _assessment_from_payload(self._ask(prompt), view, len(history))
+
+    def choose_campaign(self, view: MerchantView) -> dict[str, Any]:
+        payload = self._ask(build_campaign_prompt(view))
+        available = {i.intervention_id for i in view.interventions}
+        chosen = str(payload.get("intervention_id", ""))
+        if chosen not in available:
+            raise ReasonerError(f"chose unavailable intervention {chosen!r}")
         return {"intervention_id": chosen, "rationale": str(payload.get("rationale", ""))}
 
     def diagnose(
