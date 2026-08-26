@@ -367,11 +367,17 @@ Day 6 was re-aimed on this basis: MarginPilot's primary decision is restraint, a
 
 ## 4f. Model choice — dated, 28 August 2026
 
-**The agent runs on `gemini-2.5-flash`.** Not a quality judgement: no Anthropic credentials were available in the build environment, and an agent that cannot be run cannot be evaluated. Gemini's free tier could be, so it is what the reported results come from.
+**The agent runs on `gemini-3.6-flash`.** Not a quality judgement: no Anthropic credentials were available in the build environment, and an agent that cannot be run cannot be evaluated. Gemini's free tier could be, so it is what the reported results come from.
 
 `ClaudeReasoner` (targeting `claude-opus-5`) stays in the codebase and implements the same interface. Keeping it is the point rather than a leftover — the reasoner is swappable behind one Protocol, the prompts and parsing are shared, and the authority boundary downstream is identical. What changes with the provider is the reasoning; what does not change is that randomisation, the horizon, the scaling rule and every money-adjacent action stay outside the model's reach.
 
-**Which model produced a result is recorded with the result.** "An LLM decided this" is not a claim; "*this* model decided this" is. A result produced by `gemini-2.5-flash` may not be reported as evidence about Claude, or about LLM agents generally.
+**Which model produced a result is recorded with the result.** "An LLM decided this" is not a claim; "*this* model decided this" is. A result produced by `gemini-3.6-flash` may not be reported as evidence about Claude, or about LLM agents generally.
+
+**Model substitution, recorded.** The intended model was `gemini-2.5-flash`. It is retired for new API keys: it still appears in `models.list()`, but calling it returns
+
+> `404 NOT_FOUND — This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.6-flash for the latest features and improvements.`
+
+`gemini-3.6-flash` is the model Google's own deprecation notice names, so that is what the results come from. `gemini-3.7-flash` and `gemini-3.5-flash` were also reachable on the same key and were not chosen — following the stated migration target is a smaller assumption than picking the newest thing available.
 
 Three constraints follow from the free tier and are handled in `src/agent/reasoner.py`:
 

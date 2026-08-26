@@ -32,9 +32,15 @@ import random
 import re
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Protocol, Sequence, runtime_checkable
 
 from dotenv import load_dotenv
+
+#: Resolved from this file rather than the caller's stack or cwd. python-dotenv's
+#: default find_dotenv() walks frames, which fails outright under `python -` and
+#: silently misses when the process starts anywhere but the repo root.
+_ENV_PATH = Path(__file__).resolve().parents[2] / ".env"
 
 from src.agent.hypothesis import (
     AgentHypothesis,
@@ -49,10 +55,15 @@ from src.eval.contracts import MerchantView
 #: CLAUDE.md pins the Claude model choice to the current flagship.
 DEFAULT_MODEL = "claude-opus-5"
 
-#: Gemini model. 2.5 Flash is the free tier's reasoning-capable model; the
-#: project has no Anthropic credentials, and an agent that cannot run cannot be
-#: evaluated. Recorded in docs/simulator.md with the reasoning.
-DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
+#: Gemini model. The project has no Anthropic credentials, and an agent that
+#: cannot run cannot be evaluated.
+#:
+#: 3.6 Flash rather than 2.5 Flash because 2.5 is retired for new keys — it
+#: still appears in models.list() but calling it returns 404 "no longer
+#: available to new users. Please update your code to use models/gemini-3.6-flash".
+#: The substitution follows Google's own deprecation notice. Recorded in
+#: docs/simulator.md 4f.
+DEFAULT_GEMINI_MODEL = "gemini-3.6-flash"
 
 #: Free-tier request ceiling. Exceeding it returns 429s that would otherwise be
 #: mistaken for model behaviour.
@@ -268,7 +279,7 @@ class ClaudeReasoner:
     def __post_init__(self) -> None:
         if self._client is not None:
             return
-        load_dotenv()
+        load_dotenv(_ENV_PATH)
         if not (os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")):
             raise RuntimeError(
                 "ClaudeReasoner needs Anthropic credentials (ANTHROPIC_API_KEY or an "
@@ -356,7 +367,7 @@ class GeminiReasoner:
         self._limiter = _RateLimiter(self.requests_per_minute)
         if self._client is not None:
             return
-        load_dotenv()
+        load_dotenv(_ENV_PATH)
         api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
         if not api_key:
             raise RuntimeError(

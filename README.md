@@ -107,11 +107,11 @@ That is what the comparison against `Baseline 5` measures. The ablation works th
 
 ## The model, and why it is swappable
 
-The agent runs on **`gemini-2.5-flash`**. That is a availability decision, not a quality one: no Anthropic credentials were available in the build environment, and an agent that cannot run cannot be evaluated.
+The agent runs on **`gemini-3.6-flash`**. That is a availability decision, not a quality one: no Anthropic credentials were available in the build environment, and an agent that cannot run cannot be evaluated.
 
 A `ClaudeReasoner` targeting `claude-opus-5` ships alongside it and implements the same interface. The reasoner sits behind one Protocol with shared prompts and shared parsing, so the provider is a one-line swap — and everything that matters stays outside it either way. Randomization, the experiment horizon, the scaling rule and every money-adjacent action are enforced by the deterministic layer regardless of which model is reasoning, or whether one is present at all.
 
-Which model produced a result is recorded with that result. A number produced by `gemini-2.5-flash` is evidence about `gemini-2.5-flash`, not about LLM agents in general.
+Which model produced a result is recorded with that result. A number produced by `gemini-3.6-flash` is evidence about `gemini-3.6-flash`, not about LLM agents in general. (`gemini-2.5-flash` was the intended model; it is retired for new API keys, and Google's deprecation notice names 3.6-flash as its replacement.)
 
 ## Reasoning vs. authority
 
