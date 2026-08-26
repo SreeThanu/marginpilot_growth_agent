@@ -11,8 +11,11 @@ The rules compared are the ones the project is actually arguing between:
 * ``always_scale`` — spends on everything. The "growth at any cost" strawman.
 * ``point_estimate`` — scale whenever the estimate is positive. This is what most
   dashboards do, and it is the rule MarginPilot claims to beat.
-* ``ci_lower_bound`` — MarginPilot's rule: scale only when the whole interval
-  clears zero.
+* ``ci_lower_bound`` — the original rule: scale only when the whole interval
+  clears zero. Retained because it is what the project committed to first, and
+  the difference between it and the live rule is part of the result.
+* ``bayesian_posterior`` — the live rule from Day 5: P(net > 0) >= 0.80 and a
+  projected 5th percentile above the tolerable loss.
 * ``oracle`` — scale iff the intervention truly pays, from ground truth. Not
   achievable; it bounds what any rule could have earned.
 
@@ -26,7 +29,14 @@ from dataclasses import dataclass
 
 from src.eval.harness import ExperimentOutcome, WorldResult
 
-DECISION_RULES = ("never_scale", "always_scale", "point_estimate", "ci_lower_bound", "oracle")
+DECISION_RULES = (
+    "never_scale",
+    "always_scale",
+    "point_estimate",
+    "ci_lower_bound",
+    "bayesian_posterior",
+    "oracle",
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,6 +61,12 @@ def _would_scale(rule: str, outcome: ExperimentOutcome) -> bool:
         return outcome.estimated_net_inr > 0
     if rule == "ci_lower_bound":
         return outcome.ci_low_inr > 0
+    if rule == "bayesian_posterior":
+        # The live rule: probably profitable, and a survivable bad tail.
+        return (
+            outcome.probability_net_positive >= 0.80
+            and outcome.projected_downside_inr > -outcome.tolerable_loss_inr
+        )
     if rule == "oracle":
         return outcome.true_full_population_net_inr > 0
     raise ValueError(f"unknown decision rule: {rule}")

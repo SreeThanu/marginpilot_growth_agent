@@ -121,8 +121,40 @@ def test_the_ablation_reads_no_semantic_context() -> None:
 
 
 def test_the_ablation_uses_the_same_machinery_as_marginpilot() -> None:
-    """Same CI rule, same contribution-powered horizon. Only reasoning differs."""
-    assert EngineWithoutLLM().scaling_rule is ScalingRule.CI_LOWER_BOUND
+    """Same decision rule, same contribution-powered horizon. Only reasoning differs.
+
+    If the ablation ever decides on a different rule, the Day 9 comparison stops
+    measuring what semantic reasoning is worth and starts measuring a difference
+    in decision policy instead.
+    """
+    assert EngineWithoutLLM().scaling_rule is ScalingRule.BAYESIAN_POSTERIOR
+
+
+def test_the_ablation_pays_for_its_own_experiments() -> None:
+    """Four experiments per world is Baseline 5's choice, not a free allowance.
+
+    Experimentation is scarce — one experiment costs several times the profit
+    pool of the world it runs in — so testing a fixed list of four is the cost
+    of having no way to decide which single question is worth asking.
+    """
+    assert EngineWithoutLLM().max_experiments == 4
+    assert DoNothing().max_experiments == 0
+    assert RuleBasedMarketer().max_experiments == 0
+    assert ConversionOptimizer().max_experiments == 1
+
+
+def test_the_harness_enforces_the_declared_allowance() -> None:
+    """A strategy cannot quietly run more experiments than it declared."""
+    import dataclasses
+
+    world, truth = generate(4)
+    capped = dataclasses.replace(EngineWithoutLLM(), max_experiments=1)
+    result = run_world(capped, world, truth)
+
+    assert result.experiments_launched == 1
+    refused = [o for o in result.outcomes if not o.launched]
+    assert refused, "the remaining proposals should be refused, not silently dropped"
+    assert any("allowance" in o.refusal_reason for o in refused)
 
 
 def test_the_ablation_order_is_preset_and_not_data_driven(world_and_truth) -> None:

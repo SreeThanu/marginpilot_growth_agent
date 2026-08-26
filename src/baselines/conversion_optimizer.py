@@ -28,6 +28,7 @@ from src.eval.contracts import ExperimentProposal, MerchantView, Proposal, Scali
 class ConversionOptimizer:
     name: str = "3_conversion_optimizer"
     scaling_rule: ScalingRule = ScalingRule.CONVERSION_LIFT
+    max_experiments: int = 1
     mde_fraction_of_order_contribution: float = 0.02
     assumed_lift_absolute: float = 0.03
 

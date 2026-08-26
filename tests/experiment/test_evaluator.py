@@ -18,7 +18,44 @@ from src.experiment.evaluator import (
     Verdict,
     evaluate,
 )
+from src.economics.contribution import arm_from_counts
 from src.experiment.registry import ExperimentRegistry, design_experiment
+
+
+def arms(
+    n_control: int,
+    control_orders: int,
+    n_treatment: int,
+    treatment_orders: int,
+    *,
+    contribution_per_order: float = 240.0,
+    incentive: float = 0.0,
+) -> list[ArmObservation]:
+    """Build observations with measured per-customer contribution.
+
+    Uses the constant-order-value case, where the per-customer contribution is
+    Bernoulli and its mean and variance are exact — which is also the case where
+    this estimator and the old incremental-orders one agree exactly.
+    """
+    control = arm_from_counts(
+        n_control, control_orders, contribution_per_order_inr=contribution_per_order
+    )
+    treatment = arm_from_counts(
+        n_treatment,
+        treatment_orders,
+        contribution_per_order_inr=contribution_per_order,
+        incentive_per_order_inr=incentive,
+    )
+    return [
+        ArmObservation(
+            0, "control", n_control, control_orders,
+            contribution_mean_inr=control.mean_inr, contribution_sd_inr=control.sd_inr,
+        ),
+        ArmObservation(
+            1, "treatment", n_treatment, treatment_orders,
+            contribution_mean_inr=treatment.mean_inr, contribution_sd_inr=treatment.sd_inr,
+        ),
+    ]
 
 
 def _launch(reg: ExperimentRegistry, effect: float = 0.06, arms=("control", "treatment")):
@@ -52,11 +89,7 @@ def test_before_the_horizon_no_verdict_is_returned() -> None:
 
     result = evaluate(
         experiment,
-        [
-            ArmObservation(0, "control", 400, 48),
-            ArmObservation(1, "treatment", 400, 96),  # a huge, obvious lift
-        ],
-        contribution_per_incremental_order_inr=240.0,
+        arms(400, 48, 400, 96),  # a huge, obvious lift
     )
 
     assert isinstance(result, InterimResult)
@@ -82,12 +115,8 @@ def test_an_overwhelming_early_result_is_still_refused() -> None:
     experiment = _launch(reg)
     result = evaluate(
         experiment,
-        [
-            ArmObservation(0, "control", 552, 66),
-            ArmObservation(1, "treatment", 552, 200),
-        ],
-        contribution_per_incremental_order_inr=240.0,
-    )
+        arms(552, 66, 552, 200, contribution_per_order=240.0),
+        )
     assert isinstance(result, InterimResult)
     assert result.progress == pytest.approx(552 / 553)
 
@@ -99,12 +128,8 @@ def test_the_horizon_binds_on_every_arm_not_the_total() -> None:
     experiment = _launch(reg)
     result = evaluate(
         experiment,
-        [
-            ArmObservation(0, "control", 5000, 600),
-            ArmObservation(1, "treatment", 300, 60),
-        ],
-        contribution_per_incremental_order_inr=240.0,
-    )
+        arms(5000, 600, 300, 60, contribution_per_order=240.0),
+        )
     assert isinstance(result, InterimResult)
     assert result.remaining_per_arm == (0, 253)
 
@@ -114,12 +139,8 @@ def test_at_the_horizon_a_verdict_is_returned() -> None:
     experiment = _launch(reg)
     result = evaluate(
         experiment,
-        [
-            ArmObservation(0, "control", 553, 66),
-            ArmObservation(1, "treatment", 553, 100),
-        ],
-        contribution_per_incremental_order_inr=240.0,
-    )
+        arms(553, 66, 553, 100, contribution_per_order=240.0),
+        )
     assert isinstance(result, FinalResult)
     assert result.verdict_eligible is True
     assert result.require_verdict() is result
@@ -129,21 +150,15 @@ def test_alpha_cannot_be_changed_after_launch() -> None:
     """Re-reading a borderline experiment at a looser alpha is peeking in a hat."""
     reg = ExperimentRegistry()
     experiment = _launch(reg)
-    observations = [
-        ArmObservation(0, "control", 553, 66),
-        ArmObservation(1, "treatment", 553, 100),
-    ]
+    observations = arms(553, 66, 553, 100)
     with pytest.raises(ValueError, match="pre-commitment"):
         evaluate(
             experiment,
             observations,
-            contribution_per_incremental_order_inr=240.0,
             alpha=0.10,
         )
     # The registered value is accepted.
-    assert evaluate(
-        experiment, observations, contribution_per_incremental_order_inr=240.0, alpha=0.05
-    ).verdict_eligible
+    assert evaluate(experiment, observations, alpha=0.05).verdict_eligible
 
 
 # --------------------------------------------------------------------------- #
@@ -162,11 +177,7 @@ def test_a_positive_point_estimate_with_a_straddling_ci_is_not_scale_eligible() 
     experiment = _launch(reg)
     result = evaluate(
         experiment,
-        [
-            ArmObservation(0, "control", 553, 66),   # 11.9%
-            ArmObservation(1, "treatment", 553, 76),  # 13.7%
-        ],
-        contribution_per_incremental_order_inr=240.0,
+        arms(553, 66, 553, 76),  # 11.9% vs 13.7%
     )
     assert isinstance(result, FinalResult)
     comparison = result.comparisons[0]
@@ -184,12 +195,8 @@ def test_a_clear_win_is_scale_eligible() -> None:
     experiment = _launch(reg)
     result = evaluate(
         experiment,
-        [
-            ArmObservation(0, "control", 2000, 240),
-            ArmObservation(1, "treatment", 2000, 400),
-        ],
-        contribution_per_incremental_order_inr=240.0,
-    )
+        arms(2000, 240, 2000, 400, contribution_per_order=240.0),
+        )
     comparison = result.comparisons[0]
     assert comparison.contribution_ci_low > 0
     assert comparison.scale_eligible is True
@@ -207,12 +214,8 @@ def test_a_significant_conversion_lift_can_still_be_killed_on_contribution() -> 
     experiment = _launch(reg)
     result = evaluate(
         experiment,
-        [
-            ArmObservation(0, "control", 1000, 120),
-            ArmObservation(1, "treatment", 1000, 180),
-        ],
-        contribution_per_incremental_order_inr=240.0,   # Rs.800 AOV x 30% margin
-        incentive_cost_per_treated_order_inr=100.0,     # Rs.100 off every treated order
+        # Rs.800 AOV x 30% margin, Rs.100 off every treated order
+        arms(1000, 120, 1000, 180, contribution_per_order=240.0, incentive=100.0),
     )
     comparison = result.comparisons[0]
 
@@ -246,12 +249,7 @@ def test_the_same_loss_becomes_a_demonstrated_kill_at_a_larger_sample() -> None:
     n = 3000
     result = evaluate(
         experiment,
-        [
-            ArmObservation(0, "control", n, int(0.12 * n)),
-            ArmObservation(1, "treatment", n, int(0.18 * n)),
-        ],
-        contribution_per_incremental_order_inr=240.0,
-        incentive_cost_per_treated_order_inr=100.0,
+        arms(n, int(0.12 * n), n, int(0.18 * n), contribution_per_order=240.0, incentive=100.0),
     )
     comparison = result.comparisons[0]
     assert comparison.net_contribution_inr == pytest.approx(-3600.0 * 3, abs=5.0)
@@ -269,11 +267,7 @@ def test_contribution_interval_widens_with_noise_not_with_the_estimate() -> None
     def half_width(n: int) -> float:
         result = evaluate(
             experiment,
-            [
-                ArmObservation(0, "control", n, int(round(0.12 * n))),
-                ArmObservation(1, "treatment", n, int(round(0.18 * n))),
-            ],
-            contribution_per_incremental_order_inr=240.0,
+            arms(n, int(round(0.12 * n)), n, int(round(0.18 * n))),
         )
         c = result.comparisons[0]
         return (c.contribution_ci_high - c.contribution_ci_low) / 2 / n
@@ -287,12 +281,7 @@ def test_multi_arm_experiments_compare_each_treatment_to_control() -> None:
     n = experiment.horizon_per_arm
     result = evaluate(
         experiment,
-        [
-            ArmObservation(0, "control", n, int(0.12 * n)),
-            ArmObservation(1, "flat", n, int(0.13 * n)),
-            ArmObservation(2, "shipping", n, int(0.20 * n)),
-        ],
-        contribution_per_incremental_order_inr=240.0,
+        _three_arms(n),
     )
     assert len(result.comparisons) == 2
     assert result.best.name == "shipping"
@@ -306,10 +295,27 @@ def test_mismatched_observations_are_refused() -> None:
         evaluate(
             experiment,
             [ArmObservation(0, "control", 553, 66)],
-            contribution_per_incremental_order_inr=240.0,
         )
 
 
 def test_impossible_observations_are_refused() -> None:
     with pytest.raises(ValueError, match="impossible"):
         ArmObservation(0, "control", 100, 101)
+
+
+def _three_arms(n: int) -> list[ArmObservation]:
+    """Three-arm observations for the multi-comparison test."""
+    out = []
+    for arm, (name, rate) in enumerate(
+        (("control", 0.12), ("flat", 0.13), ("shipping", 0.20))
+    ):
+        converted = int(rate * n)
+        summary = arm_from_counts(n, converted, contribution_per_order_inr=240.0)
+        out.append(
+            ArmObservation(
+                arm, name, n, converted,
+                contribution_mean_inr=summary.mean_inr,
+                contribution_sd_inr=summary.sd_inr,
+            )
+        )
+    return out

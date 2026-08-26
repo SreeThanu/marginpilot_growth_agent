@@ -22,8 +22,9 @@ Boundary rules (CLAUDE.md)
 * If MarginPilot loses to a baseline — Baseline 5 especially — that result is
   reported, not tuned away.
 
-Built Day 5: baselines 1, 1b, 2, 3 and 5. Baseline 4 (the LLM strategist) is
-Day 6, since it needs the agent.
+Built Day 5: baselines 1, 1b, 2, 3 and 5. Baseline 4 (the LLM strategist)
+arrived Day 6 with the agent, and delegates its model call to
+``src/agent/reasoner.py`` so that only ``src/agent/`` imports an LLM client.
 
 Baseline 1b is a diagnostic rather than a competitor. It runs the same
 experiments as Baseline 5 and scales none of them, so its result isolates the
@@ -34,6 +35,7 @@ cost of learning — the constraint the Day 4 replay showed to be binding.
 from src.baselines.conversion_optimizer import ConversionOptimizer  # noqa: E402
 from src.baselines.do_nothing import DoNothing  # noqa: E402
 from src.baselines.engine_without_llm import EngineWithoutLLM, LearnOnly  # noqa: E402
+from src.baselines.llm_strategist import LLMStrategist  # noqa: E402
 from src.baselines.rule_based import RuleBasedMarketer  # noqa: E402
 
 #: Every strategy the harness compares, in report order. Baseline 1b sits with
@@ -51,6 +53,7 @@ __all__ = [
     "ConversionOptimizer",
     "DoNothing",
     "EngineWithoutLLM",
+    "LLMStrategist",
     "LearnOnly",
     "RuleBasedMarketer",
 ]

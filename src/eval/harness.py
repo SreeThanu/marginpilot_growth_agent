@@ -32,9 +32,13 @@ from typing import Iterable, Sequence
 
 import numpy as np
 
-from src.economics.contribution import assess
+from src.economics.contribution import (
+    assess,
+    customer_contribution_inr,
+    summarise_arm,
+)
 from src.experiment import power as power_module
-from src.experiment.evaluator import FinalResult, InterimResult, Verdict, evaluate
+from src.experiment.evaluator import FinalResult, InterimResult, Verdict, assess_scale, evaluate
 from src.experiment.evaluator import ArmObservation
 from src.experiment.randomize import assign
 from src.experiment.registry import ExperimentRegistry, design_experiment_on_contribution
@@ -69,6 +73,12 @@ class ExperimentOutcome:
     ci_low_inr: float = 0.0
     ci_high_inr: float = 0.0
     verdict: str = "not_run"
+    #: Posterior probability the campaign is profitable, and the projected
+    #: 5th-percentile outcome the decision was taken against.
+    probability_net_positive: float = 0.0
+    projected_downside_inr: float = 0.0
+    decision_reason: str = ""
+    tolerable_loss_inr: float = 0.0
     scaled: bool = False
     #: True for a campaign run without an experiment (Baseline 2's approach).
     untested: bool = False
@@ -222,24 +232,42 @@ class WorldResult:
 def _observed_arm(
     customer_ids: Sequence[str],
     truth: GroundTruth,
-    intervention_id: str,
+    intervention: Intervention,
+    margin: float,
     treated: bool,
 ) -> tuple[int, list[float], list[float]]:
-    """Count orders and collect basket values for one arm.
+    """Observe one arm: order count, basket values, per-customer contribution.
 
     Control customers reveal ``Y(0)``, treated customers ``Y(1)`` — one outcome
     each, which is what an experiment can actually see.
+
+    Contribution is recorded per *assigned* customer, zeros included, and net of
+    any incentive the customer redeemed. Everything a merchant needs for this is
+    in their own order table: what each customer spent and what discount they
+    used. Nothing here requires knowing the counterfactual.
     """
     orders = 0
     values: list[float] = []
     contributions: list[float] = []
     for customer_id in customer_ids:
-        pair = truth.outcomes[customer_id][intervention_id]
+        pair = truth.outcomes[customer_id][intervention.intervention_id]
         outcome = pair.y1 if treated else pair.y0
+        incentive = (
+            intervention.incentive_cost_inr(outcome.order_value_inr)
+            if (treated and outcome.converted)
+            else 0.0
+        )
         if outcome.converted:
             orders += 1
             values.append(outcome.order_value_inr)
-            contributions.append(outcome.contribution_inr)
+        contributions.append(
+            customer_contribution_inr(
+                converted=outcome.converted,
+                order_value_inr=outcome.order_value_inr,
+                contribution_margin=margin,
+                incentive_inr=incentive,
+            )
+        )
     return orders, values, contributions
 
 
@@ -260,7 +288,25 @@ def _true_population_net(
     return total
 
 
-def _should_scale(rule: ScalingRule, evaluation: FinalResult | InterimResult) -> bool:
+#: Tolerable loss on a single scaled campaign, as a share of the world's
+#: promotion budget.
+#:
+#: The budget is the merchant's own stated appetite for risk across the whole
+#: promotion programme, so a per-campaign floor expressed against it scales with
+#: the merchant instead of being an invented rupee figure. At 2%, and with four
+#: candidate interventions per world, aggregate exposure in the bad tail stays
+#: under a tenth of the budget — a bad run costs a slice of the promotion
+#: programme, never the business.
+TOLERABLE_LOSS_FRACTION_OF_BUDGET = 0.02
+
+
+def _should_scale(
+    rule: ScalingRule,
+    evaluation: FinalResult | InterimResult,
+    *,
+    projection_population: int = 0,
+    tolerable_loss_inr: float = 0.0,
+) -> bool:
     """Apply the strategy's own scaling rule to a finished experiment.
 
     The rule is the strategy's to choose and the difference between the
@@ -273,6 +319,12 @@ def _should_scale(rule: ScalingRule, evaluation: FinalResult | InterimResult) ->
     comparison = evaluation.comparisons[0]
     if rule is ScalingRule.NEVER:
         return False
+    if rule is ScalingRule.BAYESIAN_POSTERIOR:
+        return assess_scale(
+            comparison,
+            projection_population=projection_population,
+            tolerable_loss_inr=tolerable_loss_inr,
+        ).scale
     if rule is ScalingRule.CI_LOWER_BOUND:
         return comparison.contribution_ci_low > 0
     if rule is ScalingRule.POINT_ESTIMATE:
@@ -346,13 +398,34 @@ def run_world(
     )
     registry = ExperimentRegistry()
 
-    rule = getattr(strategy, "scaling_rule", ScalingRule.CI_LOWER_BOUND)
+    rule = getattr(strategy, "scaling_rule", ScalingRule.BAYESIAN_POSTERIOR)
+    allowance = getattr(strategy, "max_experiments", 1)
+    launched_count = 0
 
     for index, proposal in enumerate(strategy.decide(view, budget_remaining)):
         if isinstance(proposal, DirectAction):
             outcome = _run_direct_action(proposal, view, world, truth)
             budget_remaining -= outcome.pilot_spend_inr
             result.outcomes.append(outcome)
+            continue
+
+        if launched_count >= allowance:
+            result.outcomes.append(
+                ExperimentOutcome(
+                    world_id=world.world_id,
+                    intervention_id=proposal.intervention_id,
+                    launched=False,
+                    refusal_reason=(
+                        f"experiment allowance exhausted: {allowance} per world. "
+                        "Experimentation is scarce — one experiment costs several times "
+                        "the profit pool of the world it runs in, so which question to "
+                        "ask is the decision that matters."
+                    ),
+                    true_full_population_net_inr=_true_population_net(
+                        world, truth, view.intervention(proposal.intervention_id)
+                    ),
+                )
+            )
             continue
 
         intervention = view.intervention(proposal.intervention_id)
@@ -410,6 +483,7 @@ def run_world(
         )
         registry.register(design)
         experiment = registry.launch(experiment_id)
+        launched_count += 1
         horizon = experiment.horizon_per_arm
 
         # Assign, then take the first `horizon` customers of each arm.
@@ -420,10 +494,14 @@ def run_world(
                 arms[arm].append(customer.customer_id)
 
         control_ids, treatment_ids = arms[0], arms[1]
-        control_orders, _, _ = _observed_arm(control_ids, truth, proposal.intervention_id, False)
-        treatment_orders, treated_values, _ = _observed_arm(
-            treatment_ids, truth, proposal.intervention_id, True
+        control_orders, _, control_contributions = _observed_arm(
+            control_ids, truth, intervention, view.observed_margin, treated=False
         )
+        treatment_orders, treated_values, treatment_contributions = _observed_arm(
+            treatment_ids, truth, intervention, view.observed_margin, treated=True
+        )
+        control_summary = summarise_arm(control_contributions, control_orders)
+        treatment_summary = summarise_arm(treatment_contributions, treatment_orders)
 
         realized_incentive_per_order = (
             float(np.mean([intervention.incentive_cost_inr(v) for v in treated_values]))
@@ -445,11 +523,17 @@ def run_world(
         evaluation = evaluate(
             experiment,
             [
-                ArmObservation(0, proposal.arms[0], len(control_ids), control_orders),
-                ArmObservation(1, proposal.arms[1], len(treatment_ids), treatment_orders),
+                ArmObservation(
+                    0, proposal.arms[0], len(control_ids), control_orders,
+                    contribution_mean_inr=control_summary.mean_inr,
+                    contribution_sd_inr=control_summary.sd_inr,
+                ),
+                ArmObservation(
+                    1, proposal.arms[1], len(treatment_ids), treatment_orders,
+                    contribution_mean_inr=treatment_summary.mean_inr,
+                    contribution_sd_inr=treatment_summary.sd_inr,
+                ),
             ],
-            contribution_per_incremental_order_inr=economics.contribution_per_incremental_order_inr,
-            incentive_cost_per_treated_order_inr=realized_incentive_per_order,
         )
 
         pilot_spend = economics.incentive_cost_inr
@@ -479,7 +563,23 @@ def run_world(
                 true_rollout_spend += cost
                 true_rollout_net -= cost
 
-        scaled = _should_scale(rule, evaluation)
+        tolerable_loss = view.budget_inr * TOLERABLE_LOSS_FRACTION_OF_BUDGET
+        untested_population = view.population - len(experimented)
+        scaled = _should_scale(
+            rule,
+            evaluation,
+            projection_population=untested_population,
+            tolerable_loss_inr=tolerable_loss,
+        )
+        decision = (
+            assess_scale(
+                evaluation.comparisons[0],
+                projection_population=untested_population,
+                tolerable_loss_inr=tolerable_loss,
+            )
+            if isinstance(evaluation, FinalResult)
+            else None
+        )
         rollout_spend = true_rollout_spend if scaled else 0.0
         rollout_net = true_rollout_net if scaled else 0.0
         if scaled:
@@ -501,6 +601,10 @@ def run_world(
                 ci_low_inr=comparison.contribution_ci_low if comparison else 0.0,
                 ci_high_inr=comparison.contribution_ci_high if comparison else 0.0,
                 verdict=(evaluation.verdict.value if isinstance(evaluation, FinalResult) else "no_verdict"),
+                probability_net_positive=(decision.probability_net_positive if decision else 0.0),
+                projected_downside_inr=(decision.projected_downside_inr if decision else 0.0),
+                decision_reason=(decision.reason if decision else ""),
+                tolerable_loss_inr=tolerable_loss,
                 scaled=scaled,
                 pilot_spend_inr=pilot_spend,
                 rollout_spend_inr=rollout_spend,

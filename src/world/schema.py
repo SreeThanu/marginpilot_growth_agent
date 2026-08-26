@@ -30,7 +30,7 @@ from typing import Any, Mapping, Sequence
 
 # Bumped whenever the on-disk shape changes. Persistence refuses to load a world
 # written by a different major schema rather than silently mis-parsing it.
-SCHEMA_VERSION = "3.0.0"
+SCHEMA_VERSION = "4.0.0"
 
 
 class InterventionKind(str, Enum):

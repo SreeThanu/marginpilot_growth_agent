@@ -97,6 +97,14 @@ The agent does not just execute campaigns. It forms falsifiable predictions, lea
 
 **Why this is not a bandit.** A bandit updates a distribution over a fixed set of arms. It cannot read a failed experiment, reason about *why* the prediction failed given the merchant's semantic context, and propose an intervention that was never in the arm set. That capability is the LLM's job here, and `Baseline 5` exists to test whether it is worth anything.
 
+## What the agent is actually allocating
+
+MarginPilot is not an unlimited testing loop. Experimentation is the scarce resource, and the numbers are unforgiving: measured across the development worlds, the median experiment costs **₹55,283** while the median best-case profit available in a world is **₹19,939**. One experiment costs roughly **2.8× the entire profit pool of the merchant it runs on**.
+
+So the agent can afford about **one experiment per merchant**. Its job is not to test everything and keep the winners — it is to decide *whether any question is worth asking at all*, and if so *which one*. **"Run nothing" is a first-class correct answer**, and against a corpus where most promotions lose money it is frequently the right one.
+
+That is what the comparison against `Baseline 5` measures. The ablation works through a fixed hypothesis set in a preset order, paying four times for information a well-chosen single experiment buys once. Every strategy declares an explicit experiment allowance, so those four experiments are its own choice and its own cost, not something granted for free. If reading a merchant's situation cannot tell the agent which single question to ask, the LLM adds nothing over the fixed order — and the results section will say so.
+
 ## Reasoning vs. authority
 
 The single most important design rule in this codebase: **the LLM reasons, the deterministic layer decides anything involving money.**

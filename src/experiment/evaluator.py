@@ -15,13 +15,21 @@ registered before launch. Passing a different one raises. Re-reading a
 borderline experiment at alpha 0.10 is the same act as peeking, wearing a
 different hat.
 
-**Uncertainty-aware scaling.** An experiment is scale-eligible only when the
-*lower bound* of the confidence interval on incremental contribution clears
-zero. A positive point estimate is not authority to spend the merchant's money:
-half of those intervals contain zero, and scaling on them is how a system
-converts noise into spend. This is stricter than significance on conversion —
-an experiment can show a clearly significant conversion lift and still be
-refused, which is exactly the case the whole project is built around.
+**Uncertainty-aware scaling.** A positive point estimate is never authority to
+spend the merchant's money. Scaling requires two things of the posterior on
+incremental contribution: that the campaign is probably profitable, and that its
+bad tail is survivable — see :func:`assess_scale`. This is stricter than
+significance on conversion, so an experiment can show a clearly significant
+conversion lift and still be refused, which is the case the whole project is
+built around.
+
+The original rule required the entire 95% interval to clear zero. On Day 5 that
+was measured against an oracle selector — perfect choice of intervention, full
+budget — and it scaled 0 experiments in 10 worlds while missing 9 truly
+profitable rollouts. A rule that refuses even oracular selection is not
+conservative, it is inoperable, so it was replaced before any agent existed and
+before any holdout was opened. Both rules are computed; only the posterior one
+decides. The reasoning is pre-registered in ``docs/simulator.md``.
 
 Contribution arithmetic proper belongs to ``src/economics/`` on Day 4. This
 module takes per-order figures as arguments and does not know what a margin is.
@@ -37,6 +45,21 @@ from typing import Mapping, Sequence
 from scipy import stats
 
 from src.experiment.registry import LaunchedExperiment
+
+
+#: Posterior probability of positive net contribution required to scale.
+#:
+#: With a flat prior and a normal likelihood the posterior equals the sampling
+#: distribution, so this threshold is numerically a one-sided test at alpha 0.20.
+#: That is stated plainly rather than dressed up: the Bayesian framing does not
+#: manufacture evidence, it changes the bar and pairs it with an explicit floor
+#: on the downside. The old rule — the whole 95% interval above zero — is a
+#: one-sided bar at 0.025, which at this corpus's achievable sample sizes
+#: refused to scale even under perfect selection.
+DEFAULT_MIN_PROBABILITY = 0.80
+
+#: Percentile of the posterior used as the downside floor.
+DEFAULT_LOSS_PERCENTILE = 0.05
 
 
 class Verdict(str, Enum):
@@ -56,12 +79,27 @@ class HorizonNotReachedError(RuntimeError):
 
 @dataclass(frozen=True, slots=True)
 class ArmObservation:
-    """What was actually observed in one arm."""
+    """What was actually observed in one arm.
+
+    Carries per-customer contribution as a measured mean and spread rather than
+    a modelled figure. The earlier version passed only counts and reconstructed
+    contribution as "incremental orders x a fixed contribution per order", which
+    cannot see a treatment that changes what people buy rather than whether they
+    buy — and had the wrong sign in half the dev worlds because of it.
+
+    ``contribution_mean_inr`` is over *assigned* customers, so non-buyers are
+    included as zeros. Dropping them would condition on an outcome of the
+    treatment and understate the variance the decision rests on.
+    """
 
     arm: int
     name: str
     n_assigned: int
     n_converted: int
+    #: Mean per-assigned-customer contribution, net of incentive redeemed.
+    contribution_mean_inr: float = 0.0
+    #: Sample standard deviation of that per-customer contribution.
+    contribution_sd_inr: float = 0.0
 
     def __post_init__(self) -> None:
         if self.n_assigned < 0 or self.n_converted < 0:
@@ -133,10 +171,47 @@ class ArmComparison:
     net_contribution_inr: float
     contribution_ci_low: float
     contribution_ci_high: float
+    #: Standard error of the net-contribution estimate. With a flat prior this
+    #: is also the posterior standard deviation.
+    contribution_se_inr: float = 0.0
+
+    # -- posterior view of the same evidence --------------------------------
+
+    @property
+    def probability_net_positive(self) -> float:
+        """P(net contribution > 0) under a flat prior.
+
+        The quantity a merchant actually wants: not "is this distinguishable
+        from zero" but "how likely is it that spending here makes money".
+        """
+        if self.contribution_se_inr <= 0:
+            return 1.0 if self.net_contribution_inr > 0 else 0.0
+        return float(stats.norm.cdf(self.net_contribution_inr / self.contribution_se_inr))
+
+    def posterior_percentile_inr(self, percentile: float) -> float:
+        """A percentile of the posterior on net contribution, in rupees."""
+        if self.contribution_se_inr <= 0:
+            return self.net_contribution_inr
+        return float(
+            stats.norm.ppf(percentile, loc=self.net_contribution_inr, scale=self.contribution_se_inr)
+        )
+
+    @property
+    def net_per_treated_customer_inr(self) -> float:
+        """Net contribution per treated customer — the scale-free form."""
+        return self.net_contribution_inr / self.n_treatment if self.n_treatment else 0.0
+
+    @property
+    def se_per_treated_customer_inr(self) -> float:
+        return self.contribution_se_inr / self.n_treatment if self.n_treatment else 0.0
 
     @property
     def scale_eligible(self) -> bool:
-        """The whole interval must clear zero. A positive estimate is not enough."""
+        """Frequentist rule: the whole interval must clear zero.
+
+        Retained for reporting and for the record of what the earlier rule would
+        have decided. The live decision is :func:`assess_scale`.
+        """
         return self.contribution_ci_low > 0.0
 
     @property
@@ -152,6 +227,101 @@ class ArmComparison:
         if self.contribution_ci_high < 0.0:
             return Verdict.KILL
         return Verdict.INCONCLUSIVE
+
+
+@dataclass(frozen=True, slots=True)
+class ScaleDecision:
+    """Whether the evidence supports spending, and why.
+
+    Two conditions, both required:
+
+    1. ``P(net > 0) >= min_probability`` — the campaign is probably profitable.
+    2. the ``loss_percentile`` of the posterior, projected to the population the
+       rollout would cover, sits above ``-tolerable_loss_inr`` — the bad tail is
+       survivable.
+
+    The first is about being right on average; the second is about what happens
+    when it is wrong. A rule with only the first would scale campaigns whose
+    downside could exceed the entire promotion budget.
+
+    The asymmetry of the old rule is kept: spending requires evidence, declining
+    requires none. Nothing here licenses an affirmative claim of harm.
+    """
+
+    scale: bool
+    probability_net_positive: float
+    projected_net_inr: float
+    projected_downside_inr: float
+    tolerable_loss_inr: float
+    min_probability: float
+    reason: str
+
+    @property
+    def failed_on_probability(self) -> bool:
+        return self.probability_net_positive < self.min_probability
+
+    @property
+    def failed_on_downside(self) -> bool:
+        return self.projected_downside_inr <= -self.tolerable_loss_inr
+
+
+def assess_scale(
+    comparison: "ArmComparison",
+    *,
+    projection_population: int,
+    tolerable_loss_inr: float,
+    min_probability: float = DEFAULT_MIN_PROBABILITY,
+    loss_percentile: float = DEFAULT_LOSS_PERCENTILE,
+) -> ScaleDecision:
+    """Apply the posterior scaling rule to one arm comparison.
+
+    The posterior is computed at pilot scale and then projected linearly to the
+    population a rollout would treat, because that is the money actually at
+    risk — a tolerable loss has to be measured against the decision being made,
+    not against the sample used to inform it.
+    """
+    probability = comparison.probability_net_positive
+    per_customer = comparison.net_per_treated_customer_inr
+    se_per_customer = comparison.se_per_treated_customer_inr
+
+    projected_net = per_customer * projection_population
+    projected_se = se_per_customer * projection_population
+    projected_downside = (
+        float(stats.norm.ppf(loss_percentile, loc=projected_net, scale=projected_se))
+        if projected_se > 0
+        else projected_net
+    )
+
+    passes_probability = probability >= min_probability
+    passes_downside = projected_downside > -tolerable_loss_inr
+
+    if passes_probability and passes_downside:
+        reason = (
+            f"scale: P(net>0)={probability:.2f} >= {min_probability:.2f} and 5th percentile "
+            f"Rs.{projected_downside:,.0f} above the tolerable loss of "
+            f"Rs.{-tolerable_loss_inr:,.0f}"
+        )
+    elif not passes_probability:
+        reason = (
+            f"hold: P(net>0)={probability:.2f} < {min_probability:.2f}. Not enough evidence "
+            "that spending here makes money."
+        )
+    else:
+        reason = (
+            f"hold: P(net>0)={probability:.2f} is adequate but the 5th percentile "
+            f"Rs.{projected_downside:,.0f} breaches the tolerable loss of "
+            f"Rs.{-tolerable_loss_inr:,.0f}. The bad tail is too expensive."
+        )
+
+    return ScaleDecision(
+        scale=passes_probability and passes_downside,
+        probability_net_positive=probability,
+        projected_net_inr=projected_net,
+        projected_downside_inr=projected_downside,
+        tolerable_loss_inr=tolerable_loss_inr,
+        min_probability=min_probability,
+        reason=reason,
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -197,20 +367,18 @@ def evaluate(
     experiment: LaunchedExperiment,
     observations: Sequence[ArmObservation] | Mapping[int, ArmObservation],
     *,
-    contribution_per_incremental_order_inr: float,
-    incentive_cost_per_treated_order_inr: float = 0.0,
     alpha: float | None = None,
 ) -> InterimResult | FinalResult:
     """Evaluate an experiment, refusing a verdict before the horizon.
 
+    Contribution is *measured*, not modelled: each observation carries the mean
+    and spread of per-customer contribution actually seen in its arm, and the
+    effect is the difference between arm means. Basket effects, mix shifts and
+    incentive costs are therefore inside the measurement rather than assumed
+    away by a formula — which is what the incremental-orders-only estimator got
+    wrong.
+
     Args:
-        contribution_per_incremental_order_inr: contribution earned per genuinely
-            incremental order. Passed in; ``src/economics/`` computes it on Day 4.
-        incentive_cost_per_treated_order_inr: incentive paid per *treated* order,
-            incremental or not. This asymmetry — earned on the incremental
-            orders, paid on all of them — is what makes a conversion win capable
-            of losing money, so the evaluator has to model it even before the
-            economics module exists.
         alpha: must match the registered design if given. Defaults to it.
 
     Returns:
@@ -252,8 +420,6 @@ def evaluate(
             treatment,
             alpha=alpha,
             comparisons=max(experiment.n_arms - 1, 1),
-            contribution_per_incremental_order_inr=contribution_per_incremental_order_inr,
-            incentive_cost_per_treated_order_inr=incentive_cost_per_treated_order_inr,
         )
         for treatment in observed[1:]
     )
@@ -271,8 +437,6 @@ def _compare(
     *,
     alpha: float,
     comparisons: int,
-    contribution_per_incremental_order_inr: float,
-    incentive_cost_per_treated_order_inr: float,
 ) -> ArmComparison:
     """Two-proportion comparison plus the contribution interval.
 
@@ -301,16 +465,22 @@ def _compare(
     else:
         p_value = 1.0
 
-    # Net incremental contribution over the treated arm:
-    #   net = n_t * (difference * c - p_t * k)
-    # Contribution is earned only on incremental orders; the incentive is paid on
-    # every treated order. Variance by the delta method, using
-    # Cov(difference, p_t) = Var(p_t):
-    #   Var(net) = n_t^2 * [ Var(p_t)*(c - k)^2 + c^2 * Var(p_c) ]
-    c = contribution_per_incremental_order_inr
-    k = incentive_cost_per_treated_order_inr
-    net = n_t * (difference * c - p_t * k)
-    se_net = n_t * math.sqrt(var_t * (c - k) ** 2 + (c**2) * var_c)
+    # Net incremental contribution: a two-sample difference of per-customer
+    # contribution means, scaled to the treated arm.
+    #
+    #   net = n_t * (mean_t - mean_c)
+    #   se  = n_t * sqrt(sd_t^2 / n_t + sd_c^2 / n_c)
+    #
+    # No assumption about where contribution comes from. If the treatment raised
+    # baskets, that is already inside mean_t; if it only shifted who converts,
+    # this reduces to the same answer the old estimator gave. The two agree
+    # exactly when order values are constant across arms, and diverge precisely
+    # in the case the old one could not represent.
+    contribution_difference = treatment.contribution_mean_inr - control.contribution_mean_inr
+    net = n_t * contribution_difference
+    se_net = n_t * math.sqrt(
+        treatment.contribution_sd_inr**2 / n_t + control.contribution_sd_inr**2 / n_c
+    )
 
     return ArmComparison(
         arm=treatment.arm,
@@ -326,4 +496,5 @@ def _compare(
         net_contribution_inr=net,
         contribution_ci_low=net - z_crit * se_net,
         contribution_ci_high=net + z_crit * se_net,
+        contribution_se_inr=se_net,
     )

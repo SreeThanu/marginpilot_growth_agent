@@ -60,7 +60,7 @@ from src.world.schema import (
 
 #: Bumped when sampling logic changes in a way that alters worlds for a fixed
 #: seed. Recorded in every world so a stale file is detectable.
-GENERATOR_VERSION = "3.0.0"
+GENERATOR_VERSION = "4.0.0"
 
 # Child-stream indices. Fixed positions, never reordered: reordering would
 # silently change every world ever generated from a given seed.
@@ -458,6 +458,11 @@ def _sample_customers(
 #: The offsets keep free shipping trending shallow and bundles deep, as in
 #: retail practice, while every range straddles the break-even line so that no
 #: kind is dominated by construction. Calibrated on dev worlds only.
+#: Bundle uplift as a ratio against its own break-even point (see
+#: _sample_interventions). Calibrated on dev worlds so that bundles populate all
+#: three profitability regimes rather than dominating.
+BUNDLE_UPLIFT_RATIO_RANGE: tuple[float, float] = (0.3, 0.9)
+
 DEPTH_MULTIPLE_OF_MARGIN: dict[InterventionKind, tuple[float, float]] = {
     InterventionKind.FLAT_DISCOUNT: (0.07, 0.29),
     InterventionKind.PERCENTAGE_DISCOUNT: (0.07, 0.30),
@@ -503,7 +508,29 @@ def _sample_interventions(
     pct = _round(depth_for(InterventionKind.PERCENTAGE_DISCOUNT), 4)
     shipping = float(np.clip(np.round(depth_for(InterventionKind.FREE_SHIPPING) * mean_basket, -1), 20.0, 250.0))
     bundle_pct = _round(depth_for(InterventionKind.BUNDLE), 4)
-    bundle_value = float(np.round(params.aov_median_inr * rng.uniform(0.15, 0.45), 2))
+
+    # The basket uplift a bundle creates has to be PAID FOR, not granted.
+    #
+    # Sampling the uplift independently of depth made bundles a free lunch: the
+    # extra basket earned margin on every treated converter while the discount
+    # cost less than that margin, so bundles were profitable by construction and
+    # dominated 27 of 30 dev worlds. That removed the trade-off the four
+    # interventions exist to pose.
+    #
+    # Break-even for a customer who would have converted anyway is
+    #     margin * uplift = depth * (basket + uplift)
+    #  => uplift = depth * basket / (margin - depth)
+    # so the uplift is expressed as a ratio against that break-even point. A
+    # ratio below 1 means the extra basket does not cover the discount on it; a
+    # ratio above 1 means it does. Sampled at 0.3-0.9, i.e. the uplift usually
+    # under-pays its own discount, so a bundle is not free money — its
+    # inframarginal customers cost the merchant, exactly as every other
+    # intervention's do. Calibrated on dev worlds; see docs/simulator.md.
+    breakeven_uplift = bundle_pct * mean_basket / max(params.margin_mean - bundle_pct, 1e-6)
+    bundle_uplift_ratio = float(rng.uniform(*BUNDLE_UPLIFT_RATIO_RANGE))
+    bundle_value = float(
+        np.clip(np.round(bundle_uplift_ratio * breakeven_uplift, 2), 0.0, 0.8 * mean_basket)
+    )
 
     return (
         Intervention(

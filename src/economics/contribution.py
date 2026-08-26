@@ -17,7 +17,11 @@ computed by hand rather than against the implementation's own output.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
+from typing import Sequence
+
+import numpy as np
 
 # --------------------------------------------------------------------------- #
 # Primitives
@@ -219,3 +223,128 @@ def assess(
         net_incremental_contribution_inr=net_incremental_contribution_inr(contribution, cost),
         romi=romi(contribution, cost),
     )
+
+
+# --------------------------------------------------------------------------- #
+# Per-arm contribution — the correct estimator
+# --------------------------------------------------------------------------- #
+#
+# Everything above treats contribution as "incremental orders x a fixed
+# contribution per order". That is only right when the treatment changes *who*
+# buys and not *what they buy*. A bundle changes both: it raises the basket of
+# every treated buyer, including those who would have bought anyway.
+#
+# Measured on dev worlds, the incremental-orders-only estimator had the wrong
+# SIGN in 5 of 10 worlds on bundle experiments, reporting -Rs.0.53 per customer
+# where the truth was +Rs.1.16. It could not see the basket.
+#
+# The fix is to stop modelling contribution and start measuring it: take each
+# customer's realized contribution, net of any incentive they redeemed, and
+# compare arm means. Basket effects, mix effects and incentive costs are then
+# all inside the measurement rather than assumed away by the formula.
+
+
+@dataclass(frozen=True, slots=True)
+class ArmContribution:
+    """Per-customer contribution in one experiment arm.
+
+    ``mean`` is over *assigned* customers, not converters — a customer who did
+    not buy contributed zero, and dropping them would silently condition on an
+    outcome of the treatment.
+    """
+
+    n_assigned: int
+    n_converted: int
+    mean_inr: float
+    sd_inr: float
+
+    @property
+    def total_inr(self) -> float:
+        return self.mean_inr * self.n_assigned
+
+
+def customer_contribution_inr(
+    *,
+    converted: bool,
+    order_value_inr: float,
+    contribution_margin: float,
+    incentive_inr: float = 0.0,
+) -> float:
+    """One customer's contribution to the merchant over the experiment window.
+
+    Zero if they did not buy. If they did, the margin on what they actually
+    spent, less whatever incentive they redeemed.
+    """
+    if not converted:
+        return 0.0
+    return contribution_per_order_inr(order_value_inr, contribution_margin) - incentive_inr
+
+
+def summarise_arm(contributions: Sequence[float], n_converted: int) -> ArmContribution:
+    """Mean and sample standard deviation of per-customer contribution.
+
+    Takes the full per-customer vector including the zeros, because those zeros
+    are most of the variance and dropping them would understate the uncertainty
+    the scaling decision depends on.
+    """
+    n = len(contributions)
+    if n == 0:
+        return ArmContribution(0, 0, 0.0, 0.0)
+    values = np.asarray(contributions, dtype=float)
+    # ddof=1: this is a sample, and at these n the correction is negligible but
+    # the honesty is free.
+    sd = float(values.std(ddof=1)) if n > 1 else 0.0
+    return ArmContribution(
+        n_assigned=n, n_converted=n_converted, mean_inr=float(values.mean()), sd_inr=sd
+    )
+
+
+def arm_from_counts(
+    n_assigned: int,
+    n_converted: int,
+    *,
+    contribution_per_order_inr: float,
+    incentive_per_order_inr: float = 0.0,
+) -> ArmContribution:
+    """Build an arm summary when every order is worth the same.
+
+    Exact rather than simulated: with a constant order value the per-customer
+    contribution is Bernoulli, so the mean is ``p * (c - k)`` and the variance
+    ``p(1-p)(c-k)^2``. Useful for hand-checked tests and for strategies that
+    only have aggregate counts — and it is the case in which this estimator and
+    the old incremental-orders one agree exactly.
+    """
+    if n_assigned <= 0:
+        return ArmContribution(0, 0, 0.0, 0.0)
+    p = n_converted / n_assigned
+    per_converter = contribution_per_order_inr - incentive_per_order_inr
+    mean = p * per_converter
+    variance = p * (1 - p) * per_converter**2
+    return ArmContribution(
+        n_assigned=n_assigned,
+        n_converted=n_converted,
+        mean_inr=mean,
+        sd_inr=math.sqrt(variance),
+    )
+
+
+def net_contribution_from_arms(
+    control: ArmContribution, treatment: ArmContribution
+) -> tuple[float, float]:
+    """Net incremental contribution over the treated arm, and its standard error.
+
+    A two-sample difference of means, scaled to the treated population::
+
+        net = n_t * (mean_t - mean_c)
+        se  = n_t * sqrt(sd_t^2 / n_t + sd_c^2 / n_c)
+
+    No assumption about where contribution comes from: if the treatment raised
+    baskets, that is already inside ``mean_t``.
+    """
+    if control.n_assigned == 0 or treatment.n_assigned == 0:
+        return 0.0, 0.0
+    per_customer = treatment.mean_inr - control.mean_inr
+    variance = (
+        treatment.sd_inr**2 / treatment.n_assigned + control.sd_inr**2 / control.n_assigned
+    )
+    return per_customer * treatment.n_assigned, math.sqrt(variance) * treatment.n_assigned

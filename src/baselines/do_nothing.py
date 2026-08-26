@@ -21,6 +21,7 @@ from src.eval.contracts import MerchantView, Proposal, ScalingRule
 class DoNothing:
     name: str = "1_do_nothing"
     scaling_rule: ScalingRule = ScalingRule.NEVER
+    max_experiments: int = 0
 
     def decide(self, view: MerchantView, budget_inr: float) -> Sequence[Proposal]:
         return []

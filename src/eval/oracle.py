@@ -14,7 +14,7 @@ all?*
 
 The oracle selector answers it. It knows in advance which single intervention in
 each world is most likely to pay, tests only that one, and then decides on the
-same CI-lower-bound rule as everyone else. It is not achievable — no agent can
+same posterior scaling rule as everyone else. It is not achievable — no agent can
 know this — but it bounds what any amount of reasoning about *which* experiment
 to run could possibly be worth.
 
@@ -27,8 +27,10 @@ Reading the result:
   reasoning actually captures.
 
 Note the oracle still has to *pay* for its experiment and can still be refused
-by the CI rule: perfect selection does not confer perfect information, only a
-perfect starting guess.
+by the decision rule: perfect selection does not confer perfect information,
+only a perfect starting guess. Its scale rate is therefore also the sanity check
+on the rule itself — a rule that refuses even oracular selection is too strict to
+build on, which is exactly what the first version of it turned out to be.
 """
 
 from __future__ import annotations
@@ -51,7 +53,8 @@ class _OracleSelector:
 
     chosen_intervention_id: str
     name: str = "oracle_selector"
-    scaling_rule: ScalingRule = ScalingRule.CI_LOWER_BOUND
+    scaling_rule: ScalingRule = ScalingRule.BAYESIAN_POSTERIOR
+    max_experiments: int = 1
     mde_fraction_of_order_contribution: float = 0.02
     assumed_lift_absolute: float = 0.03
 
@@ -63,8 +66,8 @@ class _OracleSelector:
                 intervention_id=self.chosen_intervention_id,
                 hypothesis_id=f"hyp_oracle_{view.world_id}",
                 prediction=(
-                    f"{intervention.name} produces incremental contribution whose CI "
-                    "lower bound clears zero."
+                    f"{intervention.name} produces incremental contribution that is "
+                    "probably positive and whose downside is tolerable."
                 ),
                 reasoning=(
                     "Selection is oracular: this intervention is known in advance to "
@@ -74,8 +77,14 @@ class _OracleSelector:
                 mde_contribution_per_customer_inr=(
                     contribution_per_order * self.mde_fraction_of_order_contribution
                 ),
-                success_condition="CI lower bound on incremental contribution above zero.",
-                failure_condition="CI contains or lies below zero.",
+                success_condition=(
+                    "P(net > 0) >= 0.80 and the projected 5th percentile stays above "
+                    "the tolerable loss."
+                ),
+                failure_condition=(
+                    "P(net > 0) < 0.80, or the projected 5th percentile breaches the "
+                    "tolerable loss."
+                ),
             )
         ]
 
@@ -95,9 +104,9 @@ def run_oracle_selector(world: World, truth: GroundTruth) -> WorldResult:
     """Run the oracle selector against one world.
 
     Selection is oracular; measurement is not. The experiment is still paid for,
-    still run to its pre-committed horizon, and still read on the same
-    CI-lower-bound rule — so a world whose best intervention is only marginally
-    profitable can still, correctly, fail to clear the bar.
+    still run to its pre-committed horizon, and still read on the same posterior
+    rule — so a world whose best intervention is only marginally profitable can
+    still, correctly, fail to clear the bar.
     """
     selector = _OracleSelector(chosen_intervention_id=best_intervention_id(world, truth))
     result = run_world(selector, world, truth)

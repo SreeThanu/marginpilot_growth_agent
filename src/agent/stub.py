@@ -30,7 +30,8 @@ class StubAgent:
 
     name: str = "stub"
     #: Same rule as MarginPilot: spend only on a proven gain.
-    scaling_rule: ScalingRule = ScalingRule.CI_LOWER_BOUND
+    scaling_rule: ScalingRule = ScalingRule.BAYESIAN_POSTERIOR
+    max_experiments: int = 1
     #: Which intervention to always pick, by index in the world's list.
     intervention_index: int = 0
     #: MDE as a fraction of contribution-per-order. 0.02 of a Rs.500 contribution

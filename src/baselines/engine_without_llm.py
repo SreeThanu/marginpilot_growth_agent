@@ -31,7 +31,14 @@ DEFAULT_ORDER: tuple[str, ...] = ("int_flat", "int_shipping", "int_pct", "int_bu
 @dataclass(frozen=True, slots=True)
 class EngineWithoutLLM:
     name: str = "5_engine_no_llm"
-    scaling_rule: ScalingRule = ScalingRule.CI_LOWER_BOUND
+    scaling_rule: ScalingRule = ScalingRule.BAYESIAN_POSTERIOR
+    #: Four experiments per world — one per hypothesis in the fixed set.
+    #:
+    #: This is the ablation's own choice and it pays for it. Working through a
+    #: preset list is what a system without merchant-specific reasoning can do;
+    #: deciding that only one of the four is worth asking about, or that none
+    #: is, requires exactly the judgement being ablated.
+    max_experiments: int = 4
     order: tuple[str, ...] = DEFAULT_ORDER
     mde_fraction_of_order_contribution: float = 0.02
     assumed_lift_absolute: float = 0.03
@@ -83,6 +90,8 @@ class LearnOnly:
 
     name: str = "1b_learn_only"
     scaling_rule: ScalingRule = ScalingRule.NEVER
+    #: Matches Baseline 5, so the comparison isolates the scaling decision.
+    max_experiments: int = 4
     engine: EngineWithoutLLM = field(default_factory=EngineWithoutLLM)
 
     def decide(self, view: MerchantView, budget_inr: float) -> Sequence[Proposal]:

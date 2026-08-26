@@ -10,6 +10,7 @@ from __future__ import annotations
 import pytest
 
 from src.economics.contribution import (
+    arm_from_counts,
     ContributionResult,
     assess,
     contribution_per_order_inr,
@@ -17,7 +18,9 @@ from src.economics.contribution import (
     incentive_cost_inr,
     incremental_contribution_inr,
     incremental_orders,
+    net_contribution_from_arms,
     net_incremental_contribution_inr,
+    summarise_arm,
     project_to_population,
     romi,
 )
@@ -172,11 +175,20 @@ def test_economics_agrees_with_the_evaluator_on_the_canonical_case() -> None:
     registry.register(design)
     experiment = registry.launch("exp_x")
 
+    control = arm_from_counts(1000, 120, contribution_per_order_inr=240.0)
+    treatment = arm_from_counts(
+        1000, 180, contribution_per_order_inr=240.0, incentive_per_order_inr=100.0
+    )
     evaluated = evaluate(
         experiment,
-        [ArmObservation(0, "control", 1000, 120), ArmObservation(1, "treatment", 1000, 180)],
-        contribution_per_incremental_order_inr=result.contribution_per_incremental_order_inr,
-        incentive_cost_per_treated_order_inr=result.incentive_per_order_inr,
+        [
+            ArmObservation(0, "control", 1000, 120,
+                           contribution_mean_inr=control.mean_inr,
+                           contribution_sd_inr=control.sd_inr),
+            ArmObservation(1, "treatment", 1000, 180,
+                           contribution_mean_inr=treatment.mean_inr,
+                           contribution_sd_inr=treatment.sd_inr),
+        ],
     )
     assert evaluated.comparisons[0].net_contribution_inr == pytest.approx(
         result.net_incremental_contribution_inr, abs=1e-6
@@ -212,3 +224,65 @@ def test_pure_functions_have_no_hidden_state() -> None:
     )
     assert assess(**args) == assess(**args)
     assert isinstance(assess(**args), ContributionResult)
+
+
+# --------------------------------------------------------------------------- #
+# The corrected estimator
+# --------------------------------------------------------------------------- #
+
+
+def test_per_arm_estimator_reproduces_the_canonical_case() -> None:
+    """Measuring contribution per arm must give the same answer as the hand
+    arithmetic when order values are constant.
+
+        control mean   = 0.12 * 240        = Rs.28.80 per customer
+        treatment mean = 0.18 * (240 - 100) = Rs.25.20 per customer
+        net            = 1000 * (25.20 - 28.80) = -Rs.3,600
+    """
+    control = arm_from_counts(1000, 120, contribution_per_order_inr=240.0)
+    treatment = arm_from_counts(
+        1000, 180, contribution_per_order_inr=240.0, incentive_per_order_inr=100.0
+    )
+    assert control.mean_inr == pytest.approx(28.80)
+    assert treatment.mean_inr == pytest.approx(25.20)
+
+    net, se = net_contribution_from_arms(control, treatment)
+    assert net == pytest.approx(-3_600.0)
+    # And it agrees with the delta-method standard error the old estimator used.
+    assert se == pytest.approx(2_996.0, abs=1.0)
+
+
+def test_the_old_estimator_could_not_see_a_basket_effect() -> None:
+    """The defect, reproduced.
+
+    A treatment that leaves conversion untouched but raises every buyer's
+    basket earns real contribution. Modelling contribution as "incremental
+    orders x a fixed per-order figure" scores that as exactly zero, because
+    there are no incremental orders. Measuring per arm sees it.
+    """
+    # Same conversion in both arms; treated baskets are 25% larger.
+    control = arm_from_counts(1000, 200, contribution_per_order_inr=240.0)
+    treatment = arm_from_counts(
+        1000, 200, contribution_per_order_inr=300.0, incentive_per_order_inr=20.0
+    )
+
+    old_estimate = incremental_contribution_inr(
+        incremental_orders(200, 200, 1000, 1000), 800.0, 0.30
+    ) - incentive_cost_inr(200, 20.0)
+    new_estimate, _ = net_contribution_from_arms(control, treatment)
+
+    # Old: no incremental orders, so no contribution — only the cost is seen.
+    assert old_estimate == pytest.approx(-4_000.0)
+    # New: 200 orders each earning Rs.60 more, less Rs.20 incentive = +Rs.8,000.
+    assert new_estimate == pytest.approx(8_000.0)
+    assert (old_estimate < 0) and (new_estimate > 0), "the sign flips"
+
+
+def test_summarise_arm_counts_non_buyers_as_zero() -> None:
+    """Dropping non-buyers would condition on an outcome of the treatment and
+    understate the variance the scaling decision rests on."""
+    contributions = [240.0, 0.0, 0.0, 0.0, 240.0]
+    summary = summarise_arm(contributions, n_converted=2)
+    assert summary.n_assigned == 5
+    assert summary.mean_inr == pytest.approx(96.0)
+    assert summary.sd_inr > 0

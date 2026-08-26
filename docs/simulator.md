@@ -118,6 +118,22 @@ Rupee-denominated kinds (flat discount, free shipping) convert through the world
 
 **Why depth is anchored to margin and not to break-even.** Break-even depth is `d* = margin × (incremental / treated)`, which *contains the true treatment effect*. Sampling `d = k × d*` would make the observable ratio `d / margin` a direct readout of `incremental/treated` — margin and depth are both visible to the agent, so a baseline could rank the four interventions by profitability without running a single experiment, and the entire experimentation apparatus would be measuring a quantity the world had already disclosed. That artefact is worse than the imbalance it would fix. Anchoring to margin keeps depth expressed in units the merchant genuinely knows while leaking nothing about response.
 
+### 3.4b Bundle uplift is paid for, not granted
+
+A bundle raises the treated basket by `bundle_added_value_inr`. That uplift was originally sampled independently of the bundle's depth, at 15–45% of AOV, which made bundles **a free lunch**: the extra basket earned margin on *every* treated converter while the discount on it cost less than that margin. Measured from ground truth across 30 dev worlds, bundles were profitable in 87% of them and the best of the four interventions in 27 of 30 — dominant by construction, which removes the trade-off the four intervention types exist to pose.
+
+The uplift is now expressed against its own break-even point. For a customer who would have converted anyway, the bundle breaks even when
+
+```
+margin × uplift = depth × (basket + uplift)   ⟹   uplift = depth × basket / (margin − depth)
+```
+
+and the generator samples `uplift = ratio × breakeven`, with `ratio ~ U(0.3, 0.9)`. A ratio below 1 means the larger basket does not cover the discount applied to it. The range sits below 1 on purpose: a bundle's inframarginal customers should cost the merchant money, exactly as every other intervention's do. **Assumption**; calibrated on dev worlds, not estimated.
+
+**This did not eliminate bundle's dominance, and the reason is worth recording.** Measured from ground truth after the change, bundles still win most worlds — not because bundles are too good, but because flat, percentage and free-shipping offers are unprofitable in 83–87% of worlds by construction. Depth is anchored at `j × margin` with `j` median ≈ 0.2, so a campaign breaks even only when roughly a fifth of treated orders are genuinely incremental, which sits right at the edge of what the corpus's response strengths deliver. Bundle wins by being the least-bad option, not by being free money. Making the three losers profitable enough to compete would mean widening response strength — a world-parameter change, recorded here as a known limitation rather than made silently.
+
+**The best-choice diagnostic is computed from ground truth from now on.** The Day-3 figures ("bundle best in 5–8% of worlds") were wrong: that diagnostic credited the bundle uplift only on incremental orders, while the generator grants it to every treated converter. Where an analytic approximation and `Y(1)−Y(0)` disagree, ground truth is authoritative.
+
 ### 3.4a Why percentage discounts and bundles win less often
 
 Measured on the 80 dev worlds, the best of the four interventions is a flat discount in 40% of worlds and free shipping in 48%, but a percentage discount in only 5% and a bundle in 8%.
@@ -205,6 +221,149 @@ For the record, since all of it happened before the holdout was opened and none 
 - Per-intervention hidden affinities extended from two kinds to all four, after finding that the winner was otherwise decided by which depth band was shallowest — and depth is observable.
 - The hard 3× response cap replaced with a smooth saturating curve of the same asymptote (§2), after measuring that the cap was flattening the responsive tail on up to 47.8% of a world's customers.
 - A defect in the clearance-signal emission — fired per ageing-stock note, compounding to ~100%/58% effective fidelity instead of 78%/18% — found by measuring the emission rate and fixed before the corpus was accepted.
+
+## 4b. Pre-registered decision rule — dated, 27 August 2026
+
+**Recorded before any holdout world was opened, before any agent existed, on evidence from dev worlds only.** The same change made after seeing holdout results would not be legitimate, and this section exists so that distinction is checkable rather than asserted.
+
+### The rule
+
+A tested campaign may be scaled when **both** hold:
+
+1. `P(net incremental contribution > 0) >= 0.80` under the posterior, and
+2. the **5th percentile** of that posterior, projected to the population the rollout would cover, sits above **−2% of the world's promotion budget**.
+
+The posterior is normal, centred on the estimated net contribution with the delta-method standard error as its scale, under a flat prior. With samples in the thousands the likelihood dominates any reasonable prior, so this is numerically the sampling distribution — stated plainly, because the Bayesian framing changes the decision threshold and the downside floor, not the evidence.
+
+Condition 1 is therefore equivalent to a one-sided frequentist test at α = 0.20. That is a deliberate loosening from the previous rule, which required the whole 95% interval above zero (a one-sided bar at α = 0.025). Condition 2 is what makes the loosening safe: a weaker evidence bar with no floor would scale campaigns whose bad tail could consume the entire budget.
+
+The asymmetry is unchanged. **Spending requires evidence; declining requires none.** Nothing in this rule licenses an affirmative claim that a campaign is harmful — that still needs the interval to clear zero on the other side.
+
+### Why 0.80 and −2% of budget
+
+**0.80** — the merchant's question is "will this make money", not "can I reject the null". At 0.80 the expected value of scaling is clearly positive while one campaign in five is still expected to disappoint, which is the correct posture for a bounded, repeatable budget rather than a one-shot irreversible bet.
+
+**−2% of the promotion budget** — the budget is the merchant's own stated appetite for risk across the whole promotion programme, so a per-campaign floor expressed against it scales with the merchant instead of being an invented rupee figure. At 2%, with four candidate interventions per world, aggregate exposure in the bad tail stays under a tenth of the budget: a bad run costs a slice of the promotion programme, never the business.
+
+Both numbers are **assumptions**, chosen for proportionality, not estimated from data.
+
+### Why the previous rule was replaced
+
+The original rule — scale only when the entire 95% confidence interval on incremental contribution clears zero — was measured on Day 5 against an **oracle selector**: a diagnostic that reads ground truth to pick the single best intervention in each world, then runs a normal experiment on it with the full budget.
+
+The oracle **scaled 0 experiments in 10 worlds**, and missed 9 rollouts that were truly profitable. Tightening the minimum detectable effect to buy precision made it worse, because the population cannot seat the resulting sample: at an MDE of 1% of order contribution only 3 of 10 worlds could run the experiment at all, and at 0.5% none could.
+
+That is a diagnosis, not a tuning opportunity. The constraint was statistical power at the scale these worlds can support, so no amount of agent reasoning could have fixed it — a rule that refuses even perfect selection is inoperable rather than conservative. It was changed on that basis, before the agent was built and with the holdout still sealed.
+
+### What is kept
+
+The frequentist interval is still computed and reported alongside every decision, so what the stricter rule *would* have decided remains visible in the results. `src/eval/replay.py` continues to price both rules against ground truth, which means Day 9 can report how much of MarginPilot's performance came from the change in decision threshold rather than from anything the agent did.
+
+## 4c. Estimator defect and correction — dated, 28 August 2026
+
+**Found and fixed on dev worlds, before any agent existed and before any holdout was opened.**
+
+### What the old estimator missed
+
+Incremental contribution was modelled as
+
+```
+net = n_t × (Δp × c − p_t × k)
+```
+
+— incremental orders times a fixed contribution per order, less the incentive on every treated order. That is correct only when a treatment changes *who* buys and not *what they buy*.
+
+Bundles change both. A bundle raises the basket of every treated buyer, including the ones who would have bought anyway, and the formula above has no term for that: with no incremental orders it scores a real basket gain as exactly zero.
+
+Measured against ground truth on 10 dev worlds, the estimator **had the wrong sign in 5 of them**, reporting −₹0.53 per customer where the truth was +₹1.16. Since the corpus's only reliably profitable intervention is the bundle, this meant no strategy could ever correctly scale the one thing worth scaling.
+
+### The correction
+
+Contribution is now **measured, not modelled**. Each customer's realized contribution — margin on what they actually spent, less any incentive they redeemed, zero if they did not buy — is averaged per arm, and the effect is the difference between arm means:
+
+```
+net = n_t × (mean_t − mean_c)
+se  = n_t × √(sd_t²/n_t + sd_c²/n_c)
+```
+
+Basket effects, mix shifts and incentive costs are inside the measurement rather than assumed away. Nothing here requires knowing a counterfactual: what each customer spent and which discount they used is in the merchant's own order table.
+
+The two estimators **agree exactly when order values are constant across arms** — the canonical README case returns −₹3,600 with a standard error of ₹2,996 under both — and diverge precisely in the case the old one could not represent. Both properties are pinned by tests.
+
+### Which results this invalidated
+
+Every Day 4 and Day 5 figure produced before 28 August 2026 was computed with the broken estimator and has been re-run. The material changes:
+
+| Result | Before | After |
+|---|---|---|
+| Mean estimation error vs truth | ₹7.67 / customer | ₹4.39 / customer |
+| Replay: `point_estimate` rule | −₹333,458, correct 1/5 | −₹59,790, correct 4/5 |
+| Oracle selector scale rate | 2/10 | 5/10 |
+| Baseline 5 realized net | −₹594,236 | −₹439,452 |
+| Baseline 5 false positives | 3 | 1 |
+
+The headline replay result survives: the CI-lower-bound rule still matches the oracle 5/5. **Its margin over the naive point-estimate rule collapsed**, from ₹332,529 to ₹58,861, because most of that gap was the broken estimator's noise rather than the rule's discipline. That is a materially weaker claim than the one the Day 4 report made, and it is recorded here rather than quietly restated.
+
+## 4d. Framing decision — scarce experimentation, dated 28 August 2026
+
+**Pre-holdout, recorded before the agent was built.**
+
+Measured on dev worlds: the median pilot costs **₹55,283**, while the median best-case profit available in a world is **₹19,939**. One experiment costs roughly **2.8× the entire profit pool of the world it runs in**.
+
+This is not a defect and is deliberately **not** being fixed. Making experimentation cheaper — by widening response strength, lowering MDE ambition, or discounting the incentive — would remove the constraint that makes the problem interesting. The economics are honest, so they become the thesis:
+
+> **The agent allocates a scarce experimentation budget.** It can afford roughly one experiment per merchant. Its job is to decide whether any question is worth asking at all, and if so which one — with "run nothing" as a first-class correct answer.
+
+Two consequences follow, and both are testable:
+
+1. **Baseline 5 should lose.** Working through a fixed hypothesis set in a preset order means paying four times for information a well-chosen single experiment would have bought once. Selection headroom against it is **₹519,684** across 10 dev worlds.
+2. **Every strategy now declares an explicit experiment allowance** (`max_experiments`), enforced by the harness. Baseline 5's four experiments per world are its own choice, which it pays for, rather than something the harness grants for free. Deciding that only one of the four is worth asking — or that none is — requires exactly the judgement being ablated.
+
+This is where semantic context has to earn its keep. If reading a merchant's situation cannot tell the agent which single question to ask, the LLM adds nothing over the fixed order, and Day 9 will say so.
+
+### Known limitation, recorded not fixed
+
+Bundles win most worlds, and after tying their uplift to their depth (§3.4b) they still do — because flat, percentage and free-shipping offers are unprofitable in 83–87% of worlds by construction. Bundle wins by being least-bad, not by being free money. Fixing that means widening response strength, which §4d declines to do. Documented as a limitation of the corpus, not corrected.
+
+## 4e. Selection is degenerate — dated pre-holdout finding, 28 August 2026
+
+**Measured on 20 dev worlds, before the agent was built. No holdout world was read.**
+
+The question was whether choosing *which* experiment to run is worth anything on this corpus. It is not.
+
+| strategy | realized net | pilot net | rollout net | experiments | scaled |
+|---|---|---|---|---|---|
+| do nothing | ₹0 | — | — | 0 | 0 |
+| fixed_single (flat) | −₹481,826 | −₹534,599 | ₹52,773 | 20 | 1 |
+| **always_bundle** | **+₹1,234,478** | ₹111,450 | ₹1,123,028 | 20 | 12 |
+| Baseline 5 (engine, no LLM) | −₹20,773 | −₹1,389,390 | ₹1,368,617 | 79 | 14 |
+| **oracle selector** | **+₹1,245,953** | ₹111,374 | ₹1,134,579 | 20 | 11 |
+
+**A hardcoded "always test the bundle" captures 99% of the oracle's edge over a badly-chosen single experiment**, leaving **₹11,475** for any amount of reasoning to compete over. The oracle picks the bundle in 18 of 20 worlds. There is almost nothing to select.
+
+### The oracle's advantage over Baseline 5 is not selection quality
+
+| component | value | share |
+|---|---|---|
+| total gap | ₹1,266,726 | 100% |
+| from pilots — which and how many were run | ₹1,500,764 | 118.5% |
+| from rollouts — what got scaled | −₹234,037 | −18.5% |
+
+Baseline 5 captures **more** rollout value than the oracle (₹1,368,617 vs ₹1,134,579) — testing four things finds more winners — and still loses overall, because it pays ₹1.5M in pilots to do it. The entire gap is *running 20 experiments instead of 79*. **No part of it may be attributed to choosing better or to declining better**, and Day 9 must not claim it for reasoning.
+
+### What decision remains
+
+`always_bundle` loses money in 6 of 20 worlds, costing ₹96,748. A perfect run/skip decision on top of it would earn ₹1,331,226 instead of ₹1,234,478.
+
+> **The agent's remaining job is whether to run at all — worth ~₹96,748 — not which intervention, worth ~₹11,475.**
+
+Day 6 was re-aimed on this basis: MarginPilot's primary decision is restraint, and "run nothing" is a first-class correct answer with logged reasoning. Intervention choice is still justified against the semantic context, but the claim under test is restraint, not selection.
+
+### Two methodological notes
+
+**Seeds 1–10 are unrepresentative.** On those ten worlds the oracle earned only +₹80,231 and every real strategy lost to do-nothing. Extending to 20 worlds moved the oracle to +₹1,245,953 and put `always_bundle` clearly ahead of do-nothing — the difference is worlds 14, 15 and 18, which earn ₹98k–₹708k each. **Twenty worlds is the minimum credible sample**, and earlier Day-4/Day-5 conclusions drawn from five or ten should be read with that in mind.
+
+**The corpus was not changed in response to this.** Widening response strength would have made selection matter again, but doing so *after* discovering that selection is degenerate is post-hoc tuning toward a more flattering result — still pre-holdout, but exactly the pattern the pre-registration discipline exists to prevent. The known limitation in §4d stands and the corpus is frozen.
 
 ## 5. What this model does *not* claim
 

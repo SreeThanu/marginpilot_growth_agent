@@ -25,6 +25,7 @@ from src.world.schema import InterventionKind
 class RuleBasedMarketer:
     name: str = "2_rule_based"
     scaling_rule: ScalingRule = ScalingRule.NEVER  # never tests, so never scales
+    max_experiments: int = 0
     #: Treat customers with at most this many orders in the last 90 days.
     max_recent_orders: int = 1
     #: ...and who have not ordered for at least this long.

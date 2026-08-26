@@ -9,7 +9,14 @@ from __future__ import annotations
 
 import pytest
 
-from src.experiment.evaluator import ArmObservation, FinalResult, InterimResult, Verdict, evaluate
+from src.economics.contribution import arm_from_counts
+from src.experiment.evaluator import (
+    ArmObservation,
+    FinalResult,
+    InterimResult,
+    Verdict,
+    evaluate,
+)
 from src.experiment.randomize import arm_counts, assign, balance_summary
 from src.experiment.registry import ExperimentRegistry, ExperimentStatus, design_experiment
 from src.world.generator import generate_world
@@ -51,25 +58,14 @@ def test_ten_thousand_customers_through_the_whole_engine() -> None:
     # Halfway to the horizon: counts only, no verdict.
     half = horizon // 2
     interim = evaluate(
-        experiment,
-        [
-            ArmObservation(0, "control", half, int(baseline * half)),
-            ArmObservation(1, "treatment", half, int((baseline + 0.09) * half)),
-        ],
-        contribution_per_incremental_order_inr=240.0,
+        experiment, _arms(half, baseline, baseline + 0.09, incentive=0.0)
     )
     assert isinstance(interim, InterimResult)
     assert interim.verdict_eligible is False
 
     # At the horizon: a verdict, and the interval decides whether to spend.
     final = evaluate(
-        experiment,
-        [
-            ArmObservation(0, "control", horizon, int(baseline * horizon)),
-            ArmObservation(1, "treatment", horizon, int((baseline + 0.09) * horizon)),
-        ],
-        contribution_per_incremental_order_inr=240.0,
-        incentive_cost_per_treated_order_inr=40.0,
+        experiment, _arms(horizon, baseline, baseline + 0.09, incentive=40.0)
     )
     assert isinstance(final, FinalResult)
     assert final.verdict in (Verdict.SCALE, Verdict.KILL, Verdict.INCONCLUSIVE)
@@ -108,3 +104,23 @@ def test_horizon_scales_with_the_worlds_own_baseline() -> None:
         )
         horizons.add(design.horizon_per_arm)
     assert len(horizons) > 1
+
+
+def _arms(n: int, control_rate: float, treatment_rate: float, *, incentive: float):
+    """Observations with measured per-customer contribution at a constant basket."""
+    pairs = []
+    for arm, (name, rate, fee) in enumerate(
+        (("control", control_rate, 0.0), ("treatment", treatment_rate, incentive))
+    ):
+        converted = int(rate * n)
+        summary = arm_from_counts(
+            n, converted, contribution_per_order_inr=240.0, incentive_per_order_inr=fee
+        )
+        pairs.append(
+            ArmObservation(
+                arm, name, n, converted,
+                contribution_mean_inr=summary.mean_inr,
+                contribution_sd_inr=summary.sd_inr,
+            )
+        )
+    return pairs

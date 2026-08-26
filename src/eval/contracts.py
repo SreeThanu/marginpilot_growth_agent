@@ -33,7 +33,11 @@ class ScalingRule(str, Enum):
     a property of the strategy.
     """
 
-    #: The whole CI on incremental contribution clears zero. MarginPilot's rule.
+    #: P(net > 0) >= 0.80 and the posterior 5th percentile, projected to the
+    #: rollout population, stays above a tolerable loss. MarginPilot's rule.
+    BAYESIAN_POSTERIOR = "bayesian_posterior"
+    #: The whole CI on incremental contribution clears zero. The earlier rule,
+    #: kept so its decisions can still be reported alongside.
     CI_LOWER_BOUND = "ci_lower_bound"
     #: The CI on *conversion* clears zero. Statistically sound, economically
     #: blind: this is what most growth tooling does.
@@ -164,6 +168,14 @@ class Strategy(Protocol):
     name: str
     #: How this strategy decides to scale a tested campaign.
     scaling_rule: ScalingRule
+    #: How many experiments this strategy is willing to run per world.
+    #:
+    #: Experimentation is scarce, not free. Measured on dev worlds, one
+    #: experiment costs roughly 2.8x the entire profit pool of the world it runs
+    #: in, so a strategy can afford about one. Making the allowance explicit
+    #: turns "run four experiments" into a choice the strategy owns and pays
+    #: for, rather than something the harness hands out for nothing.
+    max_experiments: int
 
     def decide(self, view: MerchantView, budget_inr: float) -> Sequence[Proposal]:
         ...
