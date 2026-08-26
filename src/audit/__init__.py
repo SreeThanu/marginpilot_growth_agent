@@ -15,5 +15,10 @@ Boundary rules (CLAUDE.md)
 * A failed experiment's records are never deleted or rewritten.
 * Storage is SQLite (no server processes).
 
-Not implemented yet — Day 7.
+Built Day 7. Append-only enforced three ways: no mutating methods on the class,
+SQLite triggers that abort UPDATE and DELETE at the storage layer, and a
+SHA-256 hash chain so that tampering is detectable even if the triggers were
+dropped and the table rewritten.
+
+``make audit EXPERIMENT=<id>`` prints one experiment's decision chain.
 """

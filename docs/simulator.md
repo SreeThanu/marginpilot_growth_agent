@@ -389,6 +389,81 @@ Neither model client falls back to `HeuristicReasoner` when credentials are miss
 
 **Deviation from the original skeleton, recorded:** CLAUDE.md's Day-1 spec called for `requirements.txt` to carry one LLM client library. It now carries two, for the reason above.
 
+## 4g. Semantic reasoning is load-bearing, and it makes selection worse — dated 26 August 2026
+
+**Paired ablation on 10 dev worlds. `gemini-3.6-flash`, temperature 0.0. No holdout world was read.** Each world was run twice: once with the full merchant context, once with the semantic fields stripped and every number preserved (`src/eval/ablation.py`).
+
+### The reasoning is genuinely reading the merchant
+
+| world | context | stripped | result |
+|---|---|---|---|
+| 00001 | run | skip | **FLIPPED** |
+| 00002 | run | skip | **FLIPPED** |
+| 00003 | skip | skip | same |
+| 00004 | run | skip | **FLIPPED** |
+| 00005 | skip | skip | same |
+| 00006 | run | skip | **FLIPPED** |
+| 00007 | skip | skip | same |
+| 00008 | skip | skip | same |
+| 00009 | run | skip | **FLIPPED** |
+| 00010 | skip | skip | same |
+
+**5/10 decisions flipped.** Every world the agent chose to run, it declined once the situation was withheld.
+
+Citation quality, context arm: **35 semantic citations, 0 numeric, 2 catalogue, 0 unverified**. Every world cited a semantic coupling field; no world cited only numbers; every quote verifies verbatim against the prompt the model was given. There is no fabricated evidence.
+
+Where decisions did not flip (all skip→skip), the stripped arm's reasoning falls back to naming the absence — *"There is no trading context, customer feedback, inventory data, or segment details available"* — while the context arm rejects specific interventions for specific reasons. Semantic citations drop in every pair (4→2, 4→2, 3→2, 4→3, 5→3). Same decision, different route.
+
+**The stripped arm is inert, not a better strategy.** It skipped 10/10: with no situation it never finds a reason to spend. Its apparent "safety" is the absence of any decision at all, and it must not be read as evidence that ignoring context is preferable.
+
+### And it makes selection worse
+
+| world | chose | chosen net | bundle net | difference |
+|---|---|---|---|---|
+| 00001 | int_shipping | −₹12,242 | ₹779 | −₹13,021 |
+| 00002 | int_shipping | −₹1,353 | ₹7,166 | −₹8,519 |
+| 00004 | int_shipping | −₹6,623 | −₹1,055 | −₹5,568 |
+| 00006 | int_bundle | ₹550 | ₹1,881 | −₹1,331 |
+| 00009 | int_shipping | ₹4,949 | ₹8,237 | −₹3,288 |
+
+- agent's chosen interventions: **−₹14,718**
+- bundle every time it ran: **+₹17,008**
+- **cost of the agent's selection: −₹31,726**
+- perfect selection on those worlds: ₹70,949
+
+Separating the two capabilities: **run/skip correct 5/10** (coin-flip; always-run scores 6/10), **selection correct 1/5** of the worlds it ran. It chose `int_shipping` in 4 of 5 runs and lost money in 3 of those 4.
+
+### Mechanism
+
+The generator emits shipping-threshold support themes from the hidden `shipping_affinity` latent at 78%/18% fidelity (§3.5). The agent reads that signal faithfully — its citations are correct and verbatim. But **affinity governs response, not profitability**, and bundle wins on profit in ~90% of worlds regardless of how responsive a merchant's customers are to free shipping.
+
+The agent is reading a *true* signal that does not predict the *target*. This is not hallucination and not a reasoning failure in the ordinary sense; it is a correctly-read cue pointing at the wrong quantity.
+
+### Scope caveat — do not state this finding without it
+
+**This holds in a corpus where §4d records bundle as dominant by construction.** Flat, percentage and free-shipping offers are unprofitable in 83–87% of worlds because depth is anchored at `j × margin`, and bundle wins by being least-bad. In a corpus where the four interventions were genuinely competitive, a signal about response might well predict profitability, and this result could reverse.
+
+The finding is therefore: *on this corpus*, semantic reasoning is load-bearing and selection-negative. It is **not** evidence that semantic reasoning is useless for promotion selection in general, and reporting it that way would overclaim.
+
+n = 10 on a binary decision. The 95% interval on 5/10 spans roughly 24%–76%. Directional, not conclusive.
+
+## 4h. Day 9 pre-registration — dated 26 August 2026, before any holdout is opened
+
+Recorded now so that the Day 9 result cannot be reinterpreted after the fact.
+
+**Primary hypothesis (from the README):** MarginPilot beats Baseline 1 (do nothing) and Baseline 5 (engine without LLM) on incremental contribution across the 20 holdout worlds.
+
+**What the dev evidence predicts:** it will not.
+
+- Against **Baseline 1**: the agent ran in 5/10 dev worlds and its chosen interventions netted **−₹14,718**. Do-nothing scores exactly zero. On dev evidence MarginPilot loses to doing nothing.
+- Against **Baseline 5**: less clear. Baseline 5 runs four experiments per world and pays ~₹1.5M in pilots across 20 worlds (§4e); the agent runs at most one. MarginPilot may beat Baseline 5 on *cost of learning* while losing on selection. If it wins, the win is predicted to come from restraint, not from reasoning.
+
+**Predicted cause of failure:** the `int_shipping` bias described in §4g. The agent reads shipping-affinity signals faithfully and selects on them; profitability is governed by bundle economics instead.
+
+**What would falsify the prediction:** MarginPilot beating Baseline 1 on holdout, or selecting bundle at a materially higher rate on holdout than the 1/5 observed on dev.
+
+**Commitment:** whichever way it lands is what gets reported (CLAUDE.md invariant 9). If the prediction is right, the README's headline claim fails and the failure is the finding. No parameter, prompt or threshold will be changed in response to a holdout result.
+
 ## 5. What this model does *not* claim
 
 - It is not a calibrated model of any real merchant. It is a generator of plausible retail economies whose parameter ranges are anchored where literature exists and openly labelled where it does not.

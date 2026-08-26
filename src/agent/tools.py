@@ -38,6 +38,7 @@ from src.experiment.evaluator import (
     evaluate,
 )
 from src.experiment.power import DesignFeasibility
+from src.policy.gates import PolicyLimits, PolicyRejection, PolicyVerdict, gate_experiment
 from src.experiment.registry import (
     ExperimentRegistry,
     LaunchedExperiment,
@@ -83,6 +84,10 @@ class ToolContext:
     budget_remaining_inr: float
     max_experiments: int
     launched: list[str] = field(default_factory=list)
+    #: The merchant's standing money constraints. Day 7's gate reads these.
+    limits: PolicyLimits = field(default_factory=PolicyLimits)
+    #: Power the design must reach; checked by the gate, not by the agent.
+    power_level: float = 0.80
 
 
 @dataclass(frozen=True, slots=True)
@@ -246,27 +251,40 @@ def propose_experiment(
 
 
 def validate_experiment(ctx: ToolContext, design: ProposedDesign) -> dict[str, Any]:
-    """Return a verdict. **Does not execute** — CLAUDE.md invariant 2.
+    """Return a policy verdict. **Does not execute** — CLAUDE.md invariant 2.
 
-    Day 7 replaces the body of this with the real policy gate. The interface is
-    already the one the gate will fill, so the agent's contract does not change
-    when it arrives.
+    The five money rules come from ``src/policy/gates.py``; the two rules that
+    are the agent's own operating envelope — is the question answerable, and has
+    it used its experiment allowance — are checked here. Both kinds of refusal
+    name the rule and the violating value.
     """
-    reasons: list[str] = []
+    view = ctx.view
+    intervention = view.intervention(design.intervention_id)
+    verdict: PolicyVerdict = gate_experiment(
+        experiment_id=design.experiment_id,
+        projected_spend_inr=design.projected_spend_inr,
+        remaining_budget_inr=max(ctx.budget_remaining_inr, 0.0),
+        discount_depth=intervention.effective_depth(view.observed_aov_inr),
+        contribution_margin=view.observed_margin,
+        customers_treated=design.horizon_per_arm * 2,
+        population=view.population,
+        power=ctx.power_level,
+        limits=ctx.limits,
+    )
+
+    reasons = [v.message for v in verdict.violations]
     if not design.feasibility.feasible:
-        reasons.append(design.feasibility.reason)
+        reasons.append(f"REJECTED — {design.feasibility.reason}")
     if len(ctx.launched) >= ctx.max_experiments:
         reasons.append(
-            f"experiment allowance exhausted ({ctx.max_experiments} per merchant)"
+            f"REJECTED — experiment allowance exhausted "
+            f"({ctx.max_experiments} per merchant)"
         )
-    if design.projected_spend_inr > ctx.budget_remaining_inr:
-        reasons.append(
-            f"projected spend Rs.{design.projected_spend_inr:,.0f} exceeds remaining "
-            f"budget Rs.{ctx.budget_remaining_inr:,.0f}"
-        )
+
     return {
         "approved": not reasons,
         "rejections": reasons,
+        "policy_verdict": verdict.to_dict(),
         "experiment_id": design.experiment_id,
         "horizon_per_arm": design.horizon_per_arm,
         "projected_spend_inr": round(design.projected_spend_inr, 2),
@@ -277,7 +295,11 @@ def validate_experiment(ctx: ToolContext, design: ProposedDesign) -> dict[str, A
 
 
 def launch_experiment(ctx: ToolContext, design: ProposedDesign) -> LaunchedExperiment:
-    """Execute an already-validated design. Refuses anything else."""
+    """Execute an already-validated design. Refuses anything else.
+
+    Re-runs the gate rather than trusting a verdict handed in: an approval
+    obtained earlier, under a different budget, is not authority to spend now.
+    """
     verdict = validate_experiment(ctx, design)
     if not verdict["approved"]:
         raise PermissionError(

@@ -7,6 +7,7 @@
 
 PYTHON ?= python
 WORLDS_DIR ?= worlds
+AUDIT_DB ?= audit.db
 
 ## Generate 100 worlds — 80 dev, 20 sealed holdout — and print the sanity report
 worlds:
@@ -20,9 +21,9 @@ demo:
 eval:
 	@echo "make eval: not implemented yet (Day 4 harness / Day 9 holdout run)"
 
-## Print the full decision chain for one experiment: make audit EXPERIMENT=<id> (Day 7)
+## Print the full decision chain for one experiment: make audit EXPERIMENT=<id>
 audit:
-	@echo "make audit: not implemented yet (Day 7 — src/audit/)"
+	$(PYTHON) -m src.audit $(EXPERIMENT) --db $(AUDIT_DB)
 
 ## Run the test suite
 test:

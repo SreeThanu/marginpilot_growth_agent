@@ -42,6 +42,9 @@ from src.experiment.evaluator import FinalResult, InterimResult, Verdict, assess
 from src.experiment.evaluator import ArmObservation
 from src.experiment.randomize import assign
 from src.experiment.registry import ExperimentRegistry, design_experiment_on_contribution
+from src.audit.log import AuditLog, Stage
+from src.experiment.randomize import assignment_rule
+from src.policy.gates import PolicyLimits, affordable_rollout_customers, gate_rollout
 from src.eval.contracts import (
     DirectAction,
     ExperimentProposal,
@@ -78,6 +81,8 @@ class ExperimentOutcome:
     probability_net_positive: float = 0.0
     projected_downside_inr: float = 0.0
     decision_reason: str = ""
+    #: Why the policy gate allowed or refused the rollout.
+    policy_reason: str = ""
     tolerable_loss_inr: float = 0.0
     scaled: bool = False
     #: True for a campaign run without an experiment (Baseline 2's approach).
@@ -341,6 +346,9 @@ def _run_direct_action(
     view: MerchantView,
     world: World,
     truth: GroundTruth,
+    *,
+    budget_remaining_inr: float,
+    limits: PolicyLimits,
 ) -> ExperimentOutcome:
     """Apply a campaign with no experiment, and book what really happened.
 
@@ -349,7 +357,23 @@ def _run_direct_action(
     has to score the outcome even when the strategy cannot see it.
     """
     intervention = view.intervention(action.intervention_id)
-    targets = set(action.target_customer_ids)
+    targets = list(action.target_customer_ids)
+
+    # An untested campaign is still a money-adjacent action, so it passes the
+    # same gate. The gate is constructive rather than absolute: it trims the
+    # campaign to what the budget and the exposure cap actually permit, instead
+    # of refusing a campaign the merchant could partly afford.
+    cost_each = view.observed_conversion * intervention.incentive_cost_inr(
+        view.observed_aov_inr
+    )
+    permitted = affordable_rollout_customers(
+        remaining_budget_inr=max(budget_remaining_inr, 0.0),
+        cost_per_treated_customer_inr=cost_each,
+        population=view.population,
+        limits=limits,
+    )
+    trimmed = len(targets) - min(len(targets), permitted)
+    targets = set(targets[:permitted])
 
     spend = 0.0
     realized = 0.0
@@ -372,6 +396,12 @@ def _run_direct_action(
         n_treatment=len(targets),
         treatment_orders=treated_orders,
         verdict="untested",
+        policy_reason=(
+            f"gate trimmed {trimmed:,} customers to stay inside budget and the "
+            f"{limits.max_customer_exposure_share:.0%} exposure cap"
+            if trimmed
+            else "gate approved the full target list"
+        ),
         scaled=True,
         pilot_spend_inr=spend,
         realized_net_inr=realized,
@@ -386,8 +416,27 @@ def run_world(
     *,
     alpha: float = 0.05,
     power_level: float = 0.80,
+    limits: PolicyLimits | None = None,
+    audit: AuditLog | None = None,
 ) -> WorldResult:
-    """Run one strategy against one world, end to end."""
+    """Run one strategy against one world, end to end.
+
+    When an ``audit`` log is supplied every money-adjacent step is recorded:
+    intent, policy verdict, randomization rule, execution and measured outcome.
+    Rejections are written as fully as approvals — a log that records only what
+    happened cannot show what was prevented.
+    """
+    limits = limits or PolicyLimits()
+
+    def _log(experiment_id: str, stage: Stage, **payload: object) -> None:
+        if audit is not None:
+            audit.append(
+                world_id=world.world_id,
+                experiment_id=experiment_id,
+                stage=stage,
+                actor=strategy.name,
+                payload=dict(payload),
+            )
     view = merchant_view(world)
     budget_remaining = view.budget_inr
     result = WorldResult(
@@ -404,7 +453,10 @@ def run_world(
 
     for index, proposal in enumerate(strategy.decide(view, budget_remaining)):
         if isinstance(proposal, DirectAction):
-            outcome = _run_direct_action(proposal, view, world, truth)
+            outcome = _run_direct_action(
+                proposal, view, world, truth,
+                budget_remaining_inr=budget_remaining, limits=limits,
+            )
             budget_remaining -= outcome.pilot_spend_inr
             result.outcomes.append(outcome)
             continue
@@ -449,7 +501,21 @@ def run_world(
             alpha=alpha,
             power=power_level,
         )
+        _log(experiment_id_hint := f"{world.world_id}_{strategy.name}_{index}",
+             Stage.INTENT,
+             intervention_id=proposal.intervention_id,
+             prediction=proposal.prediction,
+             reasoning=proposal.reasoning,
+             expected_effect_absolute=proposal.expected_effect_absolute,
+             mde_contribution_per_customer_inr=proposal.mde_contribution_per_customer_inr)
+
         if not feasibility.feasible:
+            _log(experiment_id_hint, Stage.POLICY_VERDICT,
+                 approved=False, rule="min_experiment_power/feasibility",
+                 reason=feasibility.reason,
+                 required_n_per_arm=feasibility.required_n_per_arm,
+                 attainable_n_per_arm=min(feasibility.affordable_n_per_arm,
+                                          feasibility.available_n_per_arm))
             result.outcomes.append(
                 ExperimentOutcome(
                     world_id=world.world_id,
@@ -484,6 +550,18 @@ def run_world(
         registry.register(design)
         experiment = registry.launch(experiment_id)
         launched_count += 1
+        _log(experiment_id, Stage.POLICY_VERDICT, approved=True,
+             projected_spend_inr=round(feasibility.projected_spend_inr, 2),
+             remaining_budget_inr=round(budget_remaining, 2),
+             horizon_per_arm=experiment.horizon_per_arm)
+        # assignment_rule() carries its own experiment_id; drop it so it does
+        # not collide with the positional the logger already has.
+        _rule = {k: v for k, v in assignment_rule(experiment_id, experiment.n_arms).items()
+                 if k != "experiment_id"}
+        _log(experiment_id, Stage.RANDOMIZATION, **_rule)
+        _log(experiment_id, Stage.EXECUTION, action="launched",
+             hypothesis_fingerprint=experiment.hypothesis_fingerprint,
+             horizon_per_arm=experiment.horizon_per_arm)
         horizon = experiment.horizon_per_arm
 
         # Assign, then take the first `horizon` customers of each arm.
@@ -571,6 +649,27 @@ def run_world(
             projection_population=untested_population,
             tolerable_loss_inr=tolerable_loss,
         )
+
+        # The rollout is gated too. Day 5 recorded four to seven budget
+        # overruns per run because only the pilot was checked: an experiment
+        # was funded, cleared the scaling rule, then spent whatever the rest of
+        # the population happened to cost. Scaling is the larger of the two
+        # spends, so gating the pilot alone gated the cheaper half.
+        rollout_verdict = None
+        if scaled:
+            rollout_verdict = gate_rollout(
+                experiment_id=experiment_id,
+                projected_spend_inr=true_rollout_spend,
+                remaining_budget_inr=max(budget_remaining, 0.0),
+                discount_depth=intervention.effective_depth(view.observed_aov_inr),
+                contribution_margin=view.observed_margin,
+                customers_treated=untested_population,
+                population=view.population,
+                limits=limits,
+            )
+            _log(experiment_id, Stage.POLICY_VERDICT, **rollout_verdict.to_dict())
+            if not rollout_verdict.approved:
+                scaled = False
         decision = (
             assess_scale(
                 evaluation.comparisons[0],
@@ -586,6 +685,16 @@ def run_world(
             budget_remaining -= rollout_spend
 
         comparison = evaluation.comparisons[0] if isinstance(evaluation, FinalResult) else None
+        if comparison is not None:
+            _log(experiment_id, Stage.OUTCOME,
+                 conversion_control=round(comparison.conversion_control, 5),
+                 conversion_treatment=round(comparison.conversion_treatment, 5),
+                 net_contribution_inr=round(comparison.net_contribution_inr, 2),
+                 probability_net_positive=round(comparison.probability_net_positive, 4),
+                 scaled=scaled,
+                 pilot_spend_inr=round(pilot_spend, 2),
+                 rollout_spend_inr=round(rollout_spend, 2),
+                 decision=(decision.reason if decision else ""))
         result.outcomes.append(
             ExperimentOutcome(
                 world_id=world.world_id,
@@ -604,6 +713,7 @@ def run_world(
                 probability_net_positive=(decision.probability_net_positive if decision else 0.0),
                 projected_downside_inr=(decision.projected_downside_inr if decision else 0.0),
                 decision_reason=(decision.reason if decision else ""),
+                policy_reason=(rollout_verdict.reason if rollout_verdict else ""),
                 tolerable_loss_inr=tolerable_loss,
                 scaled=scaled,
                 pilot_spend_inr=pilot_spend,

@@ -72,8 +72,12 @@ def test_no_tool_can_receive_ground_truth_or_latent_parameters() -> None:
 
 def test_tool_context_cannot_hold_a_world_or_ground_truth() -> None:
     fields = {f.name: str(f.type) for f in dataclasses.fields(ToolContext)}
+    # Pinned deliberately: any new field on the context has to be justified here
+    # before it can carry data to a tool. `limits` and `power_level` are the
+    # merchant's policy configuration, not world state.
     assert set(fields) == {
-        "view", "registry", "executor", "budget_remaining_inr", "max_experiments", "launched"
+        "view", "registry", "executor", "budget_remaining_inr", "max_experiments",
+        "launched", "limits", "power_level",
     }
     for name, annotation in fields.items():
         for forbidden in FORBIDDEN_TYPES:

@@ -362,6 +362,12 @@ class GeminiReasoner:
     temperature: float = 0.0
     _client: Any = None
     _limiter: _RateLimiter = field(default_factory=lambda: _RateLimiter(GEMINI_FREE_TIER_RPM))
+    #: Cumulative token usage across every call this reasoner has made. Recorded
+    #: because the run has a real cost and a result whose price is unknown is a
+    #: result nobody can decide whether to repeat.
+    usage: dict[str, int] = field(
+        default_factory=lambda: {"calls": 0, "prompt": 0, "output": 0, "thinking": 0}
+    )
 
     def __post_init__(self) -> None:
         self._limiter = _RateLimiter(self.requests_per_minute)
@@ -406,6 +412,12 @@ class GeminiReasoner:
             except errors.ServerError as exc:  # 5xx — transient
                 last_error = exc
             else:
+                meta = getattr(response, "usage_metadata", None)
+                if meta is not None:
+                    self.usage["calls"] += 1
+                    self.usage["prompt"] += meta.prompt_token_count or 0
+                    self.usage["output"] += meta.candidates_token_count or 0
+                    self.usage["thinking"] += meta.thoughts_token_count or 0
                 text = (response.text or "").strip()
                 if not text:
                     # An empty body is usually a safety block or a truncated

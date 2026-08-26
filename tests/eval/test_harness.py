@@ -92,12 +92,26 @@ def test_spine_runs_end_to_end_on_a_dev_world() -> None:
     assert not result.budget_overrun
 
 
-def test_scaling_only_happens_when_the_ci_lower_bound_clears_zero() -> None:
+def test_scaling_requires_both_the_decision_rule_and_the_policy_gate() -> None:
+    """Two independent conditions, and the gate can veto the rule.
+
+    The decision rule says the evidence supports spending; the policy gate says
+    the merchant can afford it and it stays inside the discount, margin and
+    exposure limits. Either can refuse alone, and a scale needs both — which is
+    why this asserts an implication rather than an equality.
+    """
     for seed in (1, 2, 3, 4, 5):
         world, truth = generate(seed)
         for outcome in run_world(StubAgent(), world, truth).outcomes:
-            if outcome.launched:
-                assert outcome.scaled == (outcome.ci_low_inr > 0)
+            if not outcome.launched:
+                continue
+            if outcome.scaled:
+                # Scaling implies the posterior rule was satisfied...
+                assert outcome.probability_net_positive >= 0.80
+                assert outcome.projected_downside_inr > -outcome.tolerable_loss_inr
+                # ...and that the gate did not refuse.
+                assert "REJECTED" not in outcome.policy_reason
+        del world, truth
 
 
 def test_metrics_table_reports_real_numbers() -> None:
