@@ -91,10 +91,11 @@ def test_the_app_does_not_credit_the_gates_with_catching_selection() -> None:
 
 
 @pytest.mark.skipif(not SNAPSHOT.exists(), reason="snapshot not generated")
-def test_the_snapshot_is_labelled_as_dev_and_carries_real_figures() -> None:
+def test_the_snapshot_is_labelled_as_holdout_and_carries_real_figures() -> None:
     data = json.loads(SNAPSHOT.read_text())
-    assert "dev worlds" in data["generated_from"]
-    assert "No holdout world was read" in data["generated_from"]
+    assert "holdout" in data["generated_from"]
+    assert data["dataset"] == "HOLDOUT WORLDS"
+    assert "opened once" in data["dataset_detail"]
 
     # Four ledger entries, no more — four bars read, six get skipped.
     assert set(data["ledger"]) == {

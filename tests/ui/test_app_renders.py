@@ -58,7 +58,7 @@ def test_every_view_states_which_dataset_it_shows(view: str) -> None:
     and the page footer is too far from the number to prevent that."""
     app = _run(view)
     captions = " ".join(c.value for c in app.caption)
-    assert "DEVELOPMENT WORLDS" in captions, (
+    assert "HOLDOUT WORLDS" in captions, (
         f"view {view!r} does not name its dataset in the view itself"
     )
 
@@ -82,3 +82,17 @@ def test_the_ledger_plots_four_horizontal_bars() -> None:
     # Exactly four. Six bars need a legend and get skipped.
     data = json.loads(SNAPSHOT.read_text())
     assert len(data["ledger"]) == 4
+
+
+def test_the_decision_view_reads_as_one_idea() -> None:
+    """Three elements: the verdict, the evidence bar, the interval.
+
+    This view *is* the scaling rule. Anything else on it competes with the thing
+    being shown, so the count is pinned rather than left to drift.
+    """
+    app = _run("Decision")
+    assert not app.exception
+    # The two headline metrics render on every view; the Decision view adds one.
+    assert len(app.metric) == 3, f"Decision view has {len(app.metric)} metrics, expected 3"
+    assert len(app.code) == 1, "the posterior interval should be the only code block"
+    assert len(app.dataframe) == 0, "no table belongs on this view"

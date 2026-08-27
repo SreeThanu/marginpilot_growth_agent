@@ -7,7 +7,7 @@ It renders ``data/dashboard_snapshot.json`` and can therefore not read
 ``worlds/holdout/`` even by mistake — the seal holds because there is no route,
 not because this file promises to be careful.
 
-Every figure shown comes from dev worlds and is labelled as such.
+Every figure shown comes from the sealed holdout worlds and is labelled as such.
 
 **One framing rule.** The policy gates approved the experiments the agent chose,
 correctly: budget, discount, margin, exposure and power were all within limits.
@@ -202,33 +202,28 @@ elif view == "Decision":
     if not featured:
         st.info("No decision in this snapshot.")
     else:
+        # Three elements. This view is the scaling rule and should read as one
+        # idea: the verdict, the evidence bar it had to clear, and the interval
+        # that decides. Anything else here competes with the thing being shown.
         verdict = "SCALE" if featured["scaled"] else "KILL"
         if featured["scaled"]:
             st.success(f"### {verdict}")
         else:
             st.error(f"### {verdict}")
 
-        a, b = st.columns(2)
-        a.metric("P(net > 0)", f"{featured['probability_net_positive']:.0%}",
-                 "0.80 required to scale")
-        b.metric("Posterior 5th percentile (projected)",
-                 rupees(featured["projected_downside_inr"]),
-                 "must clear the tolerable loss")
+        st.metric(
+            "P(net > 0)",
+            f"{featured['probability_net_positive']:.0%}",
+            f"{featured['probability_net_positive'] - 0.80:+.0%} against the 0.80 threshold",
+            delta_color="normal" if featured["probability_net_positive"] >= 0.80 else "inverse",
+        )
 
-        st.write("")
-        st.markdown("**Posterior interval on net contribution**")
         st.code(
             f"  point estimate   {rupees(featured['net_contribution_inr'])}\n"
             f"  95% interval     [{rupees(featured['ci_low_inr'])}, "
             f"{rupees(featured['ci_high_inr'])}]\n"
-            f"  P(net > 0)       {featured['probability_net_positive']:.2f}",
+            f"  projected 5th %  {rupees(featured['projected_downside_inr'])}",
             language="text",
-        )
-        st.caption(featured["decision_reason"])
-        st.write("")
-        st.caption(
-            "A positive point estimate is never authority to spend. Scaling requires "
-            "the campaign to be probably profitable *and* its bad tail to be survivable."
         )
 
 elif view == "Audit chain":
@@ -291,10 +286,9 @@ elif view == "Counterfactual ledger":
         "spent on experiments that found nothing."
     )
     st.caption(
-        f"On {data['dataset_short']}, MarginPilot ran {data['marginpilot']['ran']} "
-        f"experiments and declined {data['marginpilot']['skipped']} merchants outright. "
-        f"(On the sealed holdout — 20 worlds — the same agent ran 9 and declined 11, "
-        f"for a realized -Rs.85,430 against do-nothing's zero.) It read "
+        f"Across {data['dataset_short']}, MarginPilot ran {data['marginpilot']['ran']} "
+        f"experiments and declined {data['marginpilot']['skipped']} merchants outright — "
+        f"against the unreasoning engine's 77. It read "
         "each merchant accurately and still chose worse than a fixed rule, because the "
         "signals it read predict response, not profitability. The experimental "
         "machinery caught it — the horizon, the posterior and the scaling rule. The "
@@ -306,6 +300,7 @@ elif view == "Counterfactual ledger":
 st.write("")
 st.divider()
 st.caption(
-    "All figures from development worlds. The 20 holdout worlds are sealed and were "
-    "not read to produce this page."
+    "All figures from the 20 sealed holdout worlds, opened once at final evaluation "
+    "and read through the guard with an explicit final_eval flag. Nothing on this "
+    "page was tuned in response to them."
 )

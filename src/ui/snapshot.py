@@ -5,9 +5,12 @@ generator, never touches ``worlds/``, and therefore cannot reach
 ``worlds/holdout/`` even by accident — the seal is enforced by the UI not having
 a path to a world at all, rather than by the UI promising not to look.
 
-Everything here comes from **dev worlds** and is labelled as such. No figure in
-the snapshot is invented: each is produced by running the real strategies
-through the real harness against real dev-world ground truth.
+Everything here comes from the **sealed holdout worlds**, opened once at final
+evaluation and read through ``src/eval/guard.py`` with an explicit
+``final_eval=True`` — so the one path that touches them stays greppable. No
+figure in the snapshot is invented: each is produced by running the real
+strategies through the real harness against real ground truth, and the agent's
+decisions are replayed from the recorded holdout run rather than re-inferred.
 
 Regenerate with ``python -m src.ui.snapshot``.
 """
@@ -24,23 +27,17 @@ from src.baselines import ConversionOptimizer, DoNothing, EngineWithoutLLM
 from src.eval.adversarial import run_all
 from src.eval.contracts import ExperimentProposal, MerchantView, Proposal, ScalingRule
 from src.eval.harness import _true_population_net, run_world
+from src.eval.holdout import open_holdout
 from src.eval.oracle import best_intervention_id, run_oracle_selector
 from src.policy.gates import PolicyLimits
-from src.world.generator import generate
 
 SNAPSHOT_PATH = Path("data/dashboard_snapshot.json")
 AUDIT_DB = Path("data/dashboard_audit.db")
 
-#: The dev worlds the dashboard reports on. Ten is the minimum credible sample
-#: (docs/simulator.md 4e); seeds 1-10 are dev by construction.
-SEEDS = list(range(1, 11))
-
-#: The agent's recorded decisions from the gemini-3.6-flash run, so the
-#: dashboard reports what the LLM actually chose rather than re-running it.
-LLM_RESULTS = Path(
-    "/private/tmp/claude-501/-Volumes-thanu-s-T7-margin-pilot/"
-    "25d21d0d-01ac-48e1-99bd-88ce9debd1c3/scratchpad/diag_results.json"
-)
+#: The recorded holdout run. The agent's decisions are replayed from it rather
+#: than re-inferred, so the dashboard reports what the LLM actually chose on the
+#: sealed worlds — and costs nothing to regenerate.
+HOLDOUT_RESULTS = Path("data/holdout_results.json")
 
 
 class _FixedSingle:
@@ -69,23 +66,22 @@ class _FixedSingle:
         ]
 
 
-def _agent_decisions() -> dict[int, dict[str, Any]]:
-    """The LLM's recorded run/skip decision per world, if the run is available."""
-    if not LLM_RESULTS.exists():
-        return {}
-    decisions = {}
-    for entry in json.loads(LLM_RESULTS.read_text()):
-        context = entry.get("context")
-        if not context or not context.get("cycles"):
-            continue
-        cycle = context["cycles"][0]
-        assessment = cycle["assessment"]
-        decisions[entry["seed"]] = {
-            "decision": cycle["decision"],
-            "intervention_id": assessment.get("intervention_id"),
-            "reasoning": assessment.get("reasoning", ""),
+def _agent_decisions() -> dict[str, dict[str, Any]]:
+    """The LLM's recorded run/skip decision per holdout world, keyed by world id."""
+    if not HOLDOUT_RESULTS.exists():
+        raise FileNotFoundError(
+            f"{HOLDOUT_RESULTS} is missing. The dashboard reports the holdout "
+            "evaluation; without the recorded run there is nothing to report."
+        )
+    payload = json.loads(HOLDOUT_RESULTS.read_text())
+    return {
+        entry["world_id"]: {
+            "decision": entry["decision"],
+            "intervention_id": entry.get("intervention_id"),
+            "reasoning": entry.get("assessment", {}).get("reasoning", ""),
         }
-    return decisions
+        for entry in payload["agent_log"]
+    }
 
 
 def build() -> dict[str, Any]:
@@ -103,8 +99,9 @@ def build() -> dict[str, Any]:
     featured: dict[str, Any] | None = None
     budget_total = budget_spent = 0.0
 
-    for seed in SEEDS:
-        world, truth = generate(seed, split="dev")
+    worlds_seen = 0
+    for world, truth in open_holdout():
+        worlds_seen += 1
         budget_total += world.params.promotion_budget_inr
 
         optimizer = run_world(ConversionOptimizer(), world, truth)
@@ -113,7 +110,7 @@ def build() -> dict[str, Any]:
         oracle = run_oracle_selector(world, truth)
         ledger["oracle"] += oracle.incremental_contribution_inr
 
-        decision = agent.get(seed)
+        decision = agent.get(world.world_id)
         if decision and decision["decision"] == "run" and decision["intervention_id"]:
             result = run_world(
                 _FixedSingle(decision["intervention_id"], "marginpilot"),
@@ -168,7 +165,6 @@ def build() -> dict[str, Any]:
                     }
         elif decision:
             marginpilot_skipped += 1
-        del world, truth
 
     scenarios = [asdict(s) for s in run_all(db_path=":memory:")]
 
@@ -179,15 +175,17 @@ def build() -> dict[str, Any]:
         chain_text = render_chain(audit, chain_experiment)
 
     return {
-        "generated_from": "dev worlds (seeds 1-10). No holdout world was read.",
-        # Named explicitly so every view can state its own provenance. Two
-        # datasets now exist and their headline figures differ; a figure without
-        # its dataset attached is one a reader can misattribute.
-        "dataset": "DEVELOPMENT WORLDS",
-        "dataset_detail": f"seeds {SEEDS[0]}-{SEEDS[-1]} · {len(SEEDS)} worlds · not the sealed holdout",
-        "dataset_short": f"{len(SEEDS)} development worlds",
+        "generated_from": (
+            "the 20 sealed holdout worlds, opened once at final evaluation."
+        ),
+        # Named explicitly so every view states its own provenance. A figure
+        # without its dataset attached is one a reader can misattribute, and the
+        # page footer is too far from the number to prevent that.
+        "dataset": "HOLDOUT WORLDS",
+        "dataset_detail": f"{worlds_seen} worlds · opened once",
+        "dataset_short": f"the {worlds_seen} sealed holdout worlds",
         "model": "gemini-3.6-flash",
-        "seeds": SEEDS,
+        "worlds": worlds_seen,
         "budget": {
             "total_inr": budget_total,
             "spent_inr": budget_spent,
