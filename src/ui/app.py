@@ -19,25 +19,41 @@ See ``docs/simulator.md`` 4g, which a test pins.
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 
-SNAPSHOT = Path("data/dashboard_snapshot.json")
+#: Overridable so a test can render a snapshot other than the live one — the
+#: SCALE branch of the Decision view is otherwise unreachable, since the holdout
+#: featured experiment is a KILL.
+SNAPSHOT = Path(os.environ.get("MARGINPILOT_SNAPSHOT", "data/dashboard_snapshot.json"))
+
+#: The posterior probability a campaign must clear to be scaled. Mirrors
+#: src/experiment/evaluator.py; shown on the Decision view as the bar the
+#: measured value is read against.
+SCALE_THRESHOLD = 0.80
 
 st.set_page_config(page_title="MarginPilot", layout="wide")
 
 
 @st.cache_data
-def load() -> dict:
-    if not SNAPSHOT.exists():
+def load(path: str) -> dict:
+    """Read the snapshot.
+
+    Keyed on the path: a zero-argument cache would key on nothing and keep
+    serving the first snapshot it ever read, even after the file underneath it
+    changed.
+    """
+    snapshot = Path(path)
+    if not snapshot.exists():
         st.error(
-            f"No snapshot at {SNAPSHOT}. Generate it with:\n\n"
+            f"No snapshot at {snapshot}. Generate it with:\n\n"
             "    python -m src.ui.snapshot"
         )
         st.stop()
-    return json.loads(SNAPSHOT.read_text())
+    return json.loads(snapshot.read_text())
 
 
 def dataset_badge() -> None:
@@ -57,7 +73,7 @@ def rupees(amount: float) -> str:
     return f"{sign}Rs.{abs(amount):,.0f}"
 
 
-data = load()
+data = load(str(SNAPSHOT))
 featured = data["featured_experiment"]
 
 st.title("MarginPilot")
@@ -211,11 +227,17 @@ elif view == "Decision":
         else:
             st.error(f"### {verdict}")
 
+        # delta_color is "normal" so the sign carries the meaning: a shortfall
+        # is negative and renders red, a clearance is positive and renders
+        # green. The earlier conditional selected "inverse" on a miss, which
+        # flips that — a -41% shortfall rendered GREEN beside a KILL verdict,
+        # with the colour and the number saying opposite things.
         st.metric(
             "P(net > 0)",
             f"{featured['probability_net_positive']:.0%}",
-            f"{featured['probability_net_positive'] - 0.80:+.0%} against the 0.80 threshold",
-            delta_color="normal" if featured["probability_net_positive"] >= 0.80 else "inverse",
+            f"{featured['probability_net_positive'] - SCALE_THRESHOLD:+.0%} "
+            f"against the {SCALE_THRESHOLD:.2f} threshold",
+            delta_color="normal",
         )
 
         st.code(

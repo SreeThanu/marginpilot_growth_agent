@@ -61,10 +61,25 @@ def test_the_app_never_reaches_for_a_world() -> None:
 
 
 def test_the_app_reads_exactly_one_file() -> None:
-    """One input. A second would be a second thing that could go stale."""
+    """One input. A second would be a second thing that could go stale.
+
+    Asserted against the property rather than a proxy: an earlier version of
+    this test counted `Path(` occurrences, which broke the moment the snapshot
+    path became overridable for testing — while the property it was standing in
+    for still held.
+    """
+    tree = ast.parse(APP.read_text())
+    reads = [
+        node for node in ast.walk(tree)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr in ("read_text", "read_bytes", "open")
+    ]
+    assert len(reads) == 1, f"the app performs {len(reads)} file reads; it should perform one"
+
     source = APP.read_text()
-    assert source.count("Path(") == 1
-    assert 'SNAPSHOT = Path("data/dashboard_snapshot.json")' in source
+    assert "MARGINPILOT_SNAPSHOT" in source, "the snapshot path should be overridable"
+    assert "data/dashboard_snapshot.json" in source, "with the live snapshot as the default"
 
 
 def test_the_app_does_not_poll_or_autorefresh() -> None:
