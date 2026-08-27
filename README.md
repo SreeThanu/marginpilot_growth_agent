@@ -30,11 +30,13 @@ semantic context → falsifiable hypothesis → bounded experiment
 
 ---
 
-> ### ⚠️ Results status
->
-> Every number in the Results section below is a **pre-registered target**, written before the evaluation was run. Actual measured values replace them once `make eval` completes on the holdout worlds. Targets that were missed are reported as missed. See [Pre-registration](#pre-registration).
->
-> **Delete this box before submitting, and make sure every `TBD` is filled with a real number.**
+## The finding
+
+**In an environment where testing costs more than most campaigns return, every strategy loses to doing nothing.**
+
+MarginPilot loses least, by an order of magnitude — **₹85,430 against ₹921,902–₹1,330,481** — because it runs **9 experiments where the unreasoning engine runs 77**. The reasoning is genuinely reading the merchant: strip the semantic context and half its decisions flip. It is also what makes selection worse.
+
+**That was predicted before the holdout was opened, and it happened exactly as predicted.**
 
 ---
 
@@ -222,9 +224,20 @@ Primary:
 
 Secondary: policy violations, budget overruns, false-positive campaigns scaled, true-positive campaigns killed in error, experiments killed, experiments scaled, estimation error vs. known `τ`.
 
-## Pre-registration
+## Pre-registration, and what happened
 
-Targets were fixed before evaluation. Measured values are reported whether or not they were met.
+Targets were fixed before the holdout was opened, at commit `857e990` (tag `frozen-for-holdout`). Measured values are reported whether or not they were met.
+
+**The prediction beside the outcome is the strongest thing in this project.** [`docs/simulator.md` §4h](docs/simulator.md), dated and written while the 20 worlds were still sealed, predicted the failure *and its mechanism*. Both held.
+
+| §4h predicted, before the seal opened | Measured on the holdout | Held |
+|---|---|---|
+| MarginPilot loses to Baseline 1 (do nothing) | −₹85,430 against ₹0 | **Yes** |
+| It beats Baseline 5 on cost of learning, not on selection | ₹274,435 vs ₹4,426,285; selection cost ₹228,918 | **Yes** |
+| The `int_shipping` bias is the cause | Chose shipping 7/9 times; selection correct 2/9 | **Yes** |
+| Falsified if bundle selection rose above the dev rate of 1/5 | 2/9 on holdout — not falsified | **Yes** |
+
+The characterisation was made on development worlds, in advance, and recurred unmodified on twenty worlds the agent had never seen. A negative result that was *predicted* is a different claim from one that was merely observed.
 
 | Metric (holdout worlds) | Target | Measured | Met |
 |---|---|---|---|
@@ -289,9 +302,29 @@ individual treatment effects:
 - MarginPilot's own estimates were the most accurate of any strategy: **₹3.96**
   per customer against ₹6.15–₹7.85 for the baselines
 
-**Hypothesis calibration: the truth fell inside the 95% interval 135 times out of
-183 — 74% against a nominal 95%.** The intervals are too narrow. Reported as
-measured; nothing was adjusted in response.
+Hypothesis calibration is reported separately below, because it qualifies every
+number in this section.
+
+### What worked
+
+Reported alongside the failures rather than instead of them:
+
+- **Zero policy violations, zero budget overruns**, across all six strategies and
+  20 worlds. Both the pilot and the rollout pass the gate.
+- **Zero negative-contribution campaigns scaled.** The scaling rule refused every
+  losing campaign it was offered. Baseline 2 scaled 19.
+- **The decision rule beats the naive alternative by ₹2.1M** in replay and lands
+  closest to the oracle of any achievable rule.
+- **The most accurate estimates of any strategy**, at ₹3.96 per customer.
+- **Restraint works.** Nine experiments against Baseline 5's 77, for an eighth of
+  the spend and a tenth of the loss.
+
+The apparatus is sound. What it measured is that this agent's reading of merchant
+context does not predict which promotion pays — on this corpus, where
+[`docs/simulator.md` §4d](docs/simulator.md) records bundles as dominant by
+construction. That scope caveat is load-bearing: in a corpus where the four
+interventions were genuinely competitive, a signal about response might well
+predict profitability, and this result could reverse.
 
 ### Where MarginPilot loses
 
@@ -333,26 +366,30 @@ is most confident. Confidence and correctness are anti-correlated here, which is
 the most uncomfortable finding in the project and the one most worth carrying
 forward.
 
-### What worked
+## A defect in these results: the intervals are too narrow
 
-Reported alongside the failures rather than instead of them:
+**Hypothesis calibration: the truth fell inside the 95% confidence interval 135 times out of 183 — 74% coverage against a nominal 95%.**
 
-- **Zero policy violations, zero budget overruns**, across all six strategies and
-  20 worlds. Both the pilot and the rollout pass the gate.
-- **Zero negative-contribution campaigns scaled.** The scaling rule refused every
-  losing campaign it was offered. Baseline 2 scaled 19.
-- **The decision rule beats the naive alternative by ₹2.1M** in replay and lands
-  closest to the oracle of any achievable rule.
-- **The most accurate estimates of any strategy**, at ₹3.96 per customer.
-- **Restraint works.** Nine experiments against Baseline 5's 77, for an eighth of
-  the spend and a tenth of the loss.
+This is not a finding about merchants. It is a defect in the measurement, and it qualifies every number in this README.
 
-The apparatus is sound. What it measured is that this agent's reading of merchant
-context does not predict which promotion pays — on this corpus, where
-[`docs/simulator.md` §4d](docs/simulator.md) records bundles as dominant by
-construction. That scope caveat is load-bearing: in a corpus where the four
-interventions were genuinely competitive, a signal about response might well
-predict profitability, and this result could reverse.
+An interval that claims 95% and delivers 74% is **systematic error, not noise**. It does not average out across worlds; it biases in one direction, consistently. And it feeds directly into the thing that decides whether money moves: the scaling rule reads the posterior, and a posterior narrower than the evidence supports will license scaling on weaker grounds than the rule intends. The rule's ₹2.1M advantage over the naive point estimate is real and was measured under these intervals — but it was measured with a ruler that reads short.
+
+What this does *not* invalidate: the realized net contribution figures, which come from ground truth rather than from estimates, and the decision counts, which are observed. What it does qualify: anything resting on the width of an interval, which includes the scaling decisions themselves.
+
+**Measured after the freeze. Nothing was adjusted in response.** Correcting the estimator and re-running would have meant tuning against a sealed holdout, which destroys the only unbiased measurement this project has. It is recorded as a known defect and left standing.
+
+Most likely cause, stated as a hypothesis rather than a conclusion: the per-arm contribution variance is computed from the observed sample, and with a heavy-tailed basket distribution the sample standard deviation understates the population's. That is a testable claim and the first thing future work should check.
+
+## What I would change, and why I did not
+
+The failure is specific and the fix is not mysterious. The agent selects on signals that predict **response** — shipping-threshold support tickets, segment friction notes — when the quantity that decides profitability is **margin against incentive cost**. Two changes would address it directly:
+
+1. **Constrain the agent toward profitability rather than response.** The prompt asks which intervention will move customers; it should ask which will move customers *at a cost the margin can absorb*. The information is already in the merchant view — contribution per order and cost per treated order are both there — but nothing directs attention to their ratio.
+2. **Give it margin-adjusted historical performance per intervention.** The agent currently reasons about interventions from their descriptions. A merchant with any promotional history would know which offer types have paid before; supplying that would replace inference with evidence.
+
+**Neither was applied.** The holdout was already open. Changing a prompt or a signal after seeing the sealed result and re-running would produce a number that looks better and means nothing — the evaluation's value comes entirely from the agent having been fixed before the worlds were seen. A tuned second result would not be a better result; it would be the absence of one.
+
+These are recorded as the next experiment, not as a correction to this one.
 
 ## Failure and adversarial handling
 
