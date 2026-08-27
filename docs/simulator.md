@@ -478,6 +478,47 @@ Recorded now so that the Day 9 result cannot be reinterpreted after the fact.
 
 **Commitment:** whichever way it lands is what gets reported (CLAUDE.md invariant 9). If the prediction is right, the README's headline claim fails and the failure is the finding. No parameter, prompt or threshold will be changed in response to a holdout result.
 
+## 4i. Holdout result — dated 27 August 2026. The prediction held.
+
+**The 20 sealed worlds were opened once, at commit `857e990` (tag `frozen-for-holdout`), through `src/eval/holdout.py` with `final_eval=True`. No parameter, prompt, threshold or rule changed in response to anything below.**
+
+### §4h predicted this, and it was right
+
+§4h, written before the seal was opened, predicted: *MarginPilot loses to Baseline 1, with the `int_shipping` bias as the mechanism.*
+
+| prediction | outcome |
+|---|---|
+| loses to Baseline 1 (do nothing) | **Held.** −₹85,430 against ₹0 |
+| beats Baseline 5 on cost of learning, not on selection | **Held.** ₹274,435 vs ₹4,426,285; selection cost ₹228,918 |
+| shipping bias is the cause | **Held.** `int_shipping` chosen 7/9 times; selection correct 2/9 |
+| would be falsified by bundle selection rising above the dev rate of 1/5 | **Not falsified.** 2/9 on holdout, statistically indistinguishable from 1/5 |
+
+The dev-world diagnostic in §4g transferred to unseen worlds without modification. That is the strongest methodological claim available here: the failure was characterised in advance, on different data, and recurred exactly as described.
+
+### The measured result
+
+| strategy | realized net | spend | cost of learning | exp | scaled |
+|---|---|---|---|---|---|
+| do nothing | ₹0 | ₹0 | ₹0 | 0 | 0 |
+| learn only | −₹1,330,481 | ₹4,562,034 | ₹4,562,034 | 77 | 0 |
+| rule-based | −₹929,086 | ₹2,194,834 | ₹0 | 0 | 20 |
+| conversion optimizer | −₹921,902 | ₹3,004,455 | ₹1,129,051 | 20 | 7 |
+| engine without LLM | −₹1,253,786 | ₹4,925,911 | ₹4,426,285 | 77 | 3 |
+| **MarginPilot** | **−₹85,430** | ₹365,757 | ₹274,435 | 9 | 1 |
+| oracle (cheats) | +₹250,025 | ₹1,506,621 | ₹1,144,478 | 20 | 2 |
+
+Zero policy violations and zero budget overruns across all six strategies.
+
+### What this does and does not establish
+
+**Establishes:** the measurement apparatus works. The scaling rule beats the naive point-estimate rule by ₹2.1M in replay and lands nearest the oracle of any achievable rule. Estimates are accurate to ₹3.96 per customer, better than any baseline. No losing campaign was scaled.
+
+**Does not establish:** that LLM reasoning is useless for promotion selection. It establishes that *this* model, reading *this* corpus's semantic signals, selects worse than a hardcoded bundle rule — in a corpus where §4d records bundles as dominant by construction and §4e measured selection headroom at only ₹11,475. Both caveats are load-bearing and neither may be dropped when this result is quoted.
+
+### One number that should not be quoted without its caveat
+
+**Hypothesis calibration: 74% coverage against a nominal 95%** (135/183). The intervals are too narrow. This was measured after the freeze and nothing was adjusted in response; it is a known defect in the reported results, not a finding about the world. Any future work should start here, because an overconfident interval feeding a scaling rule is a systematic error rather than noise.
+
 ## 5. What this model does *not* claim
 
 - It is not a calibrated model of any real merchant. It is a generator of plausible retail economies whose parameter ranges are anchored where literature exists and openly labelled where it does not.

@@ -226,24 +226,133 @@ Secondary: policy violations, budget overruns, false-positive campaigns scaled, 
 
 Targets were fixed before evaluation. Measured values are reported whether or not they were met.
 
-| Metric (holdout worlds) | Target | Measured |
-|---|---|---|
-| Incremental contribution vs. Baseline 1 | > 0 | `TBD` |
-| Incremental contribution vs. Baseline 2 (rules) | beat | `TBD` |
-| Incremental contribution vs. Baseline 3 (conversion optimizer) | beat | `TBD` |
-| Incremental contribution vs. Baseline 5 (no LLM) | beat | `TBD` |
-| Policy violations | **0** | `TBD` |
-| Budget overruns | **0** | `TBD` |
-| Negative-contribution campaigns scaled | **0** | `TBD` |
-| ROMI | > 1.0 | `TBD` |
+| Metric (holdout worlds) | Target | Measured | Met |
+|---|---|---|---|
+| Incremental contribution vs. Baseline 1 | > 0 | **−₹85,430** vs ₹0 | **No** |
+| Incremental contribution vs. Baseline 2 (rules) | beat | −₹85,430 vs −₹929,086 | Yes |
+| Incremental contribution vs. Baseline 3 (conversion optimizer) | beat | −₹85,430 vs −₹921,902 | Yes |
+| Incremental contribution vs. Baseline 5 (no LLM) | beat | −₹85,430 vs −₹1,253,786 | Yes |
+| Policy violations | **0** | **0** | Yes |
+| Budget overruns | **0** | **0** | Yes |
+| Negative-contribution campaigns scaled | **0** | **0** | Yes |
+| ROMI | > 1.0 | **0.77** | **No** |
+
+Two targets missed, and the first one is the headline: **MarginPilot lost money on the holdout.** It beat every baseline and still lost to doing nothing.
 
 ## Results
 
-`TBD — populated from evaluation output on the 20 holdout worlds.`
+Twenty sealed holdout worlds, opened once. Agent reasoning on `gemini-3.6-flash`;
+payments through Razorpay test mode.
+
+| strategy | realized net | spend | cost of learning | exp | scaled | FP | missed | ROMI |
+|---|---|---|---|---|---|---|---|---|
+| 1 do nothing | **₹0** | ₹0 | ₹0 | 0 | 0 | 0 | 0 | — |
+| 1b learn only *(diagnostic)* | −₹1,330,481 | ₹4,562,034 | ₹4,562,034 | 77 | 0 | 0 | 16 | 0.71 |
+| 2 rule-based | −₹929,086 | ₹2,194,834 | ₹0 | 0 | 20 | 19 | 0 | 0.58 |
+| 3 conversion optimizer | −₹921,902 | ₹3,004,455 | ₹1,129,051 | 20 | 7 | 7 | 3 | 0.69 |
+| 5 engine without LLM | −₹1,253,786 | ₹4,925,911 | ₹4,426,285 | 77 | 3 | 2 | 15 | 0.75 |
+| **MarginPilot** | **−₹85,430** | ₹365,757 | ₹274,435 | 9 | 1 | 0 | 3 | 0.77 |
+| oracle selector *(cheats)* | +₹250,025 | ₹1,506,621 | ₹1,144,478 | 20 | 2 | 0 | 9 | 1.17 |
+
+**Do nothing wins.** MarginPilot is second, ahead of every real strategy by an
+order of magnitude, and still ₹85,430 behind an empty campaign calendar.
+
+Its advantage over the other strategies is restraint, not insight: it ran 9
+experiments where Baseline 5 ran 77, and skipped 11 of 20 merchants outright.
+Spending an eighth as much is what kept its losses small.
+
+### Counterfactual replay — the decision rule, isolated
+
+Holding the worlds and experiments fixed and swapping only the rule that reads
+the result (228 decisions):
+
+| rule | realized net | spend | scaled | correct |
+|---|---|---|---|---|
+| never scale | −₹3,233,129 | ₹14,590,133 | 0 | 177/228 |
+| always scale | −₹11,660,742 | ₹54,555,745 | 228 | 51/228 |
+| point estimate | −₹4,257,971 | ₹36,882,053 | 105 | 158/228 |
+| CI lower bound | −₹2,212,074 | ₹22,983,314 | 32 | 185/228 |
+| **Bayesian posterior** *(live rule)* | **−₹2,116,323** | ₹25,383,041 | 44 | 185/228 |
+| oracle | −₹1,057,744 | ₹22,632,187 | 50 | 219/228 |
+
+The scaling rule holds up: the live rule beats the naive point estimate by
+**₹2.1M** and lands closest to the oracle of any achievable rule. This is the
+part of the system that worked.
+
+### Counterfactual validation — estimates against known τ
+
+183 experiments with a measurable estimate, scored against the simulator's true
+individual treatment effects:
+
+- mean |estimate − truth|: **₹6.14** per customer
+- median: ₹4.24 · 90th percentile: ₹14.20
+- MarginPilot's own estimates were the most accurate of any strategy: **₹3.96**
+  per customer against ₹6.15–₹7.85 for the baselines
+
+**Hypothesis calibration: the truth fell inside the 95% interval 135 times out of
+183 — 74% against a nominal 95%.** The intervals are too narrow. Reported as
+measured; nothing was adjusted in response.
 
 ### Where MarginPilot loses
 
-`TBD — the failure taxonomy. This section is mandatory and stays in the README even when it is unflattering. World types where the agent underperformed, campaigns it killed that were actually profitable, and estimation failures go here.`
+**1. It loses to doing nothing.** −₹85,430 against ₹0. The pre-registered primary
+hypothesis fails. This was predicted before the holdout was opened
+([`docs/simulator.md` §4h](docs/simulator.md)), and the prediction held.
+
+**2. Selection is where the money went.** On the 9 worlds it chose to run, its
+picks returned **−₹327,847**. Testing a bundle every time instead would have
+returned −₹98,929, and perfect selection +₹152,848. **Its reasoning cost
+₹228,918 against a hardcoded rule.**
+
+Selection was correct in **2 of 9** worlds. It chose `int_shipping` 7 times out of
+9 — the same bias measured on dev worlds and named in §4g as the predicted cause.
+The mechanism: the world generator emits shipping-threshold support tickets from
+a hidden `shipping_affinity` latent, and the agent reads them accurately. But
+affinity governs *response*, not *profitability*. It is reading a true signal
+that does not predict the target.
+
+The three worst cases are all this failure: `world_09005` (−₹122,795 chosen,
++₹33,566 available), `world_09009` (−₹157,009 chosen), `world_09015` (−₹121,859
+chosen). All three chose free shipping. All three had a better option.
+
+**3. Profitable campaigns it declined.** Run/skip was correct in 12 of 20 worlds
+— better than a coin flip, worse than useful. It skipped 5 merchants where
+something profitable existed, the largest being `world_09019` (₹342,025
+available), `world_09002` (₹125,662) and `world_09020` (₹77,064). Those
+omissions cost more than its bad experiments did.
+
+**4. Its intervals are overconfident.** 74% coverage against a nominal 95%. The
+estimator is more accurate than any baseline's (₹3.96 per customer) but its
+uncertainty is understated, so the scaling rule is being fed intervals narrower
+than the evidence supports. Worst single estimate: `world_09005`, `int_pct`,
+estimated +₹17.45 per customer against a true −₹18.86.
+
+**5. World types where it underperforms.** Worlds whose semantic context
+contains shipping-threshold support themes — exactly the ones where its reading
+is most confident. Confidence and correctness are anti-correlated here, which is
+the most uncomfortable finding in the project and the one most worth carrying
+forward.
+
+### What worked
+
+Reported alongside the failures rather than instead of them:
+
+- **Zero policy violations, zero budget overruns**, across all six strategies and
+  20 worlds. Both the pilot and the rollout pass the gate.
+- **Zero negative-contribution campaigns scaled.** The scaling rule refused every
+  losing campaign it was offered. Baseline 2 scaled 19.
+- **The decision rule beats the naive alternative by ₹2.1M** in replay and lands
+  closest to the oracle of any achievable rule.
+- **The most accurate estimates of any strategy**, at ₹3.96 per customer.
+- **Restraint works.** Nine experiments against Baseline 5's 77, for an eighth of
+  the spend and a tenth of the loss.
+
+The apparatus is sound. What it measured is that this agent's reading of merchant
+context does not predict which promotion pays — on this corpus, where
+[`docs/simulator.md` §4d](docs/simulator.md) records bundles as dominant by
+construction. That scope caveat is load-bearing: in a corpus where the four
+interventions were genuinely competitive, a signal about response might well
+predict profitability, and this result could reverse.
 
 ## Failure and adversarial handling
 
