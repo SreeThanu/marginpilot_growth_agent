@@ -26,7 +26,7 @@ import streamlit as st
 
 SNAPSHOT = Path("data/dashboard_snapshot.json")
 
-st.set_page_config(page_title="MarginPilot", page_icon="▲", layout="wide")
+st.set_page_config(page_title="MarginPilot", layout="wide")
 
 
 @st.cache_data
@@ -38,6 +38,18 @@ def load() -> dict:
         )
         st.stop()
     return json.loads(SNAPSHOT.read_text())
+
+
+def dataset_badge() -> None:
+    """State which dataset this view is showing, in the view itself.
+
+    Two datasets now exist — development worlds and the sealed holdout — and
+    their headline figures differ (5 experiments across 10 dev worlds against 9
+    across 20 holdout). A number without its dataset attached is a number a
+    reader can misattribute, and a page footer is too far from the figure to
+    prevent that.
+    """
+    st.caption(f":grey[**{data['dataset']}**  ·  {data['dataset_detail']}]")
 
 
 def rupees(amount: float) -> str:
@@ -94,6 +106,7 @@ st.write("")
 # --------------------------------------------------------------------------- #
 
 if view == "Budget":
+    dataset_badge()
     budget = data["budget"]
     a, b, c = st.columns(3)
     a.metric("Promotion budget", rupees(budget["total_inr"]))
@@ -113,7 +126,7 @@ if view == "Budget":
             ]
         ),
         hide_index=True,
-        use_container_width=True,
+        width="stretch",
     )
     st.caption(
         f"Budget overruns: **{budget['overruns']}**. Both the pilot and the rollout "
@@ -121,6 +134,7 @@ if view == "Budget":
     )
 
 elif view == "Live experiment":
+    dataset_badge()
     if not featured:
         st.info("No launched experiment in this snapshot.")
     else:
@@ -144,11 +158,11 @@ elif view == "Live experiment":
             "**Before the horizon there is no verdict.** The evaluator returns counts "
             "only — no difference, no interval, no p-value, no scale-eligibility. "
             "Those fields do not exist on the interim result, so nothing can read the "
-            "experiment early, however favourable it looks.",
-            icon="■",
+            "experiment early, however favourable it looks."
         )
 
 elif view == "Contribution":
+    dataset_badge()
     if not featured:
         st.info("No experiment in this snapshot.")
     else:
@@ -176,7 +190,7 @@ elif view == "Contribution":
                 ]
             ),
             hide_index=True,
-            use_container_width=True,
+            width="stretch",
         )
         st.caption(
             "Contribution is earned on the incremental orders. The incentive is paid "
@@ -184,14 +198,15 @@ elif view == "Contribution":
         )
 
 elif view == "Decision":
+    dataset_badge()
     if not featured:
         st.info("No decision in this snapshot.")
     else:
         verdict = "SCALE" if featured["scaled"] else "KILL"
         if featured["scaled"]:
-            st.success(f"### {verdict}", icon="▲")
+            st.success(f"### {verdict}")
         else:
-            st.error(f"### {verdict}", icon="▼")
+            st.error(f"### {verdict}")
 
         a, b = st.columns(2)
         a.metric("P(net > 0)", f"{featured['probability_net_positive']:.0%}",
@@ -217,6 +232,7 @@ elif view == "Decision":
         )
 
 elif view == "Audit chain":
+    dataset_badge()
     chain = data["audit_chain"]
     st.markdown(f"**`make audit EXPERIMENT={chain['experiment_id']}`**")
     st.code(chain["text"], language="text")
@@ -228,6 +244,7 @@ elif view == "Audit chain":
     )
 
 elif view == "Adversarial":
+    dataset_badge()
     st.markdown("**Seven attacks, seven refusals.** Each names the module that refused it.")
     st.write("")
     for scenario in data["adversarial"]:
@@ -240,21 +257,33 @@ elif view == "Adversarial":
     st.caption(f"{refused}/{len(data['adversarial'])} refused as designed.")
 
 elif view == "Counterfactual ledger":
+    dataset_badge()
     ledger = data["ledger"]
     frame = pd.DataFrame(
         {
-            "strategy": ["do nothing", "conversion optimizer", "MarginPilot", "oracle*"],
+            "strategy": [
+                "do nothing (baseline)",
+                "conversion optimizer",
+                "MarginPilot",
+                "oracle — cheating diagnostic",
+            ],
             "net contribution": [
                 ledger["do_nothing"], ledger["conversion_optimizer"],
                 ledger["marginpilot"], ledger["oracle"],
             ],
         }
-    ).set_index("strategy")
-    st.bar_chart(frame, height=340, color="#E8A33D")
+    )
+    # Horizontal. Vertical bars rotate these labels to unreadable stubs, and the
+    # do-nothing bar is exactly zero — invisible as a bar, so the zero line has
+    # to be the reference the others are read against rather than a bar of its own.
+    st.bar_chart(
+        frame, x="net contribution", y="strategy",
+        horizontal=True, height=300, color="#E8A33D",
+    )
     st.caption(
-        f"Realized net contribution across {len(data['seeds'])} dev worlds. "
-        "*oracle reads ground truth to pick the best intervention — a cheating "
-        "diagnostic, shown as an upper bound, not a competitor."
+        "**Zero is the line to beat** — *do nothing* sits exactly on it and has no "
+        "visible bar. Every strategy falls to its left. The oracle reads ground "
+        "truth to pick the best intervention: an upper bound, not a competitor."
     )
     st.write("")
     st.markdown(
@@ -262,8 +291,10 @@ elif view == "Counterfactual ledger":
         "spent on experiments that found nothing."
     )
     st.caption(
-        f"MarginPilot ran {data['marginpilot']['ran']} experiments and declined "
-        f"{data['marginpilot']['skipped']} merchants outright. On this corpus it read "
+        f"On {data['dataset_short']}, MarginPilot ran {data['marginpilot']['ran']} "
+        f"experiments and declined {data['marginpilot']['skipped']} merchants outright. "
+        f"(On the sealed holdout — 20 worlds — the same agent ran 9 and declined 11, "
+        f"for a realized -Rs.85,430 against do-nothing's zero.) It read "
         "each merchant accurately and still chose worse than a fixed rule, because the "
         "signals it read predict response, not profitability. The experimental "
         "machinery caught it — the horizon, the posterior and the scaling rule. The "

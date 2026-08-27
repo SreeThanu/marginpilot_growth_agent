@@ -180,6 +180,12 @@ def build() -> dict[str, Any]:
 
     return {
         "generated_from": "dev worlds (seeds 1-10). No holdout world was read.",
+        # Named explicitly so every view can state its own provenance. Two
+        # datasets now exist and their headline figures differ; a figure without
+        # its dataset attached is one a reader can misattribute.
+        "dataset": "DEVELOPMENT WORLDS",
+        "dataset_detail": f"seeds {SEEDS[0]}-{SEEDS[-1]} · {len(SEEDS)} worlds · not the sealed holdout",
+        "dataset_short": f"{len(SEEDS)} development worlds",
         "model": "gemini-3.6-flash",
         "seeds": SEEDS,
         "budget": {

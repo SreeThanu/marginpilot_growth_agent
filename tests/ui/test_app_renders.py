@@ -1,0 +1,84 @@
+"""Every view must render. Two of them shipped broken.
+
+`st.warning(..., icon="■")` and `st.error(..., icon="▼")` raise: Streamlit takes
+a valid emoji or a material shortcode there, not an arbitrary glyph. Both the
+Live experiment and Decision views died with a traceback, and nothing caught it
+because no test ever ran the app.
+
+AppTest executes the real script, so this exercises what a viewer would see
+rather than a stand-in for it.
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import pytest
+from streamlit.testing.v1 import AppTest
+
+ROOT = Path(__file__).resolve().parents[2]
+APP = ROOT / "src" / "ui" / "app.py"
+SNAPSHOT = ROOT / "data" / "dashboard_snapshot.json"
+
+VIEWS = [
+    "Budget", "Live experiment", "Contribution", "Decision",
+    "Audit chain", "Adversarial", "Counterfactual ledger",
+]
+
+pytestmark = pytest.mark.skipif(
+    not SNAPSHOT.exists(), reason="snapshot not generated; run python -m src.ui.snapshot"
+)
+
+
+def _run(view: str | None = None) -> AppTest:
+    app = AppTest.from_file(str(APP), default_timeout=60)
+    app.run()
+    if view is not None:
+        app.radio[0].set_value(view).run()
+    return app
+
+
+def test_the_page_loads() -> None:
+    app = _run()
+    assert not app.exception, f"app raised on load: {app.exception}"
+    assert app.title[0].value == "MarginPilot"
+
+
+@pytest.mark.parametrize("view", VIEWS)
+def test_every_view_renders_without_error(view: str) -> None:
+    """The regression guard. Both crashes were in this list."""
+    app = _run(view)
+    assert not app.exception, f"view {view!r} raised: {app.exception}"
+
+
+@pytest.mark.parametrize("view", VIEWS)
+def test_every_view_states_which_dataset_it_shows(view: str) -> None:
+    """A figure without its dataset attached is one a reader can misattribute,
+    and the page footer is too far from the number to prevent that."""
+    app = _run(view)
+    captions = " ".join(c.value for c in app.caption)
+    assert "DEVELOPMENT WORLDS" in captions, (
+        f"view {view!r} does not name its dataset in the view itself"
+    )
+
+
+def test_no_icon_arguments_survive() -> None:
+    """The exact defect: Streamlit rejects a geometric glyph as an icon."""
+    assert "icon=" not in APP.read_text(), (
+        "st.warning/st.error/st.success take a valid emoji or material shortcode; "
+        "an arbitrary glyph raises at render time"
+    )
+
+
+def test_the_ledger_plots_four_horizontal_bars() -> None:
+    app = _run("Counterfactual ledger")
+    assert not app.exception
+    source = APP.read_text()
+    assert "horizontal=True" in source, "vertical bars rotate the labels unreadable"
+    for label in ("do nothing (baseline)", "conversion optimizer", "MarginPilot",
+                  "oracle — cheating diagnostic"):
+        assert label in source, f"ledger is missing the {label!r} bar"
+    # Exactly four. Six bars need a legend and get skipped.
+    data = json.loads(SNAPSHOT.read_text())
+    assert len(data["ledger"]) == 4
