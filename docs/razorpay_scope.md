@@ -56,6 +56,24 @@ The audit trail records this separately from `client_mode`:
 | `client_mode` | `razorpay_test` if orders were created against the API, `mock` otherwise |
 | `webhook_source` | how the capture event reached the receiver |
 
+A real audit entry, from a run against the sandbox:
+
+```
+[1] PAYMENT  (payments)  2026-08-27T15:10:07+00:00
+      client_mode: razorpay_test
+      executed_live: 2
+      webhook_source: replayed_locally_no_public_endpoint
+      simulated: 2202
+      total_treated_orders: 2204
+      order_ids: ["order_TUq30EhkwcJFMG", "order_TUq30Lbbucb0wy"]
+      payment_ids: ["pay_TUq30EhkwcJFMG", "pay_TUq30Lbbucb0wy"]
+      hash: 40105b9f346708c0  <- prev: genesis
+```
+
+Two orders genuinely created at Razorpay; 2,202 simulated; and the capture event
+replayed locally because this host has no public URL for Razorpay to deliver to.
+All three facts are in one record, so none of them can be read as more than it is.
+
 Stating it this way means "this ran against Razorpay" can never be read as more
 than it is. To close the last gap, the webhook endpoint needs a public tunnel
 and the Razorpay dashboard pointed at it — worth doing for the demo, and not
@@ -68,13 +86,27 @@ something a reader should have to infer.
 - `RazorpayTestClient` — the real SDK, **test mode only**.
 - `MockRazorpayClient` — identical interface, deterministic ids, no network.
 
-**No Razorpay test credentials were available in this build environment, so
-everything here ran against `MockRazorpayClient`.** The interface, the webhook
-path, the idempotency key and the reconciliation logic are all exercised; the
-network call is not. `default_client()` selects the real client automatically
-when `RAZORPAY_TEST_KEY_ID` and `RAZORPAY_TEST_KEY_SECRET` are present, and the
-audit trail records which one was used, so a later run with credentials is
-distinguishable from this one in the data rather than only in the prose.
+**Razorpay test credentials are present, and the real client has been exercised
+against the live test endpoints.** Verified 27 August 2026:
+
+```
+default_client() -> RazorpayTestClient  mode=razorpay_test
+
+order created  : order_TUq2elz3qdzFp8   Rs.800.00 (80000 paise)  status=created
+payment link   : plink_TUq2fLkWuUFj5J   https://rzp.io/rzp/iiook1G
+order fetched  : order_TUq2elz3qdzFp8   notes round-tripped intact
+```
+
+Order creation, payment-link generation and order fetch are genuine HTTPS calls
+to Razorpay. The `notes` field round-trips, which is what carries
+`experiment_id` and `customer_id` through the provider and back into
+attribution — the mechanism the whole loop depends on.
+
+`MockRazorpayClient` remains for the test suite, which must run offline and
+deterministically. `default_client()` selects the real client whenever the
+credentials are present, and the audit trail records which was used, so a run
+against the sandbox is distinguishable from a mocked one **in the data** rather
+than only in the prose.
 
 ## Live keys are refused
 
