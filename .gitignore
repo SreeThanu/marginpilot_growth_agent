@@ -33,6 +33,10 @@ conda-meta/
 # holdout world reach the repo where it could be inspected.
 worlds/
 results/
+
+# Generated databases live under data/ so the repo root stays clean and a
+# stray artifact cannot be committed by a careless `git add -A`.
+data/
 *.db
 *.sqlite
 *.sqlite3

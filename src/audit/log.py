@@ -35,7 +35,9 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Iterator, Sequence
 
-DEFAULT_DB_PATH = Path("audit.db")
+#: Generated artifacts live under data/, which is gitignored. Keeping them out
+#: of the repo root means a careless `git add -A` cannot commit a decision log.
+DEFAULT_DB_PATH = Path("data/audit.db")
 
 
 class Stage(str, Enum):

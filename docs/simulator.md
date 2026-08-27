@@ -439,6 +439,20 @@ The generator emits shipping-threshold support themes from the hidden `shipping_
 
 The agent is reading a *true* signal that does not predict the *target*. This is not hallucination and not a reasoning failure in the ordinary sense; it is a correctly-read cue pointing at the wrong quantity.
 
+### What did NOT happen: the policy gates did not catch this
+
+**A tempting and false framing, recorded here so it cannot creep into the README or the video.**
+
+It is not true that the policy gates "detected the failure and saved ₹31,726". The gates **approved every one of those experiments.** They are contradicted by `src/policy/gates.py`, which checks exactly five things — remaining budget, maximum discount, minimum contribution margin, maximum customer exposure, and minimum experiment power — and has no view whatever on which intervention is more profitable than another. The word `intervention` does not appear in that file.
+
+The agent's `int_shipping` proposals were within budget, within the discount ceiling, above the margin floor, inside the exposure cap and adequately powered. A correct gate approves them. Claiming credit for a refusal that never happened would be inventing a result, and it would be trivially falsified by anyone who opened `gates.py`.
+
+**The honest framing:**
+
+> Grounded reasoning is not the same as good decisions. The agent read the merchant accurately and still chose worse than a fixed rule, because the signals it read predict *response*, not *profitability*. The experimental machinery caught it.
+
+What actually caught it was measurement: the experiment ran to its pre-committed horizon, the posterior on incremental contribution was computed, and the scaling rule declined. The gates constrain *how much* can be spent; the experiment establishes *whether spending pays*. Those are different jobs and only the second one was load-bearing here.
+
 ### Scope caveat — do not state this finding without it
 
 **This holds in a corpus where §4d records bundle as dominant by construction.** Flat, percentage and free-shipping offers are unprofitable in 83–87% of worlds because depth is anchored at `j × margin`, and bundle wins by being least-bad. In a corpus where the four interventions were genuinely competitive, a signal about response might well predict profitability, and this result could reverse.

@@ -193,6 +193,10 @@ Measured on the 80 development worlds (not the holdout), the four intervention t
 
 A percentage discount scales its cost with basket size, so it pays the most to the customers with the largest baskets — the customers most likely to have converted anyway. A flat ₹150 off is a 30% discount to a ₹500 basket and 6% to a ₹2,500 one, concentrating incentive where an incremental order is cheapest to buy. This is the same mechanism as the worked example at the top of this README, applied to the choice between interventions rather than to a single campaign.
 
+**Grounded reasoning is not the same as good decisions.** On the development worlds the agent read each merchant accurately — its citations quote the merchant's own support tickets, segment notes and trading commentary verbatim — and still chose worse than a fixed rule, because the signals it read predict *response*, not *profitability*. The experimental machinery caught it: the experiment ran to its pre-committed horizon, the posterior on incremental contribution was computed, and the scaling rule declined.
+
+To be precise about what did *not* happen: the policy gates did not catch this. They approved those experiments, correctly — the gates check budget, discount, margin, exposure and power, and have no view on which intervention is more profitable. Measurement caught it, not the gate.
+
 All four types produce profitable, marginal and unprofitable cases across the corpus, so none is dominated by construction. The parameters were **not** adjusted to equalize how often each type wins: doing so would mean rigging the worlds so that economically disfavoured strategies succeed more often than the economics allows. Details and the pre-registered Day-2 diagnostic are in [`docs/simulator.md`](docs/simulator.md).
 
 ## Baselines
@@ -290,7 +294,7 @@ Python 3.11 · FastAPI · SQLite · pandas / NumPy · SciPy / statsmodels · sci
 
 ```bash
 conda create -n marginpilot python=3.11 && conda activate marginpilot
-pip install -r requirements.txt
+pip install -r requirements.lock.txt   # exact frozen environment; use requirements.txt for the readable list
 cp .env.example .env          # add RAZORPAY_TEST_KEY_ID, RAZORPAY_TEST_KEY_SECRET, LLM API key
 
 make worlds                   # generate 100 worlds (80 dev / 20 sealed holdout)

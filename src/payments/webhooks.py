@@ -29,7 +29,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-DEFAULT_DB_PATH = Path("payments.db")
+DEFAULT_DB_PATH = Path("data/payments.db")
 
 
 class SignatureInvalid(ValueError):

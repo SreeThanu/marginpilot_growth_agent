@@ -7,7 +7,7 @@
 
 PYTHON ?= python
 WORLDS_DIR ?= worlds
-AUDIT_DB ?= audit.db
+AUDIT_DB ?= data/audit.db
 
 ## Generate 100 worlds — 80 dev, 20 sealed holdout — and print the sanity report
 worlds:

@@ -39,7 +39,14 @@ class ExecutionRecord:
     orders: tuple[str, ...]
     attributions: tuple[Attribution, ...]
     pending: tuple[PendingOrder, ...]
+    #: "razorpay_test" when orders were created by real HTTP calls to Razorpay,
+    #: "mock" when no credentials were available.
     client_mode: str
+    #: Where the payment.captured event came from. Order creation and payment
+    #: links are genuine API calls under the real client, but *receiving* a
+    #: webhook needs a publicly reachable endpoint. Recorded separately so
+    #: "this ran against Razorpay" is never read as more than it means.
+    webhook_source: str = "replayed_locally"
 
     @property
     def total_treated_orders(self) -> int:
@@ -50,6 +57,7 @@ class ExecutionRecord:
             "experiment_id": self.experiment_id,
             "client_mode": self.client_mode,
             "executed_live": self.executed_live,
+            "webhook_source": self.webhook_source,
             "simulated": self.simulated,
             "total_treated_orders": self.total_treated_orders,
             "order_ids": list(self.orders),
@@ -111,6 +119,11 @@ def execute_subset(
 
     record = ExecutionRecord(
         experiment_id=experiment_id,
+        webhook_source=(
+            "replayed_locally"
+            if client.mode == "mock"
+            else "replayed_locally_no_public_endpoint"
+        ),
         executed_live=len(subset),
         simulated=max(total_treated_orders - len(subset), 0),
         orders=tuple(orders),

@@ -35,6 +35,32 @@ Every experiment writes a `PAYMENT` entry to the append-only audit trail
 So for any figure in the results, a reviewer can check whether money moved and
 how much of the number rests on it. `make audit EXPERIMENT=<id>` prints it.
 
+## What "executed live" means, precisely
+
+Under the real client, these are genuine HTTP calls to Razorpay test endpoints:
+
+- **order creation** (`orders.create`)
+- **payment link generation** (`payment_link.create`)
+- **order state fetch** during reconciliation (`orders.fetch`)
+
+**Receiving a webhook is different.** Razorpay delivers `payment.captured` to a
+publicly reachable URL, which a local build does not have. So the capture event
+is replayed into the receiver locally, through the identical code path a real
+delivery would take — same signature verification, same idempotency key, same
+attribution write. Nothing about the receiver is stubbed; only the transport is.
+
+The audit trail records this separately from `client_mode`:
+
+| field | meaning |
+|---|---|
+| `client_mode` | `razorpay_test` if orders were created against the API, `mock` otherwise |
+| `webhook_source` | how the capture event reached the receiver |
+
+Stating it this way means "this ran against Razorpay" can never be read as more
+than it is. To close the last gap, the webhook endpoint needs a public tunnel
+and the Razorpay dashboard pointed at it — worth doing for the demo, and not
+something a reader should have to infer.
+
 ## Credentials, and what this build actually ran on
 
 `src/payments/razorpay_client.py` provides two implementations of one Protocol:

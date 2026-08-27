@@ -1,5 +1,9 @@
-# MarginPilot — pinned dependencies (Python 3.11).
+# MarginPilot — direct dependencies (Python 3.11), each pinned.
 # Nothing is added here without a reason recorded in CLAUDE.md's stack list.
+#
+# This file is the readable list of what the project depends on and why.
+# `requirements.lock.txt` pins every transitive version as well — install from
+# the lock file to reproduce the exact environment the results were produced in.
 
 # Web / actuator surface (webhook receiver)
 fastapi==0.141.1

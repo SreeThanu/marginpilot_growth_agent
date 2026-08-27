@@ -143,3 +143,29 @@ def test_limits_are_configurable_per_merchant() -> None:
     strict = PolicyLimits(max_discount_pct=0.05)
     assert not gate_experiment(**{**CLEAN, "discount_depth": 0.08}, limits=strict).approved
     assert gate_experiment(**CLEAN).approved
+
+
+def test_the_gates_have_no_view_on_which_intervention_is_profitable() -> None:
+    """Pins a claim made in docs/simulator.md 4g and the README.
+
+    The gates approved the agent's losing `int_shipping` experiments, correctly:
+    they check budget, discount, margin, exposure and power, and nothing else.
+    Any framing that credits them with catching that failure is false, and this
+    test exists so the claim cannot quietly become true by drift — if a future
+    gate starts comparing interventions, the docs must change with it.
+    """
+    import inspect
+
+    from src.policy import gates
+
+    source = inspect.getsource(gates).lower()
+    for term in ("intervention", "int_bundle", "int_shipping", "profitab", "ground_truth"):
+        assert term not in source.split('"""')[0] + "".join(
+            part for i, part in enumerate(source.split('"""')) if i % 2 == 0
+        ), f"gates.py now references {term!r} outside its docstrings — 4g needs updating"
+
+    # And the rules are exactly the five documented ones.
+    assert {r.value for r in gates.Rule} == {
+        "remaining_budget", "max_discount", "min_contribution_margin",
+        "max_customer_exposure", "min_experiment_power",
+    }
