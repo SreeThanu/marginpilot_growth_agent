@@ -13,5 +13,12 @@ Boundary rules (CLAUDE.md)
 * Deliberately built last (Day 10), and first on the fallback-cut list — if time
   runs short this degrades to console output plus a screen recording.
 
-Not implemented yet — Day 10.
+Built Day 10.
+
+``snapshot.py`` runs the strategies against dev worlds and writes
+``data/dashboard_snapshot.json``. ``app.py`` renders that file and nothing else
+— it has no import path to the world generator, the harness or ground truth, so
+it cannot reach ``worlds/holdout/`` even by mistake. ``tests/ui/`` enforces
+that, along with the rule that nothing on the page may credit the policy gates
+with catching the selection failure (docs/simulator.md 4g).
 """

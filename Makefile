@@ -3,7 +3,7 @@
 # Day 2: `worlds` and `test` are wired. The rest are declared now so the interface
 # is fixed before the code exists, and echo their build day until implemented.
 
-.PHONY: worlds demo eval audit adversarial test
+.PHONY: worlds demo snapshot eval audit adversarial test
 
 PYTHON ?= python
 WORLDS_DIR ?= worlds
@@ -13,9 +13,13 @@ AUDIT_DB ?= data/audit.db
 worlds:
 	$(PYTHON) -m src.world --out $(WORLDS_DIR)
 
-## Single world, full agent loop, dashboard on :8501 (Day 6 / Day 10)
-demo:
-	@echo "make demo: not implemented yet (Day 6 — src/agent/)"
+## Rebuild the dashboard snapshot from dev worlds, then serve the dashboard
+demo: snapshot
+	$(PYTHON) -m streamlit run src/ui/app.py
+
+## Rebuild data/dashboard_snapshot.json (dev worlds only; ~9s)
+snapshot:
+	$(PYTHON) -m src.ui.snapshot
 
 ## All strategies across the 20 holdout worlds -> results/ (Day 4 harness, Day 9 run)
 eval:

@@ -1,0 +1,26 @@
+# Dark, one accent, one font. Streamlit's defaults are recognisable as
+# Streamlit's defaults; a config file is the difference between a page that
+# looks generated and one that looks decided on.
+
+[theme]
+base = "dark"
+
+# Amber. Chosen because the project's headline is a warning — a conversion win
+# that loses money — and amber reads as caution without the alarm of red, which
+# is reserved here for the contribution figure itself.
+primaryColor = "#E8A33D"
+
+backgroundColor = "#0E1117"
+secondaryBackgroundColor = "#171B24"
+textColor = "#E6E6E6"
+
+# One font, used everywhere. Monospace suits a page whose most important
+# element is terminal output, and it keeps the numbers in column.
+font = "monospace"
+
+[server]
+headless = true
+runOnSave = false
+
+[browser]
+gatherUsageStats = false
