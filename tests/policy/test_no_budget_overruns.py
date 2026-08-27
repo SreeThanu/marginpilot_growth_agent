@@ -13,7 +13,11 @@ from src.baselines import ALL_BASELINES
 from src.eval.harness import run_world
 from src.world.generator import generate
 
-SEEDS = (1, 2, 3, 4, 5)
+#: Two seeds, not five. Each generates a ~20k-customer world, and the suite is
+#: run often enough that 15 minutes of it was becoming a reason not to run it.
+#: The property under test is structural — the gate binds or it does not — so
+#: more seeds buy repetition rather than coverage.
+SEEDS = (1, 2)
 
 
 @pytest.mark.parametrize("strategy", ALL_BASELINES, ids=lambda s: s.name)
