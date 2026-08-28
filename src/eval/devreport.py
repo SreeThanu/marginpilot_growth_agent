@@ -25,11 +25,15 @@ data = {a: json.loads(Path(f"results/cycle2_dev_{a}.json").read_text()) for a in
 # under-counted relative to a full accounting.
 opt = {}
 for r in data["neither"]["rows"]:
+    if r["decision"] == "error":
+        continue
     opt[r["world_id"]] = ("run" if r["true_net_of_best"] > 0 else "skip", r["truth_best"])
 
 # The optimal action is a property of the world, not the arm. Verify.
 for a in ARMS:
     for r in data[a]["rows"]:
+        if r["decision"] == "error" or r["world_id"] not in opt:
+            continue
         assert opt[r["world_id"]][0] == ("run" if r["true_net_of_best"] > 0 else "skip")
         assert opt[r["world_id"]][1] == r["truth_best"]
 

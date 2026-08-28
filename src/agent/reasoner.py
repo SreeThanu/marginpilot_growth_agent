@@ -35,7 +35,20 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol, Sequence, runtime_checkable
 
+import httpx
 from dotenv import load_dotenv
+
+#: Transport-level failures worth retrying. Connection drops and timeouts say
+#: nothing about the request; they say the network moved underneath it.
+_TRANSPORT_ERRORS = (
+    httpx.RemoteProtocolError,
+    httpx.ConnectError,
+    httpx.ReadError,
+    httpx.ReadTimeout,
+    httpx.WriteError,
+    httpx.ConnectTimeout,
+    httpx.PoolTimeout,
+)
 
 #: Resolved from this file rather than the caller's stack or cwd. python-dotenv's
 #: default find_dotenv() walks frames, which fails outright under `python -` and
@@ -471,6 +484,12 @@ class GeminiReasoner:
                 last_error = exc
             except errors.ServerError as exc:  # 5xx — transient
                 last_error = exc
+            except _TRANSPORT_ERRORS as exc:
+                # A dropped connection is an infrastructure event, exactly like a
+                # 429 or a 5xx, and must not reach the loop looking like a
+                # decision. Measured in Cycle 3: an unretried
+                # RemoteProtocolError killed a three-replicate run outright.
+                last_error = exc
             else:
                 meta = getattr(response, "usage_metadata", None)
                 if meta is not None:
@@ -494,8 +513,9 @@ class GeminiReasoner:
             time.sleep(delay + random.uniform(0, 1.0))
 
         raise RateLimitExceededError(
-            f"{self.model} rate limit survived {self.max_retries} retries: {last_error}. "
-            "This is an infrastructure failure, not a decision, and is not recorded as one."
+            f"{self.model} failed {self.max_retries} retries "
+            f"({type(last_error).__name__}: {last_error}). This is an infrastructure "
+            "failure, not a decision, and is not recorded as one."
         )
 
     #: Cycle 2 ablation switches. Both fixes on by default; the ablation turns

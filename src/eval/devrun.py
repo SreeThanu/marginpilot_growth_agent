@@ -26,11 +26,16 @@ import json
 from collections import Counter
 from pathlib import Path
 
+from src.agent.reasoner import RateLimitExceededError, ReasonerError
 from src.eval.contracts import merchant_view
 from src.eval.devcorpus import open_dev
 from src.eval.executor import GroundTruthExecutor
 from src.eval.harness import _true_population_net
 from src.eval.oracle import best_intervention_id
+
+#: Attempts per world before it is recorded as an error. Bounded so a persistent
+#: failure is reported rather than retried forever.
+MAX_ATTEMPTS = 3
 
 
 def _best_in_history(view) -> str | None:
@@ -52,6 +57,21 @@ def main() -> int:
         help="which Cycle 2 fixes the agent gets. 'neither' is the Cycle 1 prompt "
              "and is the control: without it, a change measured on a fresh corpus "
              "cannot be attributed to the fixes rather than to the worlds.",
+    )
+    parser.add_argument(
+        "--replicates",
+        type=int,
+        default=1,
+        help="run the arm this many times over the same worlds, changing nothing "
+             "between runs. Measures instrument noise: the spread across "
+             "replicates is what an arm's metric does when the arm does not.",
+    )
+    parser.add_argument(
+        "--replicate-offset",
+        type=int,
+        default=0,
+        help="number replicates from here, so an interrupted replication can be "
+             "continued without renumbering or discarding what already ran.",
     )
     parser.add_argument("--heuristic", action="store_true",
                         help="use the offline stand-in instead of the model (pipeline check only)")
@@ -77,12 +97,63 @@ def main() -> int:
     agent = MarginPilotAgent(reasoner, max_experiments=1, max_cycles=2)
     print(f"arm={args.arm}  break_even={break_even}  merchant_history={merchant_history}\n")
 
+    out_paths = []
+    for rep in range(args.replicates):
+        out = (
+            args.out
+            if args.replicates == 1
+            else args.out.with_name(
+                f"{args.out.stem}_rep{rep + 1 + args.replicate_offset}{args.out.suffix}"
+            )
+        )
+        if args.replicates > 1:
+            print(f"\n--- replicate {rep + 1 + args.replicate_offset} "
+                  f"(this run: {rep + 1}/{args.replicates}) ---", flush=True)
+        _run_once(agent, args, out)
+        out_paths.append(out)
+    if len(out_paths) > 1:
+        print(f"\n{len(out_paths)} replicates written; analyse with "
+              f"python -m src.eval.power")
+    return 0
+
+
+def _run_once(agent, args, out: Path) -> None:
+    """One pass over the worlds. A replicate differs from its siblings only in
+    when it ran — same code, same worlds, same prompts."""
     rows: list[dict] = []
+    errors: list[dict] = []
+
     for world, truth in open_dev(args.root, limit=args.worlds):
         view = merchant_view(world)
 
-        run = agent.run(view, GroundTruthExecutor(world, truth, view.observed_margin))
-        assessment = run.cycles[0].assessment
+        # A hard API failure is an infrastructure event, not a decision. Retry it
+        # a bounded number of times; if it will not complete, record the world as
+        # an error and carry on rather than discarding a multi-hour replication
+        # for one bad call. The retry is triggered only by the exception type --
+        # never by what the model decided -- so it cannot select for outcomes.
+        assessment = None
+        last_error = ""
+        for attempt in range(MAX_ATTEMPTS):
+            try:
+                run = agent.run(view, GroundTruthExecutor(world, truth, view.observed_margin))
+                assessment = run.cycles[0].assessment
+                break
+            except (ReasonerError, RateLimitExceededError) as exc:
+                last_error = str(exc)
+                print(f"    {world.world_id} attempt {attempt + 1}/{MAX_ATTEMPTS} "
+                      f"failed: {exc}", flush=True)
+        if assessment is None:
+            errors.append({"world_id": world.world_id, "error": last_error})
+            rows.append({
+                "world_id": world.world_id, "decision": "error", "chosen": None,
+                "truth_best": best_intervention_id(world, truth), "history_best": None,
+                "true_net_of_choice": 0.0, "true_net_of_best": 0.0, "assessment": {},
+            })
+            print(f"{world.world_id}  ERROR after {MAX_ATTEMPTS} attempts: {last_error}",
+                  flush=True)
+            del world, truth
+            continue
+
         chosen = (
             assessment.hypothesis.intervention_id
             if assessment.decision.value == "run" and assessment.hypothesis
@@ -116,14 +187,19 @@ def main() -> int:
               f"history={rows[-1]['history_best'] or '-'}", flush=True)
         del world, truth
 
-    ran = [r for r in rows if r["decision"] == "run"]
+    # Errored worlds are excluded from every denominator and reported in their
+    # own right. Substituting a decision for them would be fabrication.
+    scored = [r for r in rows if r["decision"] != "error"]
+    ran = [r for r in scored if r["decision"] == "run"]
     correct = [r for r in ran if r["chosen"] == r["truth_best"]]
     matched_history = [r for r in ran if r["chosen"] == r["history_best"]]
     summary = {
         "arm": args.arm,
-        "worlds": len(rows),
+        "worlds": len(scored),
+        "errors": len(errors),
+        "error_detail": errors,
         "ran": len(ran),
-        "skipped": len(rows) - len(ran),
+        "skipped": len(scored) - len(ran),
         "selection_accuracy": f"{len(correct)}/{len(ran)}",
         "history_match_rate": f"{len(matched_history)}/{len(ran)}",
         # Reasoning beyond table-reading: right answer, and the history did not
@@ -135,14 +211,13 @@ def main() -> int:
         "net_of_choices_inr": sum(r["true_net_of_choice"] for r in ran),
         "net_if_always_best_inr": sum(r["true_net_of_best"] for r in ran),
     }
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps({"summary": summary, "rows": rows}, indent=1, default=str))
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps({"summary": summary, "rows": rows}, indent=1, default=str))
 
     print("\n" + "=" * 62)
     for key, value in summary.items():
         print(f"{key:<32}{value}")
-    print(f"written to {args.out}")
-    return 0
+    print(f"written to {out}")
 
 
 if __name__ == "__main__":
