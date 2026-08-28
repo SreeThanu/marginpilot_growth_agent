@@ -8,6 +8,7 @@
 PYTHON ?= python
 WORLDS_DIR ?= worlds
 AUDIT_DB ?= data/audit.db
+EVAL_ARGS ?=
 
 ## Generate 100 worlds — 80 dev, 20 sealed holdout — and print the sanity report
 worlds:
@@ -21,9 +22,10 @@ demo: snapshot
 snapshot:
 	$(PYTHON) -m src.ui.snapshot
 
-## All strategies across the 20 holdout worlds -> results/ (Day 4 harness, Day 9 run)
+## Open the sealed holdout once and evaluate every strategy -> results/
+## EVAL_ARGS=--with-agent also runs MarginPilot (needs GEMINI_API_KEY, one call per world)
 eval:
-	@echo "make eval: not implemented yet (Day 4 harness / Day 9 holdout run)"
+	$(PYTHON) -m src.eval $(EVAL_ARGS)
 
 ## Print the full decision chain for one experiment: make audit EXPERIMENT=<id>
 audit:

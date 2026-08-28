@@ -37,6 +37,11 @@ results/
 # Generated databases live under data/ so the repo root stays clean and a
 # stray artifact cannot be committed by a careless `git add -A`.
 data/
+# ...except the recorded holdout run. That one is evidence rather than an
+# intermediate: it cost real API calls, an LLM cannot reproduce it
+# deterministically, and the README's headline result rests on it. Without it
+# the dashboard cannot be built from a clean clone.
+!data/holdout_results.json
 *.db
 *.sqlite
 *.sqlite3

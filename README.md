@@ -459,12 +459,22 @@ conda create -n marginpilot python=3.11 && conda activate marginpilot
 pip install -r requirements.lock.txt   # exact frozen environment; use requirements.txt for the readable list
 cp .env.example .env          # add RAZORPAY_TEST_KEY_ID, RAZORPAY_TEST_KEY_SECRET, LLM API key
 
-make worlds                   # generate 100 worlds (80 dev / 20 sealed holdout)
-make test                     # 243 tests, ~5 minutes
-make adversarial              # the seven refusal scenarios
-make snapshot                 # rebuild the dashboard's data from the holdout results
-make demo                     # snapshot, then serve the dashboard at :8501
-make audit EXPERIMENT=<id>    # print one experiment's full decision chain
+make test                     # 243 tests, ~5 minutes. Needs no corpus.
+make adversarial              # the seven refusal scenarios. Needs no corpus.
+
+make worlds                   # generate 100 worlds (80 dev / 20 sealed holdout), ~80s
+make eval                     # open the holdout once, evaluate every strategy -> results/
+make demo                     # build the dashboard's data, then serve it at :8501
+
+make audit EXPERIMENT=<id>    # one experiment's decision chain (run make eval first)
+```
+
+`make eval` runs the five deterministic strategies and the oracle diagnostic. It
+reproduces the results table above exactly and needs no API key. **MarginPilot
+itself is opt-in**, because it makes one LLM call per world:
+
+```bash
+make eval EVAL_ARGS=--with-agent     # also runs MarginPilot; needs GEMINI_API_KEY
 ```
 
 ## Audit trail
