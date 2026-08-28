@@ -410,9 +410,15 @@ class GeminiReasoner:
     requests_per_minute: int = GEMINI_FREE_TIER_RPM
     max_retries: int = 5
     max_output_tokens: int = 8192
-    #: Zero temperature so a re-run of the same merchant gives the same
-    #: decision. The diagnostics compare paired runs, and a sampling difference
-    #: would be indistinguishable from a reasoning difference.
+    #: Zero temperature, which reduces run-to-run variation but does **not**
+    #: eliminate it. Measured in Cycle 2 (§4k): two runs of the same arm over
+    #: the same 20 dev worlds, identical code and prompts, disagreed on the
+    #: run/skip decision for 6 of 16 worlds. Any paired diagnostic built on a
+    #: single run per arm is therefore comparing reasoning differences against
+    #: a sampling floor of roughly that size, and must either replicate or say
+    #: it cannot resolve the effect. The temperature is kept at zero because
+    #: lower variance is still better than higher; the claim that it buys
+    #: reproducibility was wrong and is withdrawn.
     temperature: float = 0.0
     _client: Any = None
     _limiter: _RateLimiter = field(default_factory=lambda: _RateLimiter(GEMINI_FREE_TIER_RPM))

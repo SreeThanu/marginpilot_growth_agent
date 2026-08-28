@@ -560,6 +560,66 @@ The size of that past campaign matters and is stated in advance: **300 treated c
 
 Nothing changes in response to Cycle 2's holdout — not a prompt, not a threshold, not a parameter, not a strategy. Cycle 2 reports whichever way it lands, and a fix that does not work is a result (CLAUDE.md invariant 9).
 
+## 4k. Cycle 2 dev result — dated 28 August 2026. The sealed holdout was NOT opened.
+
+Reported as measured, against the predictions in §4j. Nothing below was tuned in response to anything below.
+
+### Corpus
+
+Seeds moved from `1-80`/`9001-9020` to `20001-20080`/`29001-29020`; every generator parameter unchanged. Cycle 1's corpus stays at `worlds/` so §4i remains reproducible from disk; Cycle 2 generates into `worlds_cycle2/`.
+
+Dev medians, Cycle 1 -> Cycle 2: conversion 0.124 -> 0.126, AOV Rs.1,858 -> Rs.1,814, margin 0.289 -> 0.295, elasticity -2.742 -> -2.573, budget Rs.404,500 -> Rs.369,000. Designed effects: flat 3.835 -> 2.867pp, pct 2.537 -> 2.123pp, shipping 3.144 -> 3.010pp, bundle 2.948 -> 2.650pp. Every effect is *smaller* at the median, so the new corpus is marginally harder. It cannot manufacture an improvement.
+
+### A defect in Fix B, found before any result was read
+
+The past-campaign history seeded its RNG with `abs(hash(world.world_id))`. Python salts string hashing per interpreter, so the same world produced a different history in every process — `world_20001` returned `int_shipping`, `int_bundle` and `int_pct` on three consecutive runs. Fix B's evidence was irreproducible. Re-derived via `blake2b`, the convention `src/experiment/randomize.py` already uses and for the same reason. The first dev run was discarded and re-run.
+
+`tests/eval/test_history_determinism.py` starts a second interpreter under a different `PYTHONHASHSEED`; a same-process assertion cannot catch this, which is why the earlier verification missed it. The test was confirmed to fail against the reverted code.
+
+### The measurement, run as a 2x2 ablation
+
+§4j proposed two fixes together. Measuring them together would not have said which one worked, so both were made switchable and all four combinations were run over the same 20 dev worlds. The `neither` arm is the Cycle 1 prompt byte-for-byte, and is the control: without it, a change measured on a fresh corpus cannot be attributed to the fixes rather than to the worlds.
+
+| arm | ran | skipped | selection accuracy | history-match | correct where history disagreed | int_shipping | realized net |
+|---|---|---|---|---|---|---|---|
+| neither (Cycle 1 prompt) | 12 | 8 | 3/12 | 4/12 | 0 | 9 | -Rs.701,329 |
+| Fix A only (break-even) | 15 | 5 | 3/15 | 2/15 | 2 | 9 | -Rs.894,588 |
+| Fix B only (history) | 6 | 14 | 3/6 | 6/6 | 0 | 2 | -Rs.287,901 |
+| both fixes | 8 | 12 | 1/8 | 6/8 | 0 | 3 | -Rs.259,265 |
+
+Realized net is comparable across arms (a skip contributes zero). The per-arm "always-best ceiling" in `results/cycle2_dev_*.json` is **not** comparable across arms — it sums only over the worlds that arm chose to run.
+
+### The instability that governs how much of the table can be believed
+
+Two runs of the **same** arm (`both`), same code, same worlds, temperature 0.0, disagreed on the run/skip decision for **6 of 16** worlds — 38%. Run *counts* matched (6/16 and 6/16); *which* worlds were run did not.
+
+That is the same order of magnitude as the between-arm differences above. So:
+
+- The large run-rate differences (12 and 15 versus 6 and 8) are plausibly real.
+- The selection-accuracy column is **not resolved**. Every numerator is 1 or 3, on top of a 38% per-world flip rate.
+
+This project computes a minimum detectable effect before it runs a merchant experiment, and then ran its own 20-world comparison without asking whether 20 worlds could resolve the difference. That is the same error, committed by the evaluation rather than by the agent, and it is recorded here rather than quietly fixed.
+
+The claim in `src/agent/reasoner.py` that temperature 0.0 makes paired runs reproducible was false. It has been withdrawn at the source.
+
+### Against §4j's predictions
+
+**Fix A failed, and appears actively harmful.** §4j predicted the break-even framing would raise selection accuracy and cut `int_shipping`. Selection accuracy did not rise (3/15, a lower rate than the control's 3/12), `int_shipping` did not move (9 in both arms), and experimentation *rose* from 12 to 15 of 20 worlds while realized net fell from -Rs.701,329 to -Rs.894,588. Adding Fix A on top of Fix B lowered selection accuracy from 3/6 to 1/8.
+
+The likely mechanism is legible in the prompt itself: break-even shares render as 12-17%, which reads as easy to clear. Stating the arithmetic argued the agent into *more* spending, not better spending. This is the opposite of the prediction and it is Fix A's own failure — the control ran on the same worlds.
+
+**Fix B changed behaviour, by lookup rather than by reasoning.** It is the only arm that cut experimentation (12 -> 6) and the only one that cut `int_shipping` (9 -> 2). But `correct_where_history_disagreed` is **0** in both arms that carry it: the agent never once identified the best intervention when the history table did not already point at it. §4j named this outcome in advance — *"if those two are the same number, Fix B replaced reasoning rather than informing it, and that is the finding."* It is the finding.
+
+**Falsification conditions from §4j:** `int_shipping` did not remain the modal choice in the Fix B arms, so that condition is not met. Selection accuracy stayed at or below 3 of the worlds run in every arm, which §4j names as evidence the fixes changed the prose and not the choices.
+
+### Decision on the pre-committed stopping rule
+
+§4j committed: *"If the dev-world ablation shows no change in selection behaviour, the new holdout is not opened."*
+
+Selection behaviour did change, so the rule's literal condition is not met. The rule's purpose is not satisfied. Opening the sealed set would measure whether the agent can read a table it was handed — a question §4j states in advance measures nothing about reasoning — at a per-world noise level that cannot resolve the accuracy differences anyway. A holdout is opened once; spending it on that is the one thing the rule exists to prevent.
+
+**The Cycle 2 holdout (`worlds_cycle2/holdout/`) has not been opened.** It remains sealed. No parameter, prompt, threshold or strategy was changed in response to any number in this section.
+
 ## 5. What this model does *not* claim
 
 - It is not a calibrated model of any real merchant. It is a generator of plausible retail economies whose parameter ranges are anchored where literature exists and openly labelled where it does not.
