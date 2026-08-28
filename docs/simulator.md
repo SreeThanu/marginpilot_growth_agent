@@ -587,7 +587,48 @@ The past-campaign history seeded its RNG with `abs(hash(world.world_id))`. Pytho
 | Fix B only (history) | 6 | 14 | 3/6 | 6/6 | 0 | 2 | -Rs.287,901 |
 | both fixes | 8 | 12 | 1/8 | 6/8 | 0 | 3 | -Rs.259,265 |
 
+> **Superseded, 28 August 2026 (Cycle 3, Step 1).** The `selection accuracy` column above is reported on a moving denominator — each arm's own run count, which is exactly the quantity the fixes change — so `3/12` and `3/6` are not a like-for-like rate. It has the same defect this section already retracted in `net_if_always_best_inr`. The corrected fixed-denominator decomposition is below and supersedes that column. The table is left in place because the error is part of the record.
+
 Realized net is comparable across arms (a skip contributes zero). The per-arm "always-best ceiling" in `results/cycle2_dev_*.json` is **not** comparable across arms — it sums only over the worlds that arm chose to run.
+
+### Correction: the same decomposition on a fixed denominator
+
+Re-derived from the committed `results/cycle2_dev_*.json`. No new runs.
+
+The optimal action is a property of the world, not of the arm: **run** where the best available intervention has positive population net, **skip** otherwise. Over the 20 dev worlds that is 12 run, 8 skip. This definition is deliberately *generous to running* — it ignores the pilot's own cost of learning, so it under-counts false-act and over-counts false-skip relative to a full accounting. Realized net, which includes every real cost, is the ground truth that does not have that thumb on the scale.
+
+| arm | ran | correct action | false-act | false-skip | correct skip | cwhd | int_shipping | realized net |
+|---|---|---|---|---|---|---|---|---|
+| neither (Cycle 1 prompt) | 12 | 0/20 | 5/20 | 5/20 | 3/20 | 0 | 9 | -Rs.701,329 |
+| Fix A only (break-even) | 15 | 2/20 | 5/20 | 2/20 | 3/20 | 2 | 9 | -Rs.894,588 |
+| Fix B only (history) | 6 | 1/20 | 3/20 | 9/20 | 5/20 | 0 | 2 | -Rs.287,901 |
+| both fixes | 8 | 1/20 | 2/20 | 6/20 | 6/20 | 0 | 3 | -Rs.259,265 |
+
+A **correct action** is the strict one: ran on a world where running was right, *and* picked the best intervention. Decision-level agreement alone (run/skip, ignoring which intervention) is 10, 13, 8 and 12 of 20 respectively.
+
+**The corrected numbers are not a rescaling of the old ones.** On a fixed denominator the control lands **0** correct actions out of 20, not 3. Its old `3/12` counted worlds where it picked the best intervention while running at all destroyed value — credit for choosing well inside a decision that should not have been made. No arm landed 3 correct actions; the strict counts are 0, 2, 1, 1.
+
+Against a fixed ceiling of **Rs.1,132,582** (take the best intervention wherever it pays, skip elsewhere), regret is Rs.1,833,910 / Rs.2,027,170 / Rs.1,420,482 / Rs.1,391,847 for neither / Fix A / Fix B / both. Decomposing realized net by action class:
+
+| arm | net from false-act | net from correct-act |
+|---|---|---|
+| neither | -Rs.522,493 | -Rs.178,836 |
+| Fix A only | -Rs.905,403 | +Rs.10,815 |
+| Fix B only | -Rs.304,072 | +Rs.16,171 |
+| both | -Rs.233,213 | -Rs.26,052 |
+
+Every arm's loss is dominated by acting where it should have skipped. That is the same conclusion §4d reached about cost of learning, arrived at from the decision side.
+
+**This also corrects Cycle 2's reading of Fix A.** Under the running-generous optimality definition Fix A has the *best* decision-level agreement (13/20) and the *lowest* false-skip (2/20) — because that definition rewards running and Fix A runs more. It simultaneously has the worst realized net and the worst regret of any arm. The claim that Fix A is harmful stands, but it rests on realized net and regret, not on any accuracy rate. The accuracy rate was never the evidence.
+
+### What survives the noise floor, and what does not
+
+Given the 6-of-16 paired flip rate measured below, at n=20:
+
+- **Unresolved: selection accuracy.** Strict correct actions are 0, 2, 1, 1 out of 20. Those numerators are smaller than the number of decisions that flip between two identical runs of the same arm. No ordering among the arms is established, in either direction.
+- **Survives: run-rate.** 12, 15, 6, 8 of 20. Run *counts* matched exactly (6/16 and 6/16) across the two identical replicate runs even as *which* worlds were run changed, so the count is the more stable statistic and the spread across arms is large.
+- **Survives: `correct_where_history_disagreed`.** It is 0 in both arms carrying Fix B. Zero is robust to flip in a way a small positive count is not: no reshuffling of which worlds were run can turn "never right when the table disagreed" into evidence of reasoning.
+- **Directionally supported, not resolved: realized net and regret.** Both are sums over per-world outcomes and inherit the flip noise, but the spread (Rs.259k to Rs.895k) is wide and the loss decomposition points the same way in every arm.
 
 ### The instability that governs how much of the table can be believed
 
@@ -604,19 +645,19 @@ The claim in `src/agent/reasoner.py` that temperature 0.0 makes paired runs repr
 
 ### Against §4j's predictions
 
-**Fix A failed, and appears actively harmful.** §4j predicted the break-even framing would raise selection accuracy and cut `int_shipping`. Selection accuracy did not rise (3/15, a lower rate than the control's 3/12), `int_shipping` did not move (9 in both arms), and experimentation *rose* from 12 to 15 of 20 worlds while realized net fell from -Rs.701,329 to -Rs.894,588. Adding Fix A on top of Fix B lowered selection accuracy from 3/6 to 1/8.
+**Fix A failed, and appears actively harmful.** §4j predicted the break-even framing would raise selection accuracy and cut `int_shipping`. `int_shipping` did not move (9 in both arms), experimentation *rose* from 12 to 15 of 20 worlds, and realized net fell from -Rs.701,329 to -Rs.894,588 — the worst of any arm, with the worst regret against the fixed ceiling. The **accuracy** half of that prediction is unresolved at n=20 and neither confirmed nor refuted: see the correction above. The verdict on Fix A rests on run-rate and net, which survive the noise floor, not on the accuracy rate, which does not.
 
 The likely mechanism is legible in the prompt itself: break-even shares render as 12-17%, which reads as easy to clear. Stating the arithmetic argued the agent into *more* spending, not better spending. This is the opposite of the prediction and it is Fix A's own failure — the control ran on the same worlds.
 
 **Fix B changed behaviour, by lookup rather than by reasoning.** It is the only arm that cut experimentation (12 -> 6) and the only one that cut `int_shipping` (9 -> 2). But `correct_where_history_disagreed` is **0** in both arms that carry it: the agent never once identified the best intervention when the history table did not already point at it. §4j named this outcome in advance — *"if those two are the same number, Fix B replaced reasoning rather than informing it, and that is the finding."* It is the finding.
 
-**Falsification conditions from §4j:** `int_shipping` did not remain the modal choice in the Fix B arms, so that condition is not met. Selection accuracy stayed at or below 3 of the worlds run in every arm, which §4j names as evidence the fixes changed the prose and not the choices.
+**Falsification conditions from §4j:** `int_shipping` did not remain the modal choice in the Fix B arms, so that condition is not met. §4j's other condition — "selection accuracy stays at or below 3 of the worlds run" — cannot be evaluated as written: it is stated on the moving denominator this section retracts, and on a fixed denominator the strict counts (0, 2, 1, 1 of 20) sit below the instrument's own noise floor. It is recorded as unresolved rather than met, which is the weaker and more honest reading.
 
 ### Decision on the pre-committed stopping rule
 
 §4j committed: *"If the dev-world ablation shows no change in selection behaviour, the new holdout is not opened."*
 
-Selection behaviour did change, so the rule's literal condition is not met. The rule's purpose is not satisfied. Opening the sealed set would measure whether the agent can read a table it was handed — a question §4j states in advance measures nothing about reasoning — at a per-world noise level that cannot resolve the accuracy differences anyway. A holdout is opened once; spending it on that is the one thing the rule exists to prevent.
+Selection behaviour did change, so the rule's literal condition for stopping is not met. Its *purpose* is still not served by opening. Opening the sealed set would measure whether the agent can read a table it was handed — a question §4j states in advance measures nothing about reasoning — at a per-world noise level that cannot resolve the accuracy differences anyway. A holdout is opened once; spending it on that is the one thing the rule exists to prevent.
 
 **The Cycle 2 holdout (`worlds_cycle2/holdout/`) has not been opened.** It remains sealed. No parameter, prompt, threshold or strategy was changed in response to any number in this section.
 
