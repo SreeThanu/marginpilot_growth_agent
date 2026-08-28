@@ -33,6 +33,16 @@ def test_gitignore_covers_every_generated_path() -> None:
     assert "!.env.example" in text
 
 
+#: The one deliberate exception to "nothing generated is tracked".
+#:
+#: The recorded holdout run is evidence, not an intermediate: it cost real API
+#: calls, an LLM cannot reproduce it deterministically, and the README's
+#: headline rests on it. Without it the dashboard cannot be built from a clean
+#: clone. Listed here by name so that tracking anything *else* under data/ still
+#: fails — the exception is one file, not a relaxed rule.
+TRACKED_EVIDENCE = {"data/holdout_results.json"}
+
+
 def test_nothing_generated_is_tracked_by_git() -> None:
     tracked = subprocess.run(
         ["git", "ls-files"], cwd=ROOT, capture_output=True, text=True, check=True
@@ -40,8 +50,14 @@ def test_nothing_generated_is_tracked_by_git() -> None:
     offenders = [
         f for f in tracked
         if re.search(r"\.db$|\.sqlite\d?$|__pycache__|\.pyc$|^data/|^worlds/|^results/", f)
+        and f not in TRACKED_EVIDENCE
     ]
     assert not offenders, f"generated files are tracked: {offenders}"
+
+    # And the exception must actually be present — if it disappears, the
+    # dashboard silently stops building from a clean clone.
+    for evidence in TRACKED_EVIDENCE:
+        assert evidence in tracked, f"{evidence} should be tracked but is not"
     assert ".env" not in tracked, "the real .env must never be committed"
     assert ".env.example" in tracked
 
