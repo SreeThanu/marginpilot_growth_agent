@@ -109,7 +109,7 @@ That is what the comparison against `Baseline 5` measures. The ablation works th
 
 ## The model, and why it is swappable
 
-The agent runs on **`gemini-3.6-flash`**. That is a availability decision, not a quality one: no Anthropic credentials were available in the build environment, and an agent that cannot run cannot be evaluated.
+The agent runs on **`gemini-3.6-flash`**. That is an availability decision, not a quality one: no Anthropic credentials were available in the build environment, and an agent that cannot run cannot be evaluated.
 
 A `ClaudeReasoner` targeting `claude-opus-5` ships alongside it and implements the same interface. The reasoner sits behind one Protocol with shared prompts and shared parsing, so the provider is a one-line swap — and everything that matters stays outside it either way. Randomization, the experiment horizon, the scaling rule and every money-adjacent action are enforced by the deterministic layer regardless of which model is reasoning, or whether one is present at all.
 
@@ -131,10 +131,14 @@ The single most important design rule in this codebase: **the LLM reasons, the d
 The agent can say *"give this segment ₹100 off."* The policy engine answers:
 
 ```
-REJECTED — expected contribution ₹-3,600 < minimum threshold ₹0
-REJECTED — discount 22% > max_discount 15%
-REJECTED — projected spend ₹180,000 > remaining budget ₹50,000
+REJECTED — discount 40% exceeds max_discount 25%
+REJECTED — contribution margin 10.0% below floor 15.0%
+REJECTED — would treat 90% of customers (90,000 of 100,000), above the 60% exposure cap
+REJECTED — projected spend Rs.999,999 exceeds remaining budget Rs.100,000
+REJECTED — design power 0.50 below minimum 0.80; the experiment would spend budget to buy an unreadable answer
 ```
+
+That is real output from `src/policy/gates.py`, not an illustration. All five rules report at once, because the agent has to re-plan against the verdict and one rule at a time would make that a guessing game.
 
 Every rejection is logged with the rule that fired, the value that violated it, and the agent's original intent.
 
@@ -154,7 +158,9 @@ The parts that are easy to get wrong, and how they're handled:
 
 **Known ground truth.** The simulator generates both potential outcomes `Y(0)` and `Y(1)` for every customer. The experiment observes only one per customer, exactly as in reality — but the evaluation harness knows the true individual treatment effect `τᵢ = Yᵢ(1) − Yᵢ(0)`. This lets the harness report not just whether the agent made money, but whether its *estimates* were accurate: estimation error against known truth, separate from decision quality.
 
-**Scaling requires confidence, not a positive point estimate.** An experiment is only scaled when the lower bound of the confidence interval on incremental contribution clears zero. A promising-looking mean is not sufficient authority to spend money.
+**Scaling requires confidence, not a positive point estimate.** An experiment is scaled only when both hold: the posterior probability of positive net contribution reaches **0.80**, *and* the posterior's 5th percentile — projected to the population a rollout would cover — stays above a tolerable loss of 2% of the promotion budget. The first asks whether the campaign is probably profitable; the second asks whether being wrong is survivable. A promising-looking mean satisfies neither.
+
+The 95% confidence interval is still computed and reported alongside every decision, so what the stricter earlier rule *would* have decided stays visible in the results. That earlier rule — the whole interval above zero — was replaced before the holdout was opened, because measured against an oracle selector with a full budget it scaled 0 experiments in 10 worlds while missing 9 profitable rollouts. A rule that refuses even perfect selection is inoperable rather than conservative. The reasoning, thresholds and date are pre-registered in [`docs/simulator.md` §4b](docs/simulator.md).
 
 **Counterfactual replay.** Because the simulator holds `Y(0)` and `Y(1)`, every decision can be replayed under alternative strategies: what the conversion optimizer would have done with the same evidence, and what it would have cost.
 
@@ -184,22 +190,28 @@ Headline results are reported **on the holdout worlds only**.
 
 ### An expected property of the generated worlds
 
-Measured on the 80 development worlds (not the holdout), the four intervention types are not equally good ideas, and deliberately have not been made so:
+**Bundles dominate this corpus, and that scopes every finding below.** Measured from ground truth on the 20 holdout worlds:
 
-| Intervention | Best choice in |
-|---|---|
-| Free shipping | 48% of worlds |
-| Flat discount | 40% |
-| Bundle | 8% |
-| Percentage discount | 5% |
+| Intervention | Best choice in | Profitable in | Median true net |
+|---|---|---|---|
+| **Bundle** | **14 / 20 worlds** | **50%** | −₹531 |
+| Percentage discount | 4 / 20 | 5% | −₹78,152 |
+| Free shipping | 2 / 20 | 20% | −₹64,939 |
+| Flat discount | 0 / 20 | 5% | −₹82,282 |
 
-A percentage discount scales its cost with basket size, so it pays the most to the customers with the largest baskets — the customers most likely to have converted anyway. A flat ₹150 off is a 30% discount to a ₹500 basket and 6% to a ₹2,500 one, concentrating incentive where an incremental order is cheapest to buy. This is the same mechanism as the worked example at the top of this README, applied to the choice between interventions rather than to a single campaign.
+The other three are unprofitable in 80–95% of worlds. Bundle wins largely by being the least-bad option rather than by being good — it is the only one whose median is near break-even.
+
+**This is a known limitation of the world generator, recorded in [`docs/simulator.md` §4d](docs/simulator.md).** Depth is anchored at `j × margin`, so a campaign breaks even only when roughly a fifth of treated orders are genuinely incremental — which sits right at the edge of what the corpus's response strengths deliver. Tying a bundle's basket uplift to its own depth reduced its advantage but did not remove it, and widening response strength to make the four genuinely competitive would have meant changing a world parameter *after* discovering that selection was degenerate. That is post-hoc tuning toward a more flattering result, so it was not done.
+
+**An earlier version of this section reported free shipping winning 48% of worlds and claimed none was dominated.** Those figures came from an analytic approximation that credited a bundle's basket uplift only on incremental orders, while the generator grants it to every treated converter. The Day-5 diagnostic showed the approximation had the wrong sign in half the worlds it was checked against. Ground truth is authoritative and the numbers above replace it.
+
+**Why this matters for the result.** Because bundle dominates, the selection problem is close to degenerate: a hardcoded "always test the bundle" captures 99% of a ground-truth oracle's edge, leaving about ₹11,000 for reasoning to compete over ([§4e](docs/simulator.md)). So MarginPilot's selection failure is real and measured, but it is measured in a corpus where selection was worth little to begin with. In a corpus where the four interventions were genuinely competitive, a signal about customer response might well predict profitability, and this result could reverse.
 
 **Grounded reasoning is not the same as good decisions.** On the development worlds the agent read each merchant accurately — its citations quote the merchant's own support tickets, segment notes and trading commentary verbatim — and still chose worse than a fixed rule, because the signals it read predict *response*, not *profitability*. The experimental machinery caught it: the experiment ran to its pre-committed horizon, the posterior on incremental contribution was computed, and the scaling rule declined.
 
 To be precise about what did *not* happen: the policy gates did not catch this. They approved those experiments, correctly — the gates check budget, discount, margin, exposure and power, and have no view on which intervention is more profitable. Measurement caught it, not the gate.
 
-All four types produce profitable, marginal and unprofitable cases across the corpus, so none is dominated by construction. The parameters were **not** adjusted to equalize how often each type wins: doing so would mean rigging the worlds so that economically disfavoured strategies succeed more often than the economics allows. Details and the pre-registered Day-2 diagnostic are in [`docs/simulator.md`](docs/simulator.md).
+All four types do produce profitable, marginal and unprofitable cases across the corpus — none is *impossible* — but bundle wins far more often than the rest, as the table above shows. The parameters were **not** adjusted to equalize how often each type wins: doing so would mean rigging the worlds so that economically disfavoured strategies succeed more often than the economics allows. Details and the pre-registered Day-2 diagnostic are in [`docs/simulator.md`](docs/simulator.md).
 
 ## Baselines
 
@@ -208,7 +220,7 @@ All four types produce profitable, marginal and unprofitable cases across the co
 | 1 | Do nothing | — (natural business performance) |
 | 2 | Rule-based marketer | Fixed rule: 10% off to customers with P(purchase) < 0.4 |
 | 3 | Conversion optimizer | Expected conversions — the naive AI approach |
-| 4 | LLM strategist | LLM picks campaigns from context, no experiments, no economic gate |
+| 4 | LLM strategist | LLM picks campaigns from context, no experiments, no economic gate — **built, but not run on the holdout; see below** |
 | 5 | Engine without LLM | Incremental contribution, fixed hypothesis set (the ablation) |
 | — | **MarginPilot** | **Incremental contribution under budget and policy constraints** |
 
@@ -269,6 +281,10 @@ payments through Razorpay test mode.
 
 **Do nothing wins.** MarginPilot is second, ahead of every real strategy by an
 order of magnitude, and still ₹85,430 behind an empty campaign calendar.
+
+**Baseline 4 is missing from this table, and that is an omission rather than a decision.** The LLM strategist is built, tested and satisfies the same `Strategy` interface as the others (`src/baselines/llm_strategist.py`); it was simply left out of the holdout harness when that script was written. By the time the gap was noticed the seal was open, and adding a strategy to a sealed evaluation after seeing the results is exactly what the freeze exists to prevent — a number produced that way would not be comparable to the six that were run blind.
+
+What it costs the analysis: Baseline 4 is the *other* ablation. Baseline 5 has the machinery without the reasoning; Baseline 4 has the reasoning without the machinery. Without it, this evaluation can say that reasoning-plus-experimentation beat unreasoning-experimentation, but it cannot separate how much of that came from the experimentation apparatus versus from the model. Its nearest available proxy is Baseline 2, which also acts without testing and lost ₹929,086 — but Baseline 2 chooses by a fixed rule rather than by reading the merchant, so it bounds the question without answering it. This is the single largest hole in the results and it is stated here rather than left to be found.
 
 Its advantage over the other strategies is restraint, not insight: it ran 9
 experiments where Baseline 5 ran 77, and skipped 11 of 20 merchants outright.
@@ -412,7 +428,7 @@ Razorpay test mode is the **financial actuator**, not the project.
 Offer → Checkout → Payment → Webhook → Experiment attribution
 ```
 
-**Scope, stated plainly:** experiment mathematics run across simulated customer populations at a scale no sandbox could support. A defined subset of orders is executed end-to-end through Razorpay test mode with real webhook-driven attribution, demonstrating that the full financial loop closes. Which orders are real and which are simulated is recorded per experiment in the audit trail and shown in `docs/razorpay_scope.md`.
+**Scope, stated plainly:** experiment mathematics run across simulated customer populations at a scale no sandbox could support. A defined subset of orders is executed through Razorpay test mode — real order creation, real payment links, real order fetch — demonstrating that the financial loop closes. Webhook *receipt* is replayed locally rather than delivered by Razorpay, because this build has no public endpoint for Razorpay to call; the capture event goes through the identical receiver, signature verification and idempotency key that a live delivery would. `client_mode` and `webhook_source` are recorded separately in the audit trail so neither can be read as more than it is. Which orders are real and which are simulated is recorded per experiment in the audit trail and shown in `docs/razorpay_scope.md`.
 
 ## Architecture
 
@@ -434,7 +450,7 @@ src/
 
 ## Stack
 
-Python 3.11 · FastAPI · SQLite · pandas / NumPy · SciPy / statsmodels · scikit-learn · Razorpay Test APIs · Streamlit
+Python 3.11 · SQLite · pandas / NumPy · SciPy / statsmodels · Razorpay Test APIs · Streamlit · `google-genai` (agent reasoning)
 
 ## Running it
 
@@ -444,8 +460,11 @@ pip install -r requirements.lock.txt   # exact frozen environment; use requireme
 cp .env.example .env          # add RAZORPAY_TEST_KEY_ID, RAZORPAY_TEST_KEY_SECRET, LLM API key
 
 make worlds                   # generate 100 worlds (80 dev / 20 sealed holdout)
-make demo                     # single world, full agent loop, dashboard at :8501
-make eval                     # all baselines across 20 holdout worlds → results/
+make test                     # 243 tests, ~5 minutes
+make adversarial              # the seven refusal scenarios
+make snapshot                 # rebuild the dashboard's data from the holdout results
+make demo                     # snapshot, then serve the dashboard at :8501
+make audit EXPERIMENT=<id>    # print one experiment's full decision chain
 ```
 
 ## Audit trail
