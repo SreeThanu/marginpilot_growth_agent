@@ -725,6 +725,65 @@ The comparison is **paired**: every arm runs on the identical world set, so worl
 
 Nothing is tuned to what the powered re-run shows. Not a prompt, not a threshold, not a generator parameter, not the MDE, not the materiality bar. Cycle 3 ends at the dev boundary: §4j's disqualifying condition for Fix B (`cwhd` = 0) is already met and is robust to flip noise, so there is nothing about reasoning left for a sealed set to validate even once accuracy resolves. Whether to drop Fix A, and whether any new fix warrants a fresh holdout, is a separate pre-registered decision after this one.
 
+## 4m. Cycle 3, Step 3 — the measured noise floor and the required design, dated 29 August 2026
+
+The control arm (`neither`, the Cycle 1 prompt) was replicated **K₀ = 8** times over the same 20 dev worlds, changing nothing between replicates. Noise is taken from this one arm, never from the spread across arms, so it is manifestly noise rather than the signal under test. Zero errored world-runs across the replicates that recorded the field.
+
+### Decision stability
+
+| quantity | value |
+|---|---|
+| worlds whose decision is not stable across 8 replicates | **12 / 20 (60%)** |
+| expected per-world disagreement between two runs | **20.3%** |
+
+This supersedes both earlier estimates: the single paired comparison in §4k (6 of 16, 38%) and the interim five-replicate figure (12.8%). Neither was reliable, in opposite directions.
+
+### Per-metric noise and the required replicates
+
+MDE for counts is the pre-registered 14.1% of worlds = 2.82 of 20; for realized net it is the materiality bar of Rs.18,450 per merchant across 20 worlds = Rs.369,000.
+
+| metric | mean | SD | K (point) | K (SD 95% upper) |
+|---|---|---|---|---|
+| false_act | 4.50 | 0.93 | 2 | 8 |
+| false_skip | 5.25 | 0.89 | 2 | 7 |
+| run_count | 11.25 | 1.49 | 5 | 19 |
+| **correct_action** | **0.00** | **0.00** | 1 | 1 |
+| **cwhd** | **0.00** | **0.00** | 1 | 1 |
+| int_shipping | 9.38 | 1.69 | 6 | 24 |
+| realized_net | -Rs.824,814 | Rs.256,872 | 8 | 32 |
+
+An SD estimated from 8 replicates is itself noisy: the 95% interval on the false-act SD is [0.612, 1.884]. Required K scales with SD², so the interval on K is wider still. Both columns are reported because quoting only the point estimate would repeat this cycle's founding error one level up.
+
+### The interim report at K₀ = 5 was wrong, and how
+
+At five replicates the same computation gave SD 0.55 for false-act and 0.55 for run-count, implying **K = 1** for both, and I reported the design as comfortably feasible. At eight replicates those SDs are 0.93 and 1.49, implying K = 2 and K = 5. A variance estimated from a handful of replicates is biased low and unstable, and reporting a required sample size off five points was the same species of error as reading arm differences off one run each. The K₀ = 8 figures supersede it.
+
+### What is settled regardless of K
+
+`correct_action` and `cwhd` are **0.00 with SD 0.00 across all eight replicates** of the control. §4k's `0/20` is a property of the arm, not a sampling accident, and no increase in replicates can move a statistic that has never once been non-zero. §4j's disqualifying condition for Fix B — that the agent is never right where the history table disagreed — rests on this and is not at risk from instrument noise.
+
+### Feasibility
+
+Measured throughput is **38.3 s per world-run**, from the replication itself; a token-based estimate gave 0.7 hours against a measured 4.3, six times optimistic, and is not used.
+
+| design | world-runs | wall clock | verdict |
+|---|---|---|---|
+| K = 2, primary metric (false-act) only | 3 further passes, 60 | **0.6 h** | feasible |
+| K = 8, all metrics, point-estimate SD | 21 further passes, 420 | **4.5 h** | affordable but large |
+| K = 32, conservative SD upper bound | 117 further passes, 2,340 | **25 h** | **infeasible** |
+
+The pre-registered primary contrast is affordable. The realized-net and `int_shipping` contrasts are **not resolvable at feasible scale** once the uncertainty in the variance estimate is carried through, and §4l committed in advance to reporting exactly that rather than launching an oversized run to chase significance.
+
+### Instrument defects found, and fixed, during the measurement
+
+Three, each surfaced by a failure rather than by inspection, all recorded because an evaluation that silently loses runs produces biased results:
+
+1. An empty reply (`finish_reason=MAX_TOKENS`) aborted a three-replicate job, discarding 17 completed world-runs. Worlds are now retried a bounded number of times and then recorded as `decision: "error"` — excluded from every denominator, reported, never replaced by a guessed decision. The retry keys on exception type only, never on what the model decided, so it cannot select for outcomes.
+2. `httpx.RemoteProtocolError` was not retried at all, and killed the next attempt. Dropped connections now join 429s and 5xx in the reasoner's backoff.
+3. Writing the test for (2) exposed a third: retry exhaustion raises `RateLimitExceededError`, which is not a subclass of `ReasonerError`, so a harness catching only the latter would still lose a multi-hour run to one dropped connection. Both are caught now, and a test asserts it stays that way.
+
+None of these touched a prompt, an arm, or a generator parameter.
+
 ## 5. What this model does *not* claim
 
 - It is not a calibrated model of any real merchant. It is a generator of plausible retail economies whose parameter ranges are anchored where literature exists and openly labelled where it does not.

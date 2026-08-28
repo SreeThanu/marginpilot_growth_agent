@@ -53,6 +53,10 @@ TRACKED_EVIDENCE = {
     "results/cycle2_dev_break_even_only.json",
     "results/cycle2_dev_history_only.json",
     "results/cycle2_dev_both.json",
+} | {
+    # The Cycle 3 control-arm replication behind §4m's noise floor. Enumerated
+    # rather than globbed, so the replicate count stays a decision on the record.
+    f"results/cycle3_noise_neither_rep{i}.json" for i in range(1, 9)
 }
 
 

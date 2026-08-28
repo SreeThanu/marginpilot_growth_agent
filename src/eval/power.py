@@ -86,6 +86,24 @@ def _metrics(rows: Sequence[dict[str, Any]], optimal: dict[str, str]) -> dict[st
     }
 
 
+def sd_interval(sd: float, n: int, conf: float = 0.95) -> tuple[float, float]:
+    """Confidence interval for a standard deviation estimated from n replicates.
+
+    Chi-square, and reported because it is easy to forget that an SD from a
+    handful of replicates is itself a noisy estimate. Required K scales with the
+    square of the SD, so the interval on K is wider still — which is exactly the
+    kind of uncertainty this cycle exists to stop glossing over.
+    """
+    from scipy import stats
+
+    if n < 2 or sd <= 0:
+        return (sd, sd)
+    df = n - 1
+    lo = sd * math.sqrt(df / stats.chi2.ppf(1 - (1 - conf) / 2, df))
+    hi = sd * math.sqrt(df / stats.chi2.ppf((1 - conf) / 2, df))
+    return (lo, hi)
+
+
 def required_replicates(sd_count: float, mde_count: float) -> float:
     """K per arm for a two-sided paired contrast at the pre-registered alpha/power.
 
@@ -168,8 +186,13 @@ def main() -> int:
                         "min": float(vals.min()), "max": float(vals.max())}
         fmt = ",.0f" if key == "realized_net_inr" else ".2f"
         kt = "1" if k <= 1 else str(math.ceil(k))
+        _, sd_hi = sd_interval(sd, len(per_rep))
+        k_hi = required_replicates(sd_hi, mde[key])
+        results[key]["required_k_conservative"] = k_hi
+        kt_hi = "1" if k_hi <= 1 else str(math.ceil(k_hi))
         print(f"{key:<20}{vals.mean():>10{fmt}}{sd:>10{fmt}}"
-              f"{vals.min():>10{fmt}}{vals.max():>10{fmt}}{mde[key]:>10{fmt}}{kt:>10}")
+              f"{vals.min():>10{fmt}}{vals.max():>10{fmt}}{mde[key]:>10{fmt}}"
+              f"{kt:>10}{kt_hi:>14}")
 
     sd = results["false_act"]["sd"]
     k = results["false_act"]["required_k"]
@@ -193,8 +216,17 @@ def main() -> int:
         print("  required K              : unbounded (zero MDE)")
         return 0
     print(f"  required K per arm      : {k_int}   (primary metric: false-act)")
+    k_all_cons = max(
+        (max(1, math.ceil(v["required_k_conservative"])) for v in results.values()
+         if math.isfinite(v["required_k_conservative"])),
+        default=1,
+    )
+    sd_lo, sd_hi = sd_interval(sd, len(per_rep))
+    print(f"  SD 95% CI ({len(per_rep)} reps): [{sd_lo:.3f}, {sd_hi:.3f}] "
+          f"-- K scales with SD^2, so this interval matters more than it looks")
     print(f"  required K for ALL metrics: {k_all}   "
           f"(driven by {max(results, key=lambda m: results[m]['required_k'])})")
+    print(f"  conservative K (SD upper): {k_all_cons}")
     total = k_all * 4 * n_worlds
     hours = total * args.seconds_per_world / 3600.0
     print(f"  total world-runs (4 arms) : {total:,}")
