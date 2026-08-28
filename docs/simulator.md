@@ -661,6 +661,70 @@ Selection behaviour did change, so the rule's literal condition for stopping is 
 
 **The Cycle 2 holdout (`worlds_cycle2/holdout/`) has not been opened.** It remains sealed. No parameter, prompt, threshold or strategy was changed in response to any number in this section.
 
+## 4l. Cycle 3 pre-registration — dated 29 August 2026, before any new measurement code was written
+
+Cycle 3 repairs the **evaluation instrument**, not the world and not the agent. Cycle 1 stays tagged and unmodified. Cycle 2's dev-stage result stands as corrected in §4k. `worlds_cycle2/holdout/` stays sealed and nothing in Cycle 3 opens it.
+
+**Absolute constraint: change the instrument, not the world and not the agent.** Every generator parameter stays frozen. The four prompt configurations (`neither` / `break_even_only` / `history_only` / `both`) stay exactly as committed in `3cc802c`; they are measured more precisely, not edited. Fix A is not dropped or altered — that is a separate later decision, to be taken on resolved numbers. Drawing additional dev worlds from the frozen generator under new seeds is sampling the world, not changing it, and is permitted **only if** the power calculation in Step 3 requires it.
+
+### Why this cycle exists
+
+§4k established that Cycle 2 committed the project's own central error. It ran a four-arm, 20-world comparison and read differences off it without ever asking whether 20 worlds could resolve those differences — while two runs of the *same* arm, identical code and worlds at temperature 0.0, disagreed on 6 of 16 run/skip decisions. The agent is held to a pre-computed minimum detectable effect before it is allowed to spend; the evaluation was not.
+
+The reasoner's retracted claim that temperature 0.0 makes paired runs reproducible is the direct cause. That assumption is not re-made anywhere in Cycle 3: every quantity that depends on it is measured.
+
+### The target MDE, and how it was derived
+
+**Primary contrast:** the **false-act rate** — the share of worlds, out of a fixed denominator, on which an arm runs an experiment where the optimal action was to skip. §4k's loss decomposition shows this is where every arm's money goes.
+
+The threshold is derived from what would change a decision, in this chain:
+
+1. A prompt fix is worth keeping only if it improves expected realized net **per merchant** by a material amount. Materiality is fixed at **5% of the median dev promotion budget**. The median is Rs.369,000 across the 80 frozen Cycle 2 dev worlds, so the threshold is **Rs.18,450 per merchant**.
+2. The cost of one false act, pooled across all four arms, is **Rs.131,012** (15 false acts, Rs.1,965,180 destroyed).
+3. Therefore the smallest worth-resolving difference in false-act rate is `18,450 / 131,012` = **14 percentage points**, which is the target MDE. On a 20-world denominator that is 2.8 worlds.
+
+**Certification.** The MDE was derived from the chain above and **not** from the observed between-arm gaps. Only step 2 touches Cycle 2's runs, and it uses a quantity **pooled across all four arms** — a cost scale in rupees per event, carrying no arm-to-arm contrast, in the same role a pooled variance plays in any power calculation. Steps 1 and 3 use only the frozen generator's budget distribution and arithmetic.
+
+**Disclosed coincidence.** The observed false-act rates are 25%, 25%, 15% and 10%, so the largest observed gap is 15 points and sits just above the 14-point MDE. This is disclosed rather than hidden. It was not the source of the threshold: had materiality been set at 3% or 10% of budget the MDE would have been 8 or 28 points, and the derivation would have been written the same way. A reader who thinks 5% is the wrong materiality bar should read the feasibility result in Step 3 against their own number, which is why every input above is stated.
+
+### The variance input, and how it will be measured
+
+The variance that matters is **instrument noise**: how much an arm's measured metric moves when nothing about the arm changes. It will be measured by **replicating the control arm alone** — `neither`, the Cycle 1 prompt — K times over the same dev worlds. Deriving it from the spread *across* arms would confound noise with the very signal being tested; taking it from one arm makes it manifestly noise.
+
+Method, fixed now:
+
+- Replicate `neither` on the same fixed world set, K₀ ≥ 8 times, changing nothing between replicates.
+- Report, per world, the proportion of replicates that chose `run`, and the resulting per-world flip probability.
+- Report the **standard deviation across replicates of the arm-level false-act count**. That SD, not the per-world flip rate, is the standard error that enters the power calculation, because the metric being compared is arm-level.
+- Report the same SD for run-rate, `int_shipping` rate, `cwhd` and realized net.
+
+The existing 6-of-16 figure is a single paired comparison and is treated as a rough prior to be superseded, not as the variance input.
+
+### The design that will be computed, and the commitment to report feasibility
+
+The comparison is **paired**: every arm runs on the identical world set, so world-to-world variation cancels in the between-arm contrast and only replicate noise and the pairing remain. Required replicates K per arm will be computed from (MDE = 14 points, measured SD) for a two-sided paired comparison at α = 0.05 and power 0.80, by the stated normal-approximation formula, with the arithmetic shown. If the world-level base rate rather than replicate noise turns out to dominate, N will be recomputed too and fresh dev worlds drawn from the frozen generator under new seeds.
+
+**Feasibility will be reported honestly whether or not the design is runnable.** If the required K·N exceeds what the budget allows, that is the result: the accuracy contrast is below this evaluation's feasible resolution, and the conclusion rests on the columns that do resolve. No oversized run will be launched to chase significance, and no threshold will be relaxed after seeing the required K.
+
+### Metrics, each reported with a standard error or interval across replicates
+
+- False-act and false-skip counts, on the fixed all-worlds denominator of §4k
+- `correct_where_history_disagreed`
+- Run-rate
+- `int_shipping` share of runs
+- Realized net contribution, and regret against the fixed ceiling
+
+### What I predict
+
+- **Run-rate contrasts resolve.** Run counts matched exactly (6/16 and 6/16) across the two identical replicate runs even as which worlds were run changed, so the count should prove the low-variance statistic and the 12/15/6/8 spread should survive.
+- **`cwhd` stays 0 in both Fix B arms.** A zero cannot be reshuffled into evidence by flip noise.
+- **The accuracy contrast does not resolve at feasible scale.** I expect the required K to exceed the budget, and expect to report the accuracy comparison as below this instrument's resolution.
+- **Fix A's run-rate increase survives; its accuracy effect resolves to zero-or-negative, or does not resolve at all.**
+
+### Commitment
+
+Nothing is tuned to what the powered re-run shows. Not a prompt, not a threshold, not a generator parameter, not the MDE, not the materiality bar. Cycle 3 ends at the dev boundary: §4j's disqualifying condition for Fix B (`cwhd` = 0) is already met and is robust to flip noise, so there is nothing about reasoning left for a sealed set to validate even once accuracy resolves. Whether to drop Fix A, and whether any new fix warrants a fresh holdout, is a separate pre-registered decision after this one.
+
 ## 5. What this model does *not* claim
 
 - It is not a calibrated model of any real merchant. It is a generator of plausible retail economies whose parameter ranges are anchored where literature exists and openly labelled where it does not.
