@@ -466,7 +466,9 @@ make worlds                   # generate 100 worlds (80 dev / 20 sealed holdout)
 make eval                     # open the holdout once, evaluate every strategy -> results/
 make demo                     # build the dashboard's data, then serve it at :8501
 
-make audit EXPERIMENT=<id>    # one experiment's decision chain (run make eval first)
+make audit EXPERIMENT=<id>    # one experiment's decision chain
+                              #   (needs a prior run; use AUDIT_DB=data/holdout_eval_audit.db
+                              #    after make eval, or EXPERIMENT=--list to see what is there)
 ```
 
 `make eval` runs the five deterministic strategies and the oracle diagnostic. It
