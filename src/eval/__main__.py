@@ -52,6 +52,13 @@ def main() -> int:
         help="also run MarginPilot (needs GEMINI_API_KEY; makes one API call per world)",
     )
     parser.add_argument("--out", type=Path, default=RESULTS_DIR)
+    parser.add_argument(
+        "--worlds-root",
+        type=Path,
+        default=Path("worlds"),
+        help="corpus to evaluate. Cycle 2 is a labelled follow-up on its own "
+             "corpus (worlds_cycle2), not a replacement for the Cycle 1 result.",
+    )
     args = parser.parse_args()
 
     agent = None
@@ -78,7 +85,7 @@ def main() -> int:
     worlds = 0
 
     print("Opening the sealed holdout worlds. This happens once.\n", flush=True)
-    for world, truth in open_holdout():
+    for world, truth in open_holdout(args.worlds_root):
         worlds += 1
         truths[world.world_id] = truth_table(world, truth)
         print(f"[{worlds}] {world.world_id}", flush=True)
@@ -128,7 +135,7 @@ def main() -> int:
         "audit_chain_intact": audit.verify(),
     }
     args.out.mkdir(parents=True, exist_ok=True)
-    destination = args.out / "holdout_evaluation.json"
+    destination = args.out / f"holdout_evaluation_{args.worlds_root.name}.json"
     destination.write_text(json.dumps(payload, indent=1, default=str))
 
     header = f"{'strategy':<24}{'realized net':>15}{'spend':>13}{'exp':>6}{'scaled':>8}"

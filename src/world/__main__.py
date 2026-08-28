@@ -32,8 +32,11 @@ from src.world.schema import World
 
 #: Dev and holdout seeds are far apart so a dev world can never be regenerated
 #: as a holdout world by an off-by-one, and a misfiled file is obvious by name.
-DEV_SEEDS = range(1, 81)
-HOLDOUT_SEEDS = range(9001, 9021)
+#: Cycle 2 seeds. Every generator parameter is unchanged from Cycle 1 — only
+#: these move, so the agent faces worlds it has never seen while the corpus's
+#: difficulty is held fixed. Cycle 1 used 1-80 and 9001-9020.
+DEV_SEEDS = range(20_001, 20_081)
+HOLDOUT_SEEDS = range(29_001, 29_021)
 
 
 def _world_summary(world: World) -> dict[str, float]:

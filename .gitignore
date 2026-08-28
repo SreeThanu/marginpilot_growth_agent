@@ -61,3 +61,7 @@ data/*
 .idea/
 .vscode/
 *.swp
+
+# Cycle 2 corpus. Same generator, fresh seeds; Cycle 1 stays at worlds/ so the
+# pre-registered §4i result remains reproducible from disk.
+worlds_cycle2/
