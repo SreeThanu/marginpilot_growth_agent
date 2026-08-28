@@ -519,6 +519,47 @@ Zero policy violations and zero budget overruns across all six strategies.
 
 **Hypothesis calibration: 74% coverage against a nominal 95%** (135/183). The intervals are too narrow. This was measured after the freeze and nothing was adjusted in response; it is a known defect in the reported results, not a finding about the world. Any future work should start here, because an overconfident interval feeding a scaling rule is a systematic error rather than noise.
 
+## 4j. Cycle 2 pre-registration — dated 28 August 2026, before anything was changed or generated
+
+Cycle 1 is complete and tagged `v1-preregistered`. Its result stands unmodified; this is a **labelled follow-up, not a replacement**, and §4i's numbers are never overwritten by anything below.
+
+**Absolute constraint: the agent changes, the world does not.** `promo_response_scale`, the depth bands, semantic fidelity, the saturation form, the bundle uplift ratio and every other generator parameter stay frozen at their Cycle 1 values. Only the generation *seeds* change, to produce a corpus the agent has never seen. If Cycle 2 looks better because the world got easier, the comparison is worthless — so the world is held fixed and only the seeds move.
+
+### The diagnosed cause
+
+§4g and §4i established it: the agent reads the merchant accurately and selects on signals that predict **response** — shipping-threshold support tickets, segment friction notes — when profitability is decided by **margin against incentive cost**. It chose `int_shipping` in 7 of 9 holdout runs and lost money in most of them. The failure is not hallucination and not poor reading; it is a correctly-read cue pointing at the wrong quantity.
+
+### The two fixes
+
+**Fix A — direct the agent at the ratio, not the response.** The prompt asks which intervention will move customers. It should ask which will move them *at a cost the margin can absorb*. Both numbers are already in the merchant view — contribution per order and cost per treated order — and nothing directed attention to their ratio. The revised prompt states the break-even arithmetic explicitly: an intervention pays only when the share of treated orders that are genuinely incremental exceeds `cost per treated order ÷ contribution per order`. This addresses the diagnosed cause directly, because it names the quantity the agent was substituting a proxy for.
+
+**Fix B — supply margin-adjusted historical performance per intervention.** The agent currently reasons about interventions from their descriptions. A merchant with any promotional history would know which offer types have paid before. The view now carries, per intervention, the realized net contribution per treated customer from a **small past campaign** on that merchant.
+
+The size of that past campaign matters and is stated in advance: **300 treated customers per intervention**, which at these conversion rates and basket variances leaves a standard error large enough that the historical figure is *informative but not decisive*. This is deliberate. A large enough history would make selection arithmetic and the agent would win by reading one number, which would measure nothing about reasoning. The history is drawn from the same generative process as the live world, so it reflects that world's true affinities through the noise — as a real merchant's history would.
+
+**Honest risk, recorded now:** Fix B supplies evidence that points at the answer. If Cycle 2 improves, the improvement may be "the agent can read a table" rather than "the agent reasons better about economics". Cycle 2 therefore reports selection accuracy *and* how often the agent's choice simply matches the best historical performer — if those two are the same number, Fix B replaced reasoning rather than informing it, and that is the finding.
+
+### What I predict
+
+- **Against Baseline 1 (do nothing):** MarginPilot still loses, but by less than Cycle 1's −₹85,430. The binding constraint measured in §4d is that one experiment costs ~2.8× the profit pool of the world it runs in; better selection does not change that arithmetic. Predicted range: a loss between ₹0 and ₹85,430.
+- **Against Baseline 5 (engine without LLM):** MarginPilot still wins, and by more than Cycle 1's margin, because better selection compounds with the restraint that already drove that gap.
+- **Selection accuracy:** rises from 2/9 to at least 5 of the worlds it runs. Below that, the fixes did not work.
+- **Intervention mix:** `int_shipping` falls below 4 of 9 runs, and `int_bundle` rises.
+
+### What would falsify the prediction
+
+- Selection accuracy stays at or below 3 of the worlds run — the fixes changed the prose and not the choices.
+- `int_shipping` remains the modal choice.
+- MarginPilot beats Baseline 1 outright. That would falsify the cost-of-learning claim in §4d, and would be the more interesting outcome of the two.
+
+### Stopping rule, committed in advance
+
+**If the dev-world ablation shows no change in selection behaviour, the new holdout is not opened.** There is no point spending a sealed set on a fix that did nothing, and opening it anyway would burn the only unbiased measurement Cycle 2 has.
+
+### Commitment
+
+Nothing changes in response to Cycle 2's holdout — not a prompt, not a threshold, not a parameter, not a strategy. Cycle 2 reports whichever way it lands, and a fix that does not work is a result (CLAUDE.md invariant 9).
+
 ## 5. What this model does *not* claim
 
 - It is not a calibrated model of any real merchant. It is a generator of plausible retail economies whose parameter ranges are anchored where literature exists and openly labelled where it does not.
