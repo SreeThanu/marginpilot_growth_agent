@@ -104,6 +104,24 @@ def sd_interval(sd: float, n: int, conf: float = 0.95) -> tuple[float, float]:
     return (lo, hi)
 
 
+def structural_sd_bound(n_eligible: int) -> float:
+    """The largest SD a count over ``n_eligible`` worlds can have, for any arm.
+
+    ``false_act`` counts, out of the worlds whose optimal action is *skip*, how
+    many the arm ran. Within one replicate the worlds are separate calls with no
+    shared state, so the count is a sum of independent Bernoulli indicators and
+    its variance is ``sum p_w(1-p_w) <= n/4``, maximised when every per-world run
+    probability sits at one half.
+
+    This matters because it is **distribution-free and arm-independent**: it
+    bounds a treatment arm's variance without that arm having been replicated,
+    which the control arm's *measured* variance cannot do. It is also tighter
+    than the chi-square upper bound on the control's SD, which can exceed a value
+    the statistic is structurally incapable of reaching.
+    """
+    return math.sqrt(n_eligible * 0.25)
+
+
 def required_replicates(sd_count: float, mde_count: float) -> float:
     """K per arm for a two-sided paired contrast at the pre-registered alpha/power.
 

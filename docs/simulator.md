@@ -784,6 +784,29 @@ Three, each surfaced by a failure rather than by inspection, all recorded becaus
 
 None of these touched a prompt, an arm, or a generator parameter.
 
+## 4n. Cycle 2 final — dated 31 August 2026. The holdout was never opened.
+
+### Step A: does the primary contrast need the treatment arms replicated?
+
+The question, asked because §4m measured variance on the **control arm only** while the primary finding is a **contrast** — Fix A's false-act count against the control's — whose power depends on both arms, and Fix A stands at n = 1.
+
+**The control's measured variance does not bound the treatment arms'.** Nothing about observing SD = 0.926 for the Cycle 1 prompt constrains what a differently-prompted arm does; a prompt that pushes per-world run probabilities toward one half would be noisier, and Fix A demonstrably shifts those probabilities (it ran 15 of 20 worlds against the control's 12). Any argument from the control's number alone would be hand-waving.
+
+**A structural bound does hold, for every arm, without replicating any of them.** `false_act` counts, among the **8** worlds whose optimal action is skip, how many the arm ran. Within a replicate those worlds are separate calls sharing no state, so the count is a sum of 8 independent Bernoulli indicators and
+
+    Var(false_act) = Σ p_w(1 - p_w) ≤ n/4 = 2,   SD ≤ √2 = 1.414
+
+for **any** arm, whatever its per-world probabilities — the maximum falling at p = ½ throughout. This is distribution-free and arm-independent, which is exactly the property the control's measured SD lacks.
+
+Two consequences:
+
+1. The chi-square 95% upper bound on the control's SD, **1.884**, exceeds a value the statistic cannot structurally reach. §4m's conservative K = 8 for false-act was therefore conservative by more than intended, and the structural bound is strictly better information.
+2. At the worst-case SD of 1.414 and the §4l MDE of 2.82 worlds, `K ≥ 2 σ² (z_α + z_β)² / MDE²` gives **K = 4** per arm.
+
+**Conclusion: the treatment arms do need replication.** The control holds K = 8; Fix A holds K = 1, below the worst-case requirement of 4. The bound removes the need to *measure* Fix A's variance before trusting the contrast, but it does not remove the need for replicates. Fix A was replicated to K = 8, matching §4m's conservative column — deliberately above the K = 4 the bound requires, and reported as such rather than presented as the minimum.
+
+The bound is a property of the frozen corpus (8 skip-optimal worlds of 20) and the metric's definition. It is not derived from any observed between-arm difference; `structural_sd_bound` and its tests carry the argument in code.
+
 ## 5. What this model does *not* claim
 
 - It is not a calibrated model of any real merchant. It is a generator of plausible retail economies whose parameter ranges are anchored where literature exists and openly labelled where it does not.
