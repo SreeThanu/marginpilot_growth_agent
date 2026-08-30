@@ -800,12 +800,90 @@ for **any** arm, whatever its per-world probabilities — the maximum falling at
 
 Two consequences:
 
-1. The chi-square 95% upper bound on the control's SD, **1.884**, exceeds a value the statistic cannot structurally reach. §4m's conservative K = 8 for false-act was therefore conservative by more than intended, and the structural bound is strictly better information.
+1. The chi-square 95% upper bound on the control's SD, **1.884**, exceeds a value the statistic cannot structurally reach. §4m's conservative K = 8 for false-act was inflated by a bound that ignored an analytic constraint — a misspecified ceiling, not merely a wide interval. Corrected to the √2 ceiling below.
 2. At the worst-case SD of 1.414 and the §4l MDE of 2.82 worlds, `K ≥ 2 σ² (z_α + z_β)² / MDE²` gives **K = 4** per arm.
 
 **Conclusion: the treatment arms do need replication.** The control holds K = 8; Fix A holds K = 1, below the worst-case requirement of 4. The bound removes the need to *measure* Fix A's variance before trusting the contrast, but it does not remove the need for replicates. Fix A was replicated to K = 8, matching §4m's conservative column — deliberately above the K = 4 the bound requires, and reported as such rather than presented as the minimum.
 
 The bound is a property of the frozen corpus (8 skip-optimal worlds of 20) and the metric's definition. It is not derived from any observed between-arm difference; `structural_sd_bound` and its tests carry the argument in code.
+
+### The required K is 4, not 8. Fix A was run to 8, and that is over-powering, not a requirement
+
+The structural bound gives SD ≤ √2 for any arm, and at §4l's MDE of 2.82 worlds that needs **K = 4** per arm under equal allocation. Fix A was specified for K = 8 before the bound was derived, and the run was carried to completion rather than truncated mid-flight.
+
+**K = 8 exceeds the K = 4 the bound requires.** It is retained because it was specified in advance and because a run already under way is not improved by stopping it early — not because the statistics call for it. Reporting 8 as the number the analysis demands would be presenting a figure as justified by a bound that no longer justifies it, which is the precise failure this project exists to expose and must not appear in the report that exposes it. **The required conservative K is 4.**
+
+### §4m's chi-square upper bound was misspecified, not merely wide
+
+§4m computed a 95% chi-square upper limit of **1.884** on the control's false-act SD. The structural maximum the statistic can attain is **1.414**. The chi-square upper therefore extended past what the quantity can structurally reach: it was misspecified at the ceiling, and it inflated the conservative K from 4 to 8 by ignoring an analytic constraint. Corrected here to the √2 ceiling.
+
+This is the founding error of this cycle, one level up — a variance estimate running past its true limit. §4k caught it in the measurement of arms; it recurred in the measurement of the measurement. Recorded as an error found, not as harmless slack.
+
+### What was actually run, and why it stopped short
+
+Fix A reached **K = 3**, not 8: two fresh replicates plus the Cycle 2 run of the identical arm configuration. The remaining passes could not be run — the Gemini project's prepayment credits were exhausted mid-replicate (`429 RESOURCE_EXHAUSTED: Your prepayment credits are depleted`). The partial replicate was discarded rather than reported with a shortened denominator, and no world was ever assigned a substituted decision.
+
+**The primary contrast is nonetheless powered.** K = 4 per arm assumes equal allocation; the control holds K = 8. At K_A = 3 against K_C = 8, the standard error of the difference under the structural ceiling is `1.414 × √(1/3 + 1/8) = 0.957`, so the detectable difference at 80% power is `2.802 × 0.957 = 2.68` worlds, inside §4l's MDE of 2.82. Nothing below leans on a replicate that was not run.
+
+### The primary contrast: Fix A's false-act rate does not differ from the control
+
+| | control (K = 8) | Fix A (K = 3) |
+|---|---|---|
+| false_act per replicate | 4, 5, 4, 5, 5, 3, 6, 4 | 5, 5, 5 |
+| mean | 4.500 | 5.000 |
+
+Difference **+0.500 worlds** (+6.2 points over the 8 skip-optimal worlds), 95% CI under the structural ceiling **[−1.377, +2.377]**. The interval contains zero and the whole interval sits inside the 14.1-point MDE.
+
+This is a **resolved null**, not an unresolved contrast: the design was powered to detect a 2.82-world difference and the observed difference is 0.5. **Fix A does not cause the agent to act where it should have skipped.**
+
+### Two further contrasts resolve, and they revise Cycle 2's verdict on Fix A
+
+Computed under the same worst-case structural SD, so the intervals are conservative:
+
+| metric | control (K = 8) | Fix A (K = 3) | difference | 95% CI | |
+|---|---|---|---|---|---|
+| run_count | 11.250 | 15.333 | **+4.083** | [+1.116, +7.050] | excludes zero |
+| false_skip | 5.250 | 1.667 | **−3.583** | [−5.882, −1.285] | excludes zero |
+| false_act | 4.500 | 5.000 | +0.500 | [−1.377, +2.377] | contains zero |
+
+An interval that excludes zero is a positive finding whether or not the design was powered for a difference of MDE size; power governs the risk of missing an effect, not the validity of one that is found.
+
+Decomposing Fix A's extra experimentation: of roughly four additional runs per replicate, **+0.5 became false acts and −3.58 were false skips avoided**. Fix A is not spending indiscriminately. It is converting decisions the control got wrong in the *skip* direction into actions, at almost no cost in wrong actions.
+
+**This revises §4k's reading.** Cycle 2 concluded Fix A was harmful, resting that on run-rate, net and regret. Run-rate is now resolved as an increase — but an increase composed almost entirely of avoided false skips, which is an improvement in decision quality, not a harm. Realized net remains directionally worse (−Rs.898,820 against −Rs.824,814) and is **not resolved**. The reconciliation is §4k's own caveat: the optimal-action definition ignores the pilot's cost, so an action can be correct against ground truth and still lose money once the pilot is paid for. **On this evidence "Fix A is harmful" is not supported.** What is supported: Fix A acts more, acts better by the ground-truth decision criterion, does not raise false acts, and has directionally worse but unresolved realized net.
+
+### Beyond feasible resolution, as pre-registered
+
+| metric | K (structural) | further passes | wall clock | verdict |
+|---|---|---|---|---|
+| realized_net | 32 (chi-sq) / — | 117 | ~25 h | beyond resolution |
+| int_shipping | 24 | 88 | ~19 h | beyond resolution |
+| run_count (for an MDE-sized effect) | 19 | 68 | ~14 h | beyond resolution for a *small* effect |
+
+At the measured 38.3 s per world-run these are 14 to 25 hours of model time, and §4l committed in advance to reporting them as beyond this evaluation's feasible resolution rather than launching an oversized run to chase significance. `int_shipping` shows a difference of −0.042 worlds — indistinguishable from zero and not a near miss. `run_count`'s large effect resolved anyway, as above; that is a property of the effect, not of the design.
+
+### The settled spine, stated with its actual support
+
+`correct_action` and `cwhd` have **zero variance in every arm measured**: the control returns 0 in all 8 replicates, Fix A returns exactly 2 in all 3. Required K = 1 for these, and it is a floor rather than an optimistic small-sample estimate — there is no variance to overcome. Under the conservative structural interval the +2.0 difference formally contains zero; empirically neither arm has varied once across 11 replicates, so a sampling explanation for it is implausible.
+
+**One correction to how this spine has been described.** The eight zero-variance replicates are of the **control**, which does not carry Fix B at all. The arms that do carry Fix B — `history_only` and `both` — were measured at **K = 1 each**, in Cycle 2. Their `cwhd = 0` is therefore supported by one replicate apiece, corroborated by their history-match rates of 6/6 and 6/8, and **not** by eight replicates. It cannot be strengthened now that credits are exhausted.
+
+With that stated honestly, the finding stands and carries the cycle: in the arms that were handed the table, the agent never once identified the best intervention on a world where the table pointed elsewhere. §4j's disqualifying condition for Fix B is met. Note too that `cwhd = 2` for Fix A, an arm shown **no** table — so the quantity is achievable on this corpus, and the Fix B arms' zero is not a corpus artefact.
+
+### The MDE is corpus-dependent and must not be carried forward
+
+§4l's MDE rides on this corpus's median promotion budget of Rs.369,000 — a **corpus property**, which drifted about 9% from Cycle 1's Rs.404,500. It is legitimate here **because the corpus was frozen before §4l was written**, so the threshold could not have been tuned to the result. It is **not corpus-invariant**. Any future cycle that changes the corpus must **re-derive** the MDE from that corpus's own budget distribution, never carry this number across. Carrying it would let a threshold float with a corpus while presenting itself as fixed.
+
+### Verdict
+
+**Cycle 2's two fixes did not produce a reasoning improvement.**
+
+- **Fix B** changed behaviour by lookup and by suppressing action. `cwhd` is 0 in both arms carrying it: it never found an answer the table did not already hold. §4j's disqualifying condition is met.
+- **Fix A** is not the harm §4k reported. Its false-act rate is a resolved null against the control; its run-rate increase is real and is composed almost entirely of avoided false skips; its realized net is directionally worse and unresolved. It moves decisions without evidence that it improves the economics.
+
+**The holdout stays sealed, and not opening it is the pre-registered outcome** — over-determined by two independent reasons: `cwhd = 0` disqualifies what opening it would measure, and the primary contrast resolved on dev worlds without it.
+
+Nothing in Cycle 2 or Cycle 3 was tuned in response to any result. `worlds_cycle2/holdout/` has never been read.
 
 ## 5. What this model does *not* claim
 

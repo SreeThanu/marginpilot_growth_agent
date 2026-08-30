@@ -57,6 +57,11 @@ TRACKED_EVIDENCE = {
     # The Cycle 3 control-arm replication behind §4m's noise floor. Enumerated
     # rather than globbed, so the replicate count stays a decision on the record.
     f"results/cycle3_noise_neither_rep{i}.json" for i in range(1, 9)
+} | {
+    # The Fix A replicates behind §4n's primary contrast. Two, not the seven
+    # planned: the run stopped when the API credits were exhausted, and the
+    # count is left visible rather than rounded up in prose.
+    f"results/cycle3_fixa_rep{i}.json" for i in range(1, 3)
 }
 
 
