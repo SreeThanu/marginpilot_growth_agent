@@ -172,6 +172,67 @@ The project's evidence is organised as pre-registered cycles, each written into 
 
 `src/payments/` is a Razorpay **test-mode** client with webhook handling, idempotency (duplicate delivery produces one attribution) and reconciliation. Live keys are never used. `src/ui/` is a Streamlit dashboard reading recorded runs; it computes no evidence.
 
-## 14. What this architecture is for
+## 14. The product layer
+
+Everything above is the research instrument. The product built on top of it asks
+one question — *should this merchant promote, experiment, or do nothing?* — and
+answers it in one of four states: `PROMOTE`, `DO_NOT_PROMOTE`,
+`RUN_EXPERIMENT_FIRST`, `INSUFFICIENT_EVIDENCE`.
+
+```
+MerchantView ─build_brief()─► MerchantBrief ─► Proposer (LLM or stub)
+  src/eval/contracts           src/agent/brief    src/agent/proposer
+                                                        │
+                                          validate_proposal()  ← fails closed
+                                                        ▼
+                                        src/agent/decision_policy.recommend()
+                                          G1 → G2 → G3 → G4 → G5
+                                                        │
+                                        RUN_EXPERIMENT_FIRST (never PROMOTE)
+                                                        ▼
+                              design_experiment_on_contribution() → evaluate()
+                                                        ▼
+                                     decide_after_experiment(): G3 → G6
+                                                        ▼
+                                                    PROMOTE
+```
+
+**The model never holds authority.** It proposes a cohort, an offer and an
+expected lift, with citations to brief fields. `src/agent/decision_policy.py`
+recomputes every rupee from the brief and may overrule it; the recommendation
+records that it did. `recommend()` cannot return `PROMOTE` under any input,
+because a model asserting experimental confidence without an experiment is not
+evidence. Only `decide_after_experiment()`, holding a real `FinalResult`, can
+open spending.
+
+**The gates**, five of them reused from `src/policy/gates.py` rather than
+reimplemented:
+
+| gate | question | mechanism |
+|---|---|---|
+| G1 | can the proposal be priced at all? | brief lookup |
+| G2 | can this campaign reach positive net contribution? | break-even lift `p0·I/(C−I)`; `None` when `C ≤ I` |
+| G3 | is the confidence sourced from a measurement? | `assess_scale()` at the horizon |
+| G4 | can the merchant afford to find out? | `assess_feasibility()`, budget, exposure |
+| G5 | does the pilot pass standing limits? | `gate_experiment()` |
+| G6 | does the measured result justify a rollout? | `gate_rollout()` + funded-rollout net > 0 |
+
+**G4 is affordability only.** Whether an experiment costs less than the
+information it buys has no committed constant in this project, so every
+experiment recommendation carries `G4_VALUE_OF_INFORMATION_UNRESOLVED` through
+to the merchant rather than resolving it by invention.
+
+**Two exclusions the product inherits from the research.** No ground truth: the
+brief is built by explicit field selection and `src/agent/` imports no
+ground-truth loader. No `SegmentView` identity: `build_brief()` reads no segment
+field, because `name`/`notes`/`behaviour_tags` are a bijective key to withheld
+archetype multipliers (`analysis/posthoc/provenance/segmentview.md`). Targeting
+is therefore limited to order-value cohorts over customer records, which is a
+weaker representation and the honest price of the exclusion.
+
+`demo/` holds three declared fixtures exercising the path end to end. They are
+labelled **DEMONSTRATION FIXTURE — NOT RESEARCH EVIDENCE** and are never scored.
+
+## 15. What this architecture is for
 
 Every boundary above exists so that one claim survives inspection: **the measured result is a property of the world and the decision rule, not of the agent's access to information it should not have.** The seal, the stack-walking ground-truth guard, the explicit-field merchant view, the hash-chained log and the closed tool surface are each cheaper than the alternative — a result nobody can check.

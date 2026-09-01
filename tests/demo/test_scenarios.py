@@ -90,13 +90,34 @@ def test_every_scenario_is_labelled_as_a_demonstration_fixture() -> None:
 
 
 def test_the_demo_imports_no_research_or_ground_truth_module() -> None:
+    """Checked on import statements, not prose.
+
+    The fixtures' docstring names ``worlds_cycle2`` in order to say they are not
+    drawn from it; that sentence is the boundary being documented, not a
+    dependency on it.
+    """
+    import ast
     from pathlib import Path
 
+    banned = (
+        "src.world.persistence", "src.world.generator", "src.eval.oracle",
+        "src.eval.replay", "src.eval.harness", "src.eval.devcorpus",
+        "src.eval.executor", "analysis",
+    )
     root = Path(__file__).resolve().parent.parent.parent
     for relative in ("demo/fixtures/__init__.py", "demo/run_scenarios.py",
                      "demo/recommendation_app.py"):
+        tree = ast.parse((root / relative).read_text(encoding="utf-8"))
+        imported: set[str] = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                imported.update(a.name for a in node.names)
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                imported.add(node.module)
+        for name in imported:
+            assert not any(name.startswith(b) for b in banned), (
+                f"{relative} imports {name}"
+            )
         source = (root / relative).read_text(encoding="utf-8")
-        for banned in ("load_ground_truth", "src.eval.oracle", "src.eval.replay",
-                       "src.eval.harness", "src.eval.devcorpus", "analysis.posthoc",
-                       "worlds_cycle2", "final_eval"):
-            assert banned not in source, f"{relative} references {banned}"
+        assert "load_ground_truth" not in source, relative
+        assert "final_eval" not in source, relative
