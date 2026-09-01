@@ -1,0 +1,66 @@
+### START Tue Sep  1 19:56:50 IST 2026
+=========== hetero.py START 19:56:50
+PER-CUSTOMER treatment effect, contribution net of incentive (10 dev worlds x 4 arms)
+  mean net per customer        : Rs.-7.88
+  SD across customers (within) : Rs.74.48
+  -> SD / |mean| ratio         : 9.4x
+  share of customers with net>0: 3.4%
+  share genuinely persuaded    : 3.78%
+
+SEGMENT-level (what a targeting policy can actually address)
+  segments per world           : 5.1
+  spread of segment mean net   : Rs.26.88
+  arms where >=1 segment net>0 : 28/40
+  arms where ALL segments net>0: 1/40
+  arms where NO segment net>0  : 12/40
+=========== hetero.py EXIT=0 19:56:53
+=========== predict.py START 19:56:53
+TRAIN worlds 30   TEST worlds 30   (20001-20020 excluded as contaminated)
+
+Correlation of each observable with TRUE individual net uplift, per world
+field                        mean |Spearman rho|   worlds p<0.05
+----------------------------------------------------------------
+tenure_days                               0.0057         2/30
+orders_last_90d                           0.0066         2/30
+days_since_last_order                     0.0073         3/30
+historical_aov_inr                        0.0398        21/30
+segment_id (ordinal)                      0.0714        28/30
+
+fraction of individual variance explainable BY SEGMENT (eta^2), TEST worlds:
+  mean eta^2 = 0.00702  -> segment explains 0.702% of individual variance
+
+FROZEN ridge: predicted vs true uplift on TEST worlds
+  mean Spearman rho = +0.0354   (sd 0.0425, n=30 worlds)
+  worlds with rho > 0: 23/30
+  t-test vs zero: t=+4.48  p=0.000
+
+FROZEN gradient boosting: predicted vs true uplift on TEST worlds
+  mean Spearman rho = +0.0365   (sd 0.0370, n=30 worlds)
+  worlds with rho > 0: 26/30
+  t-test vs zero: t=+5.31  p=0.000
+=========== predict.py EXIT=0 19:58:36
+=========== policy.py START 19:58:36
+TRAIN net by treated fraction (threshold selection, TRAIN only):
+   top   5%: Rs.      -39,747   <- frozen
+   top  10%: Rs.     -135,723
+   top  20%: Rs.     -305,465
+   top  30%: Rs.     -470,018
+   top  50%: Rs.     -772,460
+   top  75%: Rs.   -1,361,822
+   top 100%: Rs.   -2,560,856
+
+FROZEN treated fraction k* = 5%
+
+HELD-OUT worlds: 30  (20051-20080, never examined, never tuned against)
+policy                                        net contribution
+--------------------------------------------------------------
+do-nothing                                                   0
+treat everyone                                      -1,094,562
+realistic SEGMENT targeting (1 experiment)             -77,209
+FROZEN observable predictor, top 5%                    -72,983
+oracle INDIVIDUAL targeting (ceiling)                3,595,677
+
+  segment-targeting experiment cost inside the above: Rs.1,093,492
+  frozen predictor needs no per-world experiment (cost Rs.0)
+=========== policy.py EXIT=0 20:00:27
+### DONE Tue Sep  1 20:00:27 IST 2026

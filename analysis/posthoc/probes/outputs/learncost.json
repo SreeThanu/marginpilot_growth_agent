@@ -1,0 +1,134 @@
+[
+ {
+  "world": "world_20001",
+  "best": "int_bundle",
+  "avail": 13128.150689999695,
+  "horizon": 3479,
+  "spend": 64782.68529999999,
+  "diff": -51654.53461000029,
+  "feasible": true,
+  "pop": 12770,
+  "budget": 194000.0
+ },
+ {
+  "world": "world_20002",
+  "best": "int_bundle",
+  "avail": 15184.73016800092,
+  "horizon": 4257,
+  "spend": 58305.621263999965,
+  "diff": -43120.891095999046,
+  "feasible": true,
+  "pop": 27243,
+  "budget": 1166000.0
+ },
+ {
+  "world": "world_20004",
+  "best": "int_pct",
+  "avail": 50723.21522400008,
+  "horizon": 4001,
+  "spend": 104040.23805200006,
+  "diff": -53317.02282799998,
+  "feasible": true,
+  "pop": 22425,
+  "budget": 737000.0
+ },
+ {
+  "world": "world_20006",
+  "best": "int_bundle",
+  "avail": 99673.72279199985,
+  "horizon": 5253,
+  "spend": 37142.46113600002,
+  "diff": 62531.261655999835,
+  "feasible": true,
+  "pop": 13923,
+  "budget": 248000.0
+ },
+ {
+  "world": "world_20007",
+  "best": "int_bundle",
+  "avail": 74279.73592800023,
+  "horizon": 3841,
+  "spend": 48837.60344800001,
+  "diff": 25442.13248000022,
+  "feasible": true,
+  "pop": 22356,
+  "budget": 1230000.0
+ },
+ {
+  "world": "world_20011",
+  "best": "int_bundle",
+  "avail": 10821.55751599994,
+  "horizon": 2237,
+  "spend": 10434.272152000001,
+  "diff": 387.28536399993936,
+  "feasible": true,
+  "pop": 18261,
+  "budget": 109000.0
+ },
+ {
+  "world": "world_20013",
+  "best": "int_bundle",
+  "avail": 597041.2054299858,
+  "horizon": 4796,
+  "spend": 216896.6930900002,
+  "diff": 380144.5123399856,
+  "feasible": true,
+  "pop": 26342,
+  "budget": 1067000.0
+ },
+ {
+  "world": "world_20015",
+  "best": "int_bundle",
+  "avail": 78587.52208599812,
+  "horizon": 5047,
+  "spend": 46681.539982999966,
+  "diff": 31905.982102998154,
+  "feasible": true,
+  "pop": 17714,
+  "budget": 664000.0
+ },
+ {
+  "world": "world_20017",
+  "best": "int_bundle",
+  "avail": 37098.69936399955,
+  "horizon": 2778,
+  "spend": 38654.74899600004,
+  "diff": -1556.0496320004895,
+  "feasible": true,
+  "pop": 12752,
+  "budget": 180000.0
+ },
+ {
+  "world": "world_20018",
+  "best": "int_bundle",
+  "avail": 24355.562000000198,
+  "horizon": 1644,
+  "spend": 7918.336225999996,
+  "diff": 16437.225774000202,
+  "feasible": true,
+  "pop": 13223,
+  "budget": 48000.0
+ },
+ {
+  "world": "world_20019",
+  "best": "int_bundle",
+  "avail": 19990.377871999885,
+  "horizon": 1732,
+  "spend": 36275.92815999999,
+  "diff": -16285.550288000104,
+  "feasible": true,
+  "pop": 13030,
+  "budget": 356000.0
+ },
+ {
+  "world": "world_20020",
+  "best": "int_bundle",
+  "avail": 111697.28957199976,
+  "horizon": 2194,
+  "spend": 18684.256698,
+  "diff": 93013.03287399976,
+  "feasible": true,
+  "pop": 12514,
+  "budget": 153000.0
+ }
+]

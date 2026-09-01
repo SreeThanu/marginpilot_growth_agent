@@ -1,0 +1,266 @@
+[
+ {
+  "world": "world_20001",
+  "best": "int_bundle",
+  "cheapest": "int_flat",
+  "match": false,
+  "ship": false,
+  "clear": false,
+  "pointed": [],
+  "nets": {
+   "int_flat": -6682.719999999998,
+   "int_pct": -36241.30050799996,
+   "int_shipping": -12675.150000000003,
+   "int_bundle": 13128.150689999695
+  },
+  "costs": {
+   "int_flat": 20.0,
+   "int_pct": 58.2158706330462,
+   "int_shipping": 49.99999999999999,
+   "int_bundle": 77.94304954424432
+  }
+ },
+ {
+  "world": "world_20002",
+  "best": "int_bundle",
+  "cheapest": "int_bundle",
+  "match": true,
+  "ship": false,
+  "clear": false,
+  "pointed": [],
+  "nets": {
+   "int_flat": -267722.5950000001,
+   "int_pct": -654318.0588339989,
+   "int_shipping": -459651.75000000006,
+   "int_bundle": 15184.73016800092
+  },
+  "costs": {
+   "int_flat": 90.0,
+   "int_pct": 225.50782882457878,
+   "int_shipping": 160.0,
+   "int_bundle": 84.80636297676467
+  }
+ },
+ {
+  "world": "world_20004",
+  "best": "int_pct",
+  "cheapest": "int_bundle",
+  "match": false,
+  "ship": false,
+  "clear": false,
+  "pointed": [],
+  "nets": {
+   "int_flat": -213769.82500000007,
+   "int_pct": 50723.21522400008,
+   "int_shipping": -512568.99500000017,
+   "int_bundle": -52947.7119760008
+  },
+  "costs": {
+   "int_flat": 120.0,
+   "int_pct": 154.41128345971015,
+   "int_shipping": 240.0,
+   "int_bundle": 109.32769704811594
+  }
+ },
+ {
+  "world": "world_20006",
+  "best": "int_bundle",
+  "cheapest": "int_bundle",
+  "match": true,
+  "ship": true,
+  "clear": true,
+  "pointed": [
+   "int_shipping",
+   "int_flat"
+  ],
+  "nets": {
+   "int_flat": -8233.055000000004,
+   "int_pct": -23392.965088000048,
+   "int_shipping": -83373.77499999995,
+   "int_bundle": 99673.72279199985
+  },
+  "costs": {
+   "int_flat": 60.0,
+   "int_pct": 49.56334466077713,
+   "int_shipping": 60.0,
+   "int_bundle": 29.02064259742872
+  }
+ },
+ {
+  "world": "world_20007",
+  "best": "int_bundle",
+  "cheapest": "int_bundle",
+  "match": true,
+  "ship": true,
+  "clear": false,
+  "pointed": [
+   "int_shipping"
+  ],
+  "nets": {
+   "int_flat": -84868.99000000002,
+   "int_pct": -123691.50852400044,
+   "int_shipping": -40915.84,
+   "int_bundle": 74279.73592800023
+  },
+  "costs": {
+   "int_flat": 140.0,
+   "int_pct": 141.1408907487923,
+   "int_shipping": 110.0,
+   "int_bundle": 97.78388509393453
+  }
+ },
+ {
+  "world": "world_20011",
+  "best": "int_bundle",
+  "cheapest": "int_shipping",
+  "match": false,
+  "ship": false,
+  "clear": false,
+  "pointed": [],
+  "nets": {
+   "int_flat": -38743.49,
+   "int_pct": -72492.70210000008,
+   "int_shipping": -12450.570000000005,
+   "int_bundle": 10821.55751599994
+  },
+  "costs": {
+   "int_flat": 50.0,
+   "int_pct": 75.55842105717102,
+   "int_shipping": 40.0,
+   "int_bundle": 43.43209980767756
+  }
+ },
+ {
+  "world": "world_20013",
+  "best": "int_bundle",
+  "cheapest": "int_pct",
+  "match": false,
+  "ship": true,
+  "clear": false,
+  "pointed": [
+   "int_shipping"
+  ],
+  "nets": {
+   "int_flat": -259008.36500000008,
+   "int_pct": -124072.04286400019,
+   "int_shipping": -12694.624999999969,
+   "int_bundle": 597041.2054299858
+  },
+  "costs": {
+   "int_flat": 110.0,
+   "int_pct": 49.80880734241896,
+   "int_shipping": 100.0,
+   "int_bundle": 120.60623161529118
+  }
+ },
+ {
+  "world": "world_20015",
+  "best": "int_bundle",
+  "cheapest": "int_shipping",
+  "match": false,
+  "ship": false,
+  "clear": false,
+  "pointed": [],
+  "nets": {
+   "int_flat": -48579.25000000002,
+   "int_pct": -219602.05053400062,
+   "int_shipping": -33148.79000000001,
+   "int_bundle": 78587.52208599812
+  },
+  "costs": {
+   "int_flat": 50.0,
+   "int_pct": 127.22231932268261,
+   "int_shipping": 30.0,
+   "int_bundle": 44.699733816077675
+  }
+ },
+ {
+  "world": "world_20017",
+  "best": "int_bundle",
+  "cheapest": "int_bundle",
+  "match": true,
+  "ship": false,
+  "clear": false,
+  "pointed": [],
+  "nets": {
+   "int_flat": -61255.484999999986,
+   "int_pct": -83189.75601000013,
+   "int_shipping": -94915.22500000003,
+   "int_bundle": 37098.69936399955
+  },
+  "costs": {
+   "int_flat": 120.0,
+   "int_pct": 126.31525239029173,
+   "int_shipping": 120.0,
+   "int_bundle": 111.8395641257842
+  }
+ },
+ {
+  "world": "world_20018",
+  "best": "int_bundle",
+  "cheapest": "int_shipping",
+  "match": false,
+  "ship": true,
+  "clear": false,
+  "pointed": [
+   "int_shipping"
+  ],
+  "nets": {
+   "int_flat": -23089.77499999999,
+   "int_pct": -33878.788279999986,
+   "int_shipping": -16006.919999999996,
+   "int_bundle": 24355.562000000198
+  },
+  "costs": {
+   "int_flat": 70.0,
+   "int_pct": 73.19800603251909,
+   "int_shipping": 50.0,
+   "int_bundle": 61.750372668985854
+  }
+ },
+ {
+  "world": "world_20019",
+  "best": "int_bundle",
+  "cheapest": "int_flat",
+  "match": false,
+  "ship": false,
+  "clear": false,
+  "pointed": [],
+  "nets": {
+   "int_flat": -47795.84000000002,
+   "int_pct": 5781.645605000011,
+   "int_shipping": -11090.749999999998,
+   "int_bundle": 19990.377871999885
+  },
+  "costs": {
+   "int_flat": 110.0,
+   "int_pct": 160.09496354297772,
+   "int_shipping": 110.0,
+   "int_bundle": 245.73926111312352
+  }
+ },
+ {
+  "world": "world_20020",
+  "best": "int_bundle",
+  "cheapest": "int_flat",
+  "match": false,
+  "ship": true,
+  "clear": true,
+  "pointed": [
+   "int_shipping",
+   "int_flat"
+  ],
+  "nets": {
+   "int_flat": 69199.68000000001,
+   "int_pct": 35142.854550000004,
+   "int_shipping": -12275.249999999998,
+   "int_bundle": 111697.28957199976
+  },
+  "costs": {
+   "int_flat": 100.0,
+   "int_pct": 138.848405753556,
+   "int_shipping": 160.0,
+   "int_bundle": 113.85569271791593
+  }
+ }
+]

@@ -1,0 +1,205 @@
+[
+ {
+  "k": 1,
+  "total": 9794.07318999996,
+  "pilot_net": 4005.397369999983,
+  "pilot_spend": 66069.46263000002,
+  "roll_net": 5788.675819999977,
+  "tested": [
+   "int_bundle"
+  ],
+  "world": "world_20001"
+ },
+ {
+  "k": 1,
+  "total": 4384.43360000002,
+  "pilot_net": 2307.817432000001,
+  "pilot_spend": 57179.82256799999,
+  "roll_net": 2076.6161680000187,
+  "tested": [
+   "int_bundle"
+  ],
+  "world": "world_20002"
+ },
+ {
+  "k": 0,
+  "total": 0.0,
+  "pilot_net": 0.0,
+  "pilot_spend": 0.0,
+  "roll_net": 0.0,
+  "tested": [],
+  "world": "world_20003"
+ },
+ {
+  "k": 1,
+  "total": 57359.89786799999,
+  "pilot_net": 17890.643780000028,
+  "pilot_spend": 99751.62622000008,
+  "roll_net": 39469.254087999965,
+  "tested": [
+   "int_pct"
+  ],
+  "world": "world_20004"
+ },
+ {
+  "k": 0,
+  "total": 0.0,
+  "pilot_net": 0.0,
+  "pilot_spend": 0.0,
+  "roll_net": 0.0,
+  "tested": [],
+  "world": "world_20005"
+ },
+ {
+  "k": 0,
+  "total": 0.0,
+  "pilot_net": 0.0,
+  "pilot_spend": 0.0,
+  "roll_net": 0.0,
+  "tested": [],
+  "world": "world_20006"
+ },
+ {
+  "k": 1,
+  "total": 59193.86101599991,
+  "pilot_net": 21860.687392000003,
+  "pilot_spend": 48777.59260799996,
+  "roll_net": 37333.1736239999,
+  "tested": [
+   "int_bundle"
+  ],
+  "world": "world_20007"
+ },
+ {
+  "k": 0,
+  "total": 0.0,
+  "pilot_net": 0.0,
+  "pilot_spend": 0.0,
+  "roll_net": 0.0,
+  "tested": [],
+  "world": "world_20008"
+ },
+ {
+  "k": 0,
+  "total": 0.0,
+  "pilot_net": 0.0,
+  "pilot_spend": 0.0,
+  "roll_net": 0.0,
+  "tested": [],
+  "world": "world_20009"
+ },
+ {
+  "k": 0,
+  "total": 0.0,
+  "pilot_net": 0.0,
+  "pilot_spend": 0.0,
+  "roll_net": 0.0,
+  "tested": [],
+  "world": "world_20010"
+ },
+ {
+  "k": 1,
+  "total": 9523.912463999963,
+  "pilot_net": 617.0869079999999,
+  "pilot_spend": 9482.413092,
+  "roll_net": 8906.825555999963,
+  "tested": [
+   "int_bundle"
+  ],
+  "world": "world_20011"
+ },
+ {
+  "k": 0,
+  "total": 0.0,
+  "pilot_net": 0.0,
+  "pilot_spend": 0.0,
+  "roll_net": 0.0,
+  "tested": [],
+  "world": "world_20012"
+ },
+ {
+  "k": 1,
+  "total": 503010.5700499831,
+  "pilot_net": 107166.63923000134,
+  "pilot_spend": 223611.85076999982,
+  "roll_net": 395843.93081998173,
+  "tested": [
+   "int_bundle"
+  ],
+  "world": "world_20013"
+ },
+ {
+  "k": 0,
+  "total": 0.0,
+  "pilot_net": 0.0,
+  "pilot_spend": 0.0,
+  "roll_net": 0.0,
+  "tested": [],
+  "world": "world_20014"
+ },
+ {
+  "k": 1,
+  "total": 61649.663933998905,
+  "pilot_net": 24619.506314999635,
+  "pilot_spend": 48238.693684999984,
+  "roll_net": 37030.15761899927,
+  "tested": [
+   "int_bundle"
+  ],
+  "world": "world_20015"
+ },
+ {
+  "k": 0,
+  "total": 0.0,
+  "pilot_net": 0.0,
+  "pilot_spend": 0.0,
+  "roll_net": 0.0,
+  "tested": [],
+  "world": "world_20016"
+ },
+ {
+  "k": 1,
+  "total": 36568.503875999755,
+  "pilot_net": 13052.792687999967,
+  "pilot_spend": 37919.24731200003,
+  "roll_net": 23515.711187999786,
+  "tested": [
+   "int_bundle"
+  ],
+  "world": "world_20017"
+ },
+ {
+  "k": 2,
+  "total": 2587.571894999998,
+  "pilot_net": 2587.571894999998,
+  "pilot_spend": 15445.858104999998,
+  "roll_net": 0.0,
+  "tested": [
+   "int_shipping",
+   "int_bundle"
+  ],
+  "world": "world_20018"
+ },
+ {
+  "k": 1,
+  "total": 20820.23895999999,
+  "pilot_net": -1323.7931360000011,
+  "pilot_spend": 38637.513135999994,
+  "roll_net": 22144.03209599999,
+  "tested": [
+   "int_bundle"
+  ],
+  "world": "world_20019"
+ },
+ {
+  "k": 1,
+  "total": 89872.25916099998,
+  "pilot_net": 19479.910883999986,
+  "pilot_spend": 18590.059116000004,
+  "roll_net": 70392.348277,
+  "tested": [
+   "int_bundle"
+  ],
+  "world": "world_20020"
+ }
+]

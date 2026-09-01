@@ -1,0 +1,342 @@
+[
+ {
+  "world": "world_20001",
+  "honest": {
+   "k": 0,
+   "pilot_net": 0.0,
+   "pilot_spend": 0.0,
+   "roll_net": 0.0,
+   "total": 0.0
+  },
+  "clair": {
+   "k": 1,
+   "pilot_net": 2083.1459199999886,
+   "pilot_spend": 70409.4140800001,
+   "roll_net": 5788.675819999977,
+   "total": 7871.821739999965
+  }
+ },
+ {
+  "world": "world_20002",
+  "honest": {
+   "k": 2,
+   "pilot_net": -108874.30999999998,
+   "pilot_spend": 147851.41,
+   "roll_net": 0.0,
+   "total": -108874.30999999998
+  },
+  "clair": {
+   "k": 1,
+   "pilot_net": 9483.43607200007,
+   "pilot_spend": 61136.78392799997,
+   "roll_net": 2076.6161680000187,
+   "total": 11560.052240000088
+  }
+ },
+ {
+  "world": "world_20003",
+  "honest": {
+   "k": 2,
+   "pilot_net": -6187.91,
+   "pilot_spend": 16550.0,
+   "roll_net": 0.0,
+   "total": -6187.91
+  },
+  "clair": {
+   "k": 0,
+   "pilot_net": 0.0,
+   "pilot_spend": 0.0,
+   "roll_net": 0.0,
+   "total": 0.0
+  }
+ },
+ {
+  "world": "world_20004",
+  "honest": {
+   "k": 1,
+   "pilot_net": -37181.939999999995,
+   "pilot_spend": 74348.15,
+   "roll_net": 0.0,
+   "total": -37181.939999999995
+  },
+  "clair": {
+   "k": 1,
+   "pilot_net": 10009.951716,
+   "pilot_spend": 110260.98828400014,
+   "roll_net": 39469.254087999965,
+   "total": 49479.20580399997
+  }
+ },
+ {
+  "world": "world_20005",
+  "honest": {
+   "k": 1,
+   "pilot_net": -216859.87000000005,
+   "pilot_spend": 386942.79999999993,
+   "roll_net": 0.0,
+   "total": -216859.87000000005
+  },
+  "clair": {
+   "k": 0,
+   "pilot_net": 0.0,
+   "pilot_spend": 0.0,
+   "roll_net": 0.0,
+   "total": 0.0
+  }
+ },
+ {
+  "world": "world_20006",
+  "honest": {
+   "k": 0,
+   "pilot_net": 0.0,
+   "pilot_spend": 0.0,
+   "roll_net": 0.0,
+   "total": 0.0
+  },
+  "clair": {
+   "k": 0,
+   "pilot_net": 0.0,
+   "pilot_spend": 0.0,
+   "roll_net": 0.0,
+   "total": 0.0
+  }
+ },
+ {
+  "world": "world_20007",
+  "honest": {
+   "k": 1,
+   "pilot_net": -10246.159999999998,
+   "pilot_spend": 72800.0,
+   "roll_net": 0.0,
+   "total": -10246.159999999998
+  },
+  "clair": {
+   "k": 1,
+   "pilot_net": 17372.127960000005,
+   "pilot_spend": 51154.152039999986,
+   "roll_net": 37333.1736239999,
+   "total": 54705.301583999906
+  }
+ },
+ {
+  "world": "world_20008",
+  "honest": {
+   "k": 1,
+   "pilot_net": -45404.98000000001,
+   "pilot_spend": 67276.45999999999,
+   "roll_net": 0.0,
+   "total": -45404.98000000001
+  },
+  "clair": {
+   "k": 0,
+   "pilot_net": 0.0,
+   "pilot_spend": 0.0,
+   "roll_net": 0.0,
+   "total": 0.0
+  }
+ },
+ {
+  "world": "world_20009",
+  "honest": {
+   "k": 2,
+   "pilot_net": -68127.18,
+   "pilot_spend": 92940.0,
+   "roll_net": 0.0,
+   "total": -68127.18
+  },
+  "clair": {
+   "k": 0,
+   "pilot_net": 0.0,
+   "pilot_spend": 0.0,
+   "roll_net": 0.0,
+   "total": 0.0
+  }
+ },
+ {
+  "world": "world_20010",
+  "honest": {
+   "k": 1,
+   "pilot_net": -13349.989999999994,
+   "pilot_spend": 32400.0,
+   "roll_net": 0.0,
+   "total": -13349.989999999994
+  },
+  "clair": {
+   "k": 0,
+   "pilot_net": 0.0,
+   "pilot_spend": 0.0,
+   "roll_net": 0.0,
+   "total": 0.0
+  }
+ },
+ {
+  "world": "world_20011",
+  "honest": {
+   "k": 2,
+   "pilot_net": -4387.520000000001,
+   "pilot_spend": 17330.0,
+   "roll_net": 0.0,
+   "total": -4387.520000000001
+  },
+  "clair": {
+   "k": 1,
+   "pilot_net": 139.90614400000095,
+   "pilot_spend": 8648.873856000002,
+   "roll_net": 8906.825555999963,
+   "total": 9046.731699999964
+  }
+ },
+ {
+  "world": "world_20012",
+  "honest": {
+   "k": 3,
+   "pilot_net": -53241.38459,
+   "pilot_spend": 96925.89459000001,
+   "roll_net": 0.0,
+   "total": -53241.38459
+  },
+  "clair": {
+   "k": 0,
+   "pilot_net": 0.0,
+   "pilot_spend": 0.0,
+   "roll_net": 0.0,
+   "total": 0.0
+  }
+ },
+ {
+  "world": "world_20013",
+  "honest": {
+   "k": 1,
+   "pilot_net": -58316.134999999995,
+   "pilot_spend": 163964.78499999997,
+   "roll_net": 0.0,
+   "total": -58316.134999999995
+  },
+  "clair": {
+   "k": 1,
+   "pilot_net": 84539.0318900014,
+   "pilot_spend": 225215.40811000016,
+   "roll_net": 395843.93081998173,
+   "total": 480382.9627099831
+  }
+ },
+ {
+  "world": "world_20014",
+  "honest": {
+   "k": 0,
+   "pilot_net": 0.0,
+   "pilot_spend": 0.0,
+   "roll_net": 0.0,
+   "total": 0.0
+  },
+  "clair": {
+   "k": 0,
+   "pilot_net": 0.0,
+   "pilot_spend": 0.0,
+   "roll_net": 0.0,
+   "total": 0.0
+  }
+ },
+ {
+  "world": "world_20015",
+  "honest": {
+   "k": 1,
+   "pilot_net": -16448.600000000002,
+   "pilot_spend": 48300.0,
+   "roll_net": 0.0,
+   "total": -16448.600000000002
+  },
+  "clair": {
+   "k": 1,
+   "pilot_net": 20758.161840999714,
+   "pilot_spend": 46929.67815899997,
+   "roll_net": 37030.15761899927,
+   "total": 57788.31945999898
+  }
+ },
+ {
+  "world": "world_20016",
+  "honest": {
+   "k": 1,
+   "pilot_net": -19258.339999999997,
+   "pilot_spend": 150042.09,
+   "roll_net": 0.0,
+   "total": -19258.339999999997
+  },
+  "clair": {
+   "k": 0,
+   "pilot_net": 0.0,
+   "pilot_spend": 0.0,
+   "roll_net": 0.0,
+   "total": 0.0
+  }
+ },
+ {
+  "world": "world_20017",
+  "honest": {
+   "k": 1,
+   "pilot_net": -11020.460000000003,
+   "pilot_spend": 39840.0,
+   "roll_net": 0.0,
+   "total": -11020.460000000003
+  },
+  "clair": {
+   "k": 1,
+   "pilot_net": 3384.000680000004,
+   "pilot_spend": 37444.87932000003,
+   "roll_net": 23515.711187999786,
+   "total": 26899.71186799979
+  }
+ },
+ {
+  "world": "world_20018",
+  "honest": {
+   "k": 2,
+   "pilot_net": -5019.660000000001,
+   "pilot_spend": 15680.0,
+   "roll_net": 0.0,
+   "total": -5019.660000000001
+  },
+  "clair": {
+   "k": 1,
+   "pilot_net": 3749.756324999997,
+   "pilot_spend": 8444.423675,
+   "roll_net": 0.0,
+   "total": 3749.756324999997
+  }
+ },
+ {
+  "world": "world_20019",
+  "honest": {
+   "k": 1,
+   "pilot_net": -6132.290000000001,
+   "pilot_spend": 13750.0,
+   "roll_net": 0.0,
+   "total": -6132.290000000001
+  },
+  "clair": {
+   "k": 1,
+   "pilot_net": -4425.660800000001,
+   "pilot_spend": 37455.63079999999,
+   "roll_net": 22144.03209599999,
+   "total": 17718.37129599999
+  }
+ },
+ {
+  "world": "world_20020",
+  "honest": {
+   "k": 1,
+   "pilot_net": 14334.06,
+   "pilot_spend": 18400.0,
+   "roll_net": 50284.05000000001,
+   "total": 64618.11000000001
+  },
+  "clair": {
+   "k": 1,
+   "pilot_net": 24962.920534999987,
+   "pilot_spend": 23082.789465000013,
+   "roll_net": 70392.348277,
+   "total": 95355.26881199998
+  }
+ }
+]
