@@ -17,12 +17,17 @@ features.
 from __future__ import annotations
 
 import re
-from dataclasses import replace
+from dataclasses import fields, replace
 from pathlib import Path
 
 import pytest
 
-from src.agent.brief import BriefBoundaryError, build_brief, brief_field_names
+from src.agent.brief import (
+    BriefBoundaryError,
+    HistoryBrief,
+    build_brief,
+    brief_field_names,
+)
 from src.eval.contracts import merchant_view
 from src.world.generator import generate_world
 
@@ -99,6 +104,61 @@ def test_only_campaign_history_moves_when_the_hidden_latents_move(world) -> None
 
     moved = {k for k in baseline if baseline[k] != perturbed[k]}
     assert moved <= {"history"}, f"a hidden response parameter reached: {moved}"
+
+
+#: Every field ``HistoryBrief`` is permitted to carry. An **allowlist**, not a
+#: denylist, and the distinction is the whole point.
+#:
+#: The sentinel above exempts ``history`` from the no-movement rule, because a
+#: measured past campaign is legitimately downstream of the response model. That
+#: exemption is only as narrow as the shape of what ``history`` contains — and
+#: until this test existed, that shape was guaranteed by nothing but the current
+#: dataclass definition.
+#:
+#: A denylist of suspicious names would not do. ``SegmentView.name`` is the
+#: precedent: an innocuous, legitimate-sounding field that turned out to be a
+#: bijective key to withheld response multipliers. A latent proxy added here
+#: under a plausible name — ``response_index``, ``category_score`` — would pass
+#: any name-based filter. So the rule is equality against an enumerated set:
+#: anything not on the list fails, whatever it is called.
+#:
+#: Adding a field is not forbidden. It requires editing this list, which is a
+#: deliberate act a reviewer can see in a diff.
+ALLOWED_REALIZED_HISTORY_FIELDS = frozenset(
+    {
+        # which past campaign this describes
+        "intervention_id",
+        # how large it was — the denominator behind the estimate
+        "treated_customers",
+        # realized orders observed in the treated arm
+        "orders",
+        # realized incremental net per treated customer, measured against a
+        # control arm the merchant held back at the time
+        "net_per_treated_customer_inr",
+        # the honest width of that estimate
+        "standard_error_inr",
+    }
+)
+
+
+def test_the_history_exemption_is_bounded_by_an_explicit_allowlist() -> None:
+    """Fail closed on any field the allowlist does not name.
+
+    Equality, not containment. A superset fails (a field was added), a subset
+    fails (one was removed or renamed), and a same-size swap fails. The test
+    cannot be satisfied by a field that merely *looks* legitimate.
+    """
+    actual = {field.name for field in fields(HistoryBrief)}
+
+    assert actual == ALLOWED_REALIZED_HISTORY_FIELDS, (
+        "HistoryBrief's shape changed, and it is the one field the sentinel "
+        "exempts from the hidden-latent check.\n"
+        f"  unexpected fields: {sorted(actual - ALLOWED_REALIZED_HISTORY_FIELDS)}\n"
+        f"  missing fields:    {sorted(ALLOWED_REALIZED_HISTORY_FIELDS - actual)}\n"
+        "Every field here must be a realized outcome of a past campaign, never "
+        "a latent response parameter or a proxy for one. If the addition is "
+        "legitimate, add it to ALLOWED_REALIZED_HISTORY_FIELDS deliberately."
+    )
 
 
 def test_the_sentinel_would_notice_a_latent_reaching_the_brief(world) -> None:

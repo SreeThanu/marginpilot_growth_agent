@@ -233,6 +233,38 @@ weaker representation and the honest price of the exclusion.
 `demo/` holds three declared fixtures exercising the path end to end. They are
 labelled **DEMONSTRATION FIXTURE — NOT RESEARCH EVIDENCE** and are never scored.
 
+### The boundary tests, and a correction to the record
+
+The strongest guard on the brief is a **sentinel**: perturb every hidden response
+latent, and assert the brief does not move. It exempts exactly one field —
+`history` — because `InterventionHistory` is a *measured past campaign* and is
+downstream of the response model by construction.
+
+A forensic audit established that the exemption is safe. Sweeping
+`shipping_affinity` across its full range at a fixed world gives 18 affinities →
+**10 distinct histories**, with five collision groups; holding the affinity fixed
+and varying only the history's RNG stream gives **12 of 12 distinct histories**,
+with an empirical SD of 6.21 against the reported standard error of ~7.06. The
+map is many-to-one forward and one-to-many backward, so `InterventionHistory` is
+a noisy realized measurement, not an encoding. Contrast `SegmentView.name`: seven
+names onto seven multiplier quadruples, zero collisions, no noise — an exact
+lookup, which is why SCI-1 keeps it out.
+
+That exemption is now bounded by an **allowlist** in
+`tests/agent/test_brief_boundary.py`: `HistoryBrief`'s field set must equal an
+enumerated set of realized-history quantities. A denylist would not do — the
+`SegmentView` precedent is a legitimate-sounding field carrying hidden
+structure, and a latent proxy named `response_index` would pass any name filter.
+Equality fails closed on an addition, a rename, a removal, or a same-size swap.
+
+**Correction.** The implementation report stated that *four* boundary tests were
+sharpened during implementation. That count was wrong. The diff between
+`08cd977` and `57086e4` contains **five changed tests and one added test**; the
+omitted item was the segment test, which moved from substring-matching archetype
+text to poison-injection plus a structural assertion — a **strengthening**, not a
+weakening. The forensic audit accounted for all six. The original miscount is
+recorded here rather than quietly amended.
+
 ## 15. What this architecture is for
 
 Every boundary above exists so that one claim survives inspection: **the measured result is a property of the world and the decision rule, not of the agent's access to information it should not have.** The seal, the stack-walking ground-truth guard, the explicit-field merchant view, the hash-chained log and the closed tool surface are each cheaper than the alternative — a result nobody can check.
