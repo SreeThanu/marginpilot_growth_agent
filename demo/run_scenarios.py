@@ -51,6 +51,35 @@ from src.experiment.registry import (
 SCENARIOS_WITH_EXPERIMENT = frozenset({"C"})
 
 
+def _comparison_payload(result: Any) -> dict[str, Any] | None:
+    """The evaluator's ``ArmComparison``, flattened for serialization.
+
+    A read, not a calculation. Every field and every property below is owned by
+    ``src/experiment/evaluator.py``; this function names them and nothing else,
+    so a view can show the interval and the posterior without a second
+    implementation of either.
+    """
+    comparisons = getattr(result, "comparisons", ())
+    if not comparisons:
+        return None
+    c = comparisons[0]
+    return {
+        "conversion_control": c.conversion_control,
+        "conversion_treatment": c.conversion_treatment,
+        "absolute_difference": c.absolute_difference,
+        "difference_ci_low": c.difference_ci_low,
+        "difference_ci_high": c.difference_ci_high,
+        "p_value": c.p_value,
+        "net_contribution_inr": c.net_contribution_inr,
+        "contribution_ci_low": c.contribution_ci_low,
+        "contribution_ci_high": c.contribution_ci_high,
+        "contribution_se_inr": c.contribution_se_inr,
+        "net_per_treated_customer_inr": c.net_per_treated_customer_inr,
+        "probability_net_positive": c.probability_net_positive,
+        "scale_eligible": c.scale_eligible,
+    }
+
+
 def run_scenario(spec: FixtureSpec, *, run_experiment: bool | None = None) -> dict[str, Any]:
     """Decide for one fixture, running the experiment path when it is required."""
     if run_experiment is None:
@@ -127,6 +156,11 @@ def run_scenario(spec: FixtureSpec, *, run_experiment: bool | None = None) -> di
         "verdict_eligible": result.verdict_eligible,
         "pilot_spend_inr": round(pilot_spend, 2),
         "depth": intervention.depth_at_observed_aov,
+        # The evaluator's own comparison, read verbatim. Nothing is recomputed
+        # here: a renderer that wants the interval, the p-value or the posterior
+        # must be given the numbers the engine produced, not its own arithmetic
+        # over the arm means.
+        "comparison": _comparison_payload(result),
     }
 
     final = decide_after_experiment(

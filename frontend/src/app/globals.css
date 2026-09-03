@@ -1,0 +1,141 @@
+@import "tailwindcss";
+
+/* --------------------------------------------------------------------------
+   MarginPilot — the ledger palette.
+
+   Four semantic colours and nothing else. Contribution earned is viridian,
+   incentive spent is graphite (spending is not a fault, only an entry), a
+   deficit is brick, and an open question is bronze. Every one of them is
+   paired with a word on screen: a reader who cannot separate the hues still
+   reads the decision.
+   -------------------------------------------------------------------------- */
+
+:root {
+  color-scheme: light;
+
+  --ground: #f6f6f3;
+  --surface: #ffffff;
+  --surface-sunk: #f1f1ed;
+  --ink: #101519;
+  --slate: #59636c;
+  --slate-soft: #8a939b;
+  --rule: #e0e2dd;
+  --rule-strong: #c9ccc5;
+
+  --earn: #1b6b4e;
+  --earn-soft: #e6f0eb;
+  --spend: #626d76;
+  --spend-soft: #eceeef;
+  --deficit: #a0392c;
+  --deficit-soft: #f6e9e7;
+  --open: #85641c;
+  --open-soft: #f5eedd;
+}
+
+@theme inline {
+  --color-ground: var(--ground);
+  --color-surface: var(--surface);
+  --color-sunk: var(--surface-sunk);
+  --color-ink: var(--ink);
+  --color-slate: var(--slate);
+  --color-slate-soft: var(--slate-soft);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-earn: var(--earn);
+  --color-earn-soft: var(--earn-soft);
+  --color-spend: var(--spend);
+  --color-spend-soft: var(--spend-soft);
+  --color-deficit: var(--deficit);
+  --color-deficit-soft: var(--deficit-soft);
+  --color-open: var(--open);
+  --color-open-soft: var(--open-soft);
+
+  --font-sans: var(--font-schibsted), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", monospace;
+}
+
+html {
+  background: var(--ground);
+}
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Figures are read down a column, so they are always tabular and never
+   re-flow as their digits change. */
+.figure {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.02em;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--slate-soft);
+}
+
+/* Focus is visible everywhere, in the ink rather than the browser's blue, so
+   keyboard use looks like part of the design instead of an escape hatch. */
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+::selection {
+  background: var(--earn-soft);
+  color: var(--ink);
+}
+
+@keyframes mp-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes mp-wipe {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.mp-rise {
+  animation: mp-rise 420ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.mp-wipe {
+  animation: mp-wipe 620ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.mp-extent {
+  transition: width 620ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    left 620ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
