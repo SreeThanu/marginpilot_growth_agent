@@ -35,6 +35,25 @@ construction, and only `decide_after_experiment()` — reading a real
 `FinalResult` through `assess_scale()` and `gate_rollout()` — can approve a
 rollout.
 
+## What the Streamlit app shows
+
+Five panels behind one decision. Everything on them is either executed live or
+read from a committed artifact — nothing is computed here, and no pass/fail
+label is written into demo code.
+
+| panel | what it does |
+|---|---|
+| **Why** | diagnosis, rationale, break-even lift, evidence basis, gates passed, binding constraints, citations, assumptions, and the unresolved value-of-information question |
+| **Experiment** | the pilot's arms as measured, and which gates the result had to clear |
+| **Audit** | writes *this* recommendation into `src/audit/log.py` — unmodified `append()`, same `Stage` values, same SHA-256 chain — then renders `verify()` and `render_chain()`. The audited payload is the same dict object the page displays, and the page says so |
+| **Adversarial** | the seven scenarios in `src/eval/adversarial.py` run **live**; ADV-1…ADV-12 are **test-suite outcomes**, produced by running the existing tests and reading pytest's verdict |
+| **Reproducibility** | fixture fingerprint against `SCENARIO_C.lock`, committed seeds, generator version, seal status, research checkpoint — plus the recorded holdout run read at runtime from `data/holdout_results.json` |
+
+The sidebar also carries a **Break it** control: pick a malformed proposal —
+empty, uncited, ground-truth-injected, segment-identity-bearing, or an
+impossible lift — and watch the existing `recommend_from_raw` refuse it and
+return `INSUFFICIENT_EVIDENCE`. No validation logic lives in the demo.
+
 ## What the model is shown, and what it is not
 
 **Shown:** merchant aggregates, catalogue, the offers and their per-order costs,
