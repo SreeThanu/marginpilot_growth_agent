@@ -1,40 +1,39 @@
 /**
  * Overview — the decision workspace.
  *
- * One question, answered at the top of the screen, with the arithmetic that
- * settled it directly underneath. Everything that supports the answer — the
- * gate ladder, the assistant's proposal, the experiment, the audit chain — sits
- * below it or one click away. A judge who reads only the first screenful should
- * still leave knowing what was decided and what it earns.
+ * The verdict is the first thing on the page, on the dark band, with the
+ * arithmetic that settled it in the same view. Merchant metadata comes after
+ * the answer rather than before it: a reader who never scrolls should still
+ * leave knowing what was decided, what it earns, and that a deterministic layer
+ * — not the model — decided it.
  */
 
 "use client";
 
-import { ContributionRule } from "@/components/ContributionRule";
+import Link from "next/link";
+
 import {
-  DecisionHero,
+  ControlPath,
+  DecisionBand,
   GateLadder,
-  ProposalToPolicy,
-  WhyPanel,
+  Reasoning,
 } from "@/components/Decision";
 import {
   AgentProposal,
-  HistoryNote,
-  MerchantStrip,
+  MerchantContext,
   NextAction,
+  PriorEvidence,
 } from "@/components/Merchant";
 import { useScenarioId, withScenario } from "@/components/ScenarioContext";
 import { FixtureNotice } from "@/components/TopRail";
 import {
   ErrorState,
-  Figure,
   Loading,
-  Panel,
-  SectionHeading,
+  Rule,
+  SectionHead,
+  Shell,
 } from "@/components/ui";
 import { useScenario } from "@/lib/api";
-import { rupees } from "@/lib/format";
-import Link from "next/link";
 
 export default function OverviewPage() {
   const { scenario } = useScenarioId();
@@ -44,163 +43,111 @@ export default function OverviewPage() {
   if (loading || !data) return <Loading label="Deciding" />;
 
   const final = data.final;
-  const measured = final.evidence_basis === "EXPERIMENT";
   const changedItsMind = data.initial.decision !== final.decision;
 
   return (
-    <div className="space-y-12">
-      <FixtureNotice label={data.label} />
+    <>
+      {/* -- the verdict, continuous with the chrome above it --------------- */}
+      <DecisionBand recommendation={final} scenarioKey={data.scenario} />
 
-      <MerchantStrip
-        title={data.title}
-        story={data.story}
-        merchant={data.merchant}
-        intervention={data.intervention}
-      />
+      <Shell className="pt-5">
+        <FixtureNotice label={data.label} />
+      </Shell>
 
-      {/* ---- The decision, and the arithmetic behind it ------------------- */}
-      <Panel className="overflow-hidden">
-        <div className="grid gap-10 p-7 lg:grid-cols-[1.15fr_1fr] lg:p-9">
-          <DecisionHero recommendation={final} />
-
-          <div className="flex flex-col justify-center gap-7 border-t border-rule pt-8 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-9">
-            <div className="grid grid-cols-2 gap-6">
-              <Figure
-                label="Incremental contribution"
-                value={rupees(final.expected_incremental_contribution_inr)}
-                tone="earn"
-              />
-              <Figure
-                label="Incentive cost"
-                value={rupees(final.expected_incentive_cost_inr)}
-                tone="spend"
-              />
-            </div>
-            <div className="border-t border-rule pt-6">
-              <Figure
-                label="Net contribution"
-                value={rupees(final.expected_net_contribution_inr)}
-                tone={
-                  final.expected_net_contribution_inr < 0 ? "deficit" : "earn"
-                }
-                emphasis
-                footnote={
-                  measured
-                    ? "Projected from the measured pilot across the rollout the budget can fund."
-                    : "Expected at the lift the assistant proposed. Not a measurement."
-                }
-              />
-            </div>
-          </div>
+      {/* -- the architecture, made literal --------------------------------- */}
+      <Shell className="pt-16">
+        <SectionHead
+          eyebrow="Control path"
+          title="The assistant proposes. The policy disposes."
+          note="Four stations, in order. Nothing downstream can be reached around, and no station can be entered by the model."
+        />
+        <div className="mt-9">
+          <ControlPath recommendation={final} experiment={data.experiment} />
         </div>
 
-        <div className="border-t border-rule bg-sunk/40 px-7 pt-6 pb-7 lg:px-9">
-          <SectionHeading
-            eyebrow="The subtraction"
-            title="What the promotion earns, and what the incentive takes back"
-          />
-          <ContributionRule
-            contributionInr={final.expected_incremental_contribution_inr}
-            incentiveInr={final.expected_incentive_cost_inr}
-            netInr={final.expected_net_contribution_inr}
-            basisNote={
-              measured
-                ? "measured, then projected to the funded rollout"
-                : "expected at the proposed lift"
-            }
+        {changedItsMind ? (
+          <div className="mt-10 flex flex-wrap items-center justify-between gap-x-10 gap-y-4 border-l-2 border-earn pl-5">
+            <p className="t-small max-w-[62ch] text-ink">
+              This merchant did not start here. Before the experiment ran the
+              answer was{" "}
+              <span className="font-medium text-open">
+                run experiment first
+              </span>
+              . A randomised pilot changed the evidence, and only then did the
+              rollout gate reopen the question.
+            </p>
+            <Link
+              href={withScenario("/experiment", scenario)}
+              className="t-small shrink-0 font-medium text-ink underline underline-offset-4 hover:no-underline"
+            >
+              See the progression →
+            </Link>
+          </div>
+        ) : null}
+      </Shell>
+
+      {/* -- who this is about ---------------------------------------------- */}
+      <Shell className="pt-16">
+        <Rule />
+        <div className="pt-10">
+          <MerchantContext
+            title={data.title}
+            story={data.story}
+            merchant={data.merchant}
+            intervention={data.intervention}
           />
         </div>
-      </Panel>
+      </Shell>
 
-      {/* ---- How the decision got here ----------------------------------- */}
-      {changedItsMind ? (
-        <Panel className="flex flex-wrap items-center justify-between gap-5 px-5 py-5">
-          <p className="max-w-[62ch] text-[0.92rem] leading-relaxed text-ink">
-            This merchant did not start here. Before the experiment ran, the
-            answer was{" "}
-            <span className="font-medium text-open">
-              run experiment first
-            </span>
-            . A randomised pilot changed the evidence, and the rollout gate
-            reopened the question.
-          </p>
-          <Link
-            href={withScenario("/experiment", scenario)}
-            className="rounded-[2px] border border-rule-strong px-4 py-2 text-[0.85rem] font-medium text-ink transition-colors hover:bg-sunk"
-          >
-            See the progression →
-          </Link>
-        </Panel>
-      ) : null}
-
-      {/* ---- Why --------------------------------------------------------- */}
-      <section>
-        <SectionHeading
-          eyebrow="Why"
-          title="Why MarginPilot recommends this"
-          note="Written by the policy layer at the moment it decided. Nothing on this page is a summary produced after the fact."
-        />
-        <Panel className="p-7">
-          <WhyPanel recommendation={final} />
-        </Panel>
-      </section>
-
-      {/* ---- The gates --------------------------------------------------- */}
-      <section>
-        <SectionHeading
-          eyebrow="Policy"
-          title="The gates this decision passed through"
-          note="Six ordered gates. The first that fires returns, and none of them can be reached around."
-        />
-        <GateLadder recommendation={final} />
-      </section>
-
-      {/* ---- Model to policy --------------------------------------------- */}
-      <section>
-        <SectionHeading
-          eyebrow="Authority"
-          title="AI suggests. MarginPilot decides."
-          note="The assistant may propose an intervention, a cohort and a hypothesis, and may request an outcome. The request is recorded, priced by the deterministic layer, and then either upheld or overruled."
-        />
-        <div className="space-y-5">
-          <ProposalToPolicy recommendation={final} />
-          <div className="grid gap-5 lg:grid-cols-2">
-            <AgentProposal
-              envelope={data.proposal}
-              merchant={data.merchant}
-            />
-            <Panel className="p-5">
-              <SectionHeading
-                eyebrow="Prior evidence"
-                title="What was known before"
-              />
-              {data.history ? (
-                <HistoryNote
-                  treated={data.history.treated_customers}
-                  netPerCustomer={data.history.net_per_treated_customer_inr}
-                  standardError={data.history.standard_error_inr}
-                />
-              ) : (
-                <p className="text-[0.86rem] leading-relaxed text-slate-soft italic">
-                  No prior campaign is recorded for this offer.
-                </p>
-              )}
-              <p className="mt-4 text-[0.84rem] leading-relaxed text-slate">
-                History and priors are enough to justify asking a question. Only
-                a measurement on this merchant can authorise spending, which is
-                why the evidence basis is carried on every screen.
-              </p>
-            </Panel>
+      {/* -- why ------------------------------------------------------------ */}
+      <Shell className="pt-16">
+        <Rule />
+        <div className="pt-10">
+          <SectionHead
+            eyebrow="Reasoning"
+            title="Why the policy answered this way"
+            note="Written by the policy layer at the moment it decided, and rendered verbatim. Nothing here is a summary produced after the fact."
+          />
+          <div className="mt-9">
+            <Reasoning recommendation={final} />
           </div>
         </div>
-      </section>
+      </Shell>
 
-      <NextAction
-        decision={final.decision}
-        scenario={scenario}
-        hasExperiment={data.experiment !== null}
-        recommendation={final}
-      />
-    </div>
+      {/* -- the gates ------------------------------------------------------ */}
+      <Shell className="pt-16">
+        <Rule />
+        <div className="grid gap-x-16 gap-y-10 pt-10 lg:grid-cols-[0.85fr_1.15fr]">
+          <SectionHead
+            eyebrow="Gates"
+            title="Six ordered checks"
+            note="The first that fires returns. Spending requires a measurement; declining requires none."
+          />
+          <GateLadder recommendation={final} />
+        </div>
+      </Shell>
+
+      {/* -- the model's contribution --------------------------------------- */}
+      <Shell className="pt-16">
+        <Rule />
+        <div className="grid gap-x-16 gap-y-12 pt-10 lg:grid-cols-[1.15fr_0.85fr]">
+          <AgentProposal envelope={data.proposal} merchant={data.merchant} />
+          <PriorEvidence history={data.history} />
+        </div>
+      </Shell>
+
+      {/* -- next ----------------------------------------------------------- */}
+      <Shell className="pt-16">
+        <Rule />
+        <div className="pt-10">
+          <NextAction
+            decision={final.decision}
+            scenario={scenario}
+            hasExperiment={data.experiment !== null}
+            recommendation={final}
+          />
+        </div>
+      </Shell>
+    </>
   );
 }

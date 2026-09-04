@@ -1,9 +1,9 @@
 /**
  * Which merchant the whole application is looking at.
  *
- * The URL is the state, not a copy of it. `?s=C` is read through
- * `useSyncExternalStore`, so a deep link, a back button and the switch in the
- * chrome all move the app the same way, and every screen stays on the same
+ * The URL is the state, not a copy of it. `?s=A` is read through
+ * `useSyncExternalStore`, so a deep link, the back button and the comparator in
+ * the chrome all move the app the same way, and every screen stays on the same
  * merchant as you navigate between them.
  */
 
@@ -14,8 +14,15 @@ import { useCallback, useSyncExternalStore } from "react";
 const VALID = ["A", "B", "C"] as const;
 export type ScenarioId = (typeof VALID)[number];
 
-/** C is the scenario that carries the full loop, so it is where a visitor lands. */
-const DEFAULT_SCENARIO: ScenarioId = "C";
+/**
+ * A is the landing state, and the choice is deliberate.
+ *
+ * It is the merchant where the assistant asked to promote and the policy said
+ * no — the one moment that shows what this product is for. C ends the story;
+ * it is a poor place to begin it, because there the model and the policy agree
+ * and the machinery has nothing visible to do.
+ */
+const DEFAULT_SCENARIO: ScenarioId = "A";
 
 /** Fired after a programmatic URL change, which emits no popstate of its own. */
 const CHANGED = "marginpilot:scenario";
@@ -63,17 +70,7 @@ export function useScenarioId(): ScenarioState {
   return { scenario, setScenario };
 }
 
-/**
- * Kept as a component so the provider stays a single place to change if the
- * merchant selection ever needs to live somewhere other than the URL.
- */
-export function ScenarioProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return <>{children}</>;
-}
+export const SCENARIO_IDS: readonly ScenarioId[] = VALID;
 
 /** Build an in-app href that keeps the current merchant selected. */
 export function withScenario(path: string, scenario: ScenarioId): string {

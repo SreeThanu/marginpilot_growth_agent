@@ -1,10 +1,14 @@
 /**
- * The application chrome: identity, where you are, and which merchant.
+ * The system chrome — identity, thesis, section, and the state comparator.
  *
- * The merchant switch sits in the chrome rather than on the page because it
- * changes what every screen is about. It shows each merchant's standing
- * decision under its name, so switching is a considered move between three
- * known situations, not a blind radio button.
+ * It is dark for the same reason the decision band is dark: this strip belongs
+ * to the machine. On Overview it runs straight into the verdict below it with
+ * no seam, so the top of the page reads as one continuous instrument.
+ *
+ * The comparator is not a tab bar. It shows all three merchants with their
+ * standing decision *and* their net at once, because the product's argument is
+ * that these are three legitimate outcomes of the same policy — and a control
+ * that shows them side by side makes that argument before anyone clicks.
  */
 
 "use client";
@@ -13,30 +17,37 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useScenarioIndex } from "@/lib/api";
-import { DECISION_LABEL, DECISION_TONE } from "@/lib/format";
-import { useScenarioId, withScenario, type ScenarioId } from "./ScenarioContext";
+import { DECISION_LABEL, DECISION_TONE, rupees } from "@/lib/format";
+import {
+  SCENARIO_IDS,
+  useScenarioId,
+  withScenario,
+} from "./ScenarioContext";
 import { toneText } from "./ui";
 
 const NAV = [
   { href: "/", label: "Overview" },
   { href: "/experiment", label: "Experiment" },
-  { href: "/trust", label: "Trust & safety" },
+  { href: "/trust", label: "Trust" },
   { href: "/audit", label: "Audit" },
 ] as const;
 
-function ScenarioSwitch() {
+function Comparator() {
   const { scenario, setScenario } = useScenarioId();
   const { data, error } = useScenarioIndex();
-
   const summaries = data?.scenarios ?? [];
 
   return (
     <div
       role="radiogroup"
-      aria-label="Merchant"
-      className="flex w-full items-stretch overflow-hidden rounded-[3px] border border-rule-strong bg-surface sm:w-auto"
+      aria-label="Merchant state"
+      className="grid grid-cols-1 sm:grid-cols-[minmax(0,0.9fr)_repeat(3,minmax(0,1fr))]"
     >
-      {(["A", "B", "C"] as ScenarioId[]).map((id) => {
+      <p className="eyebrow eyebrow-dark self-center py-3 sm:py-0">
+        Three merchants, one policy
+      </p>
+
+      {SCENARIO_IDS.map((id) => {
         const summary = summaries.find((s) => s.scenario === id);
         const active = scenario === id;
         return (
@@ -46,31 +57,44 @@ function ScenarioSwitch() {
             role="radio"
             aria-checked={active}
             onClick={() => setScenario(id)}
-            className={`group relative min-w-0 flex-1 border-r border-rule px-3.5 py-2 text-left transition-colors last:border-r-0 sm:min-w-[9.5rem] sm:flex-none ${
-              active ? "bg-ink" : "bg-surface hover:bg-sunk"
+            className={`group relative border-l border-band-rule px-4 py-3 text-left transition-colors ${
+              active ? "bg-band-2" : "hover:bg-band-1"
             }`}
           >
             <span
-              className={`eyebrow block ${
-                active ? "!text-surface/60" : ""
+              aria-hidden="true"
+              className={`absolute inset-x-0 top-0 h-[2px] transition-colors ${
+                active ? "bg-earn-dark" : "bg-transparent"
               }`}
-            >
-              Merchant {id}
+            />
+            <span className="flex items-baseline gap-2">
+              <span
+                className={`figure text-[0.7rem] ${
+                  active ? "text-earn-dark" : "text-band-subtle"
+                }`}
+              >
+                {id}
+              </span>
+              <span
+                className={`t-caption truncate ${
+                  active ? "text-band-ink" : "text-band-muted"
+                }`}
+              >
+                {summary
+                  ? DECISION_LABEL[summary.decision]
+                  : error
+                    ? "Unavailable"
+                    : "…"}
+              </span>
             </span>
             <span
-              className={`mt-1 block truncate text-[0.78rem] font-medium ${
-                active
-                  ? "text-surface"
-                  : summary
-                    ? toneText(DECISION_TONE[summary.decision])
-                    : "text-slate-soft"
+              className={`figure mt-1 block text-[0.9rem] ${
+                summary
+                  ? toneText(DECISION_TONE[summary.decision], true)
+                  : "text-band-subtle"
               }`}
             >
-              {summary
-                ? DECISION_LABEL[summary.decision]
-                : error
-                  ? "Unavailable"
-                  : "…"}
+              {summary ? rupees(summary.expected_net_contribution_inr) : "—"}
             </span>
           </button>
         );
@@ -84,51 +108,54 @@ export function TopRail() {
   const { scenario } = useScenarioId();
 
   return (
-    <header className="sticky top-0 z-30 border-b border-rule bg-ground/92 backdrop-blur-md">
-      <div className="mx-auto flex max-w-[1180px] flex-wrap items-center gap-x-8 gap-y-4 px-6 py-4 lg:px-8">
-        <Link
-          href={withScenario("/", scenario)}
-          className="flex items-baseline gap-2.5 rounded-[2px]"
-        >
-          <span className="text-[1.05rem] font-semibold tracking-[-0.02em] text-ink">
-            MarginPilot
-          </span>
-          <span className="hidden text-[0.78rem] text-slate sm:inline">
-            AI growth decisions, grounded in merchant economics
-          </span>
-        </Link>
+    <header className="on-band bg-band text-band-ink">
+      <div className="mx-auto max-w-[1240px] px-8">
+        <div className="flex flex-wrap items-center gap-x-10 gap-y-4 py-4">
+          <Link
+            href={withScenario("/", scenario)}
+            className="flex items-center gap-2.5 rounded-[2px]"
+          >
+            <span
+              aria-hidden="true"
+              className="h-[7px] w-[7px] rounded-full bg-earn-dark"
+            />
+            <span className="t-title text-band-ink">MarginPilot</span>
+          </Link>
 
-        <nav aria-label="Sections" className="flex items-center gap-1">
-          {NAV.map((item) => {
-            const active =
-              item.href === "/"
-                ? pathname === "/"
-                : pathname.startsWith(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={withScenario(item.href, scenario)}
-                aria-current={active ? "page" : undefined}
-                className={`rounded-[2px] px-2.5 py-1.5 text-[0.83rem] transition-colors ${
-                  active
-                    ? "text-ink font-medium"
-                    : "text-slate hover:text-ink"
-                }`}
-              >
-                {item.label}
-                <span
-                  aria-hidden="true"
-                  className={`mt-1 block h-px transition-colors ${
-                    active ? "bg-ink" : "bg-transparent"
+          {/* The thesis. The one sentence a judge must leave with. */}
+          <p className="t-small hidden max-w-[54ch] text-band-muted lg:block">
+            A promotion can lift conversions and still make a merchant poorer.
+            This decides whether the economics justify the spend.
+          </p>
+
+          <nav aria-label="Sections" className="ml-auto flex items-center gap-1">
+            {NAV.map((item) => {
+              const active =
+                item.href === "/"
+                  ? pathname === "/"
+                  : pathname.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={withScenario(item.href, scenario)}
+                  aria-current={active ? "page" : undefined}
+                  className={`rounded-[2px] px-3 py-1.5 text-[0.85rem] transition-colors ${
+                    active
+                      ? "bg-band-2 font-medium text-band-ink"
+                      : "text-band-muted hover:text-band-ink"
                   }`}
-                />
-              </Link>
-            );
-          })}
-        </nav>
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      </div>
 
-        <div className="ml-auto w-full sm:w-auto">
-          <ScenarioSwitch />
+      <div className="border-t border-band-rule">
+        <div className="mx-auto max-w-[1240px] px-8">
+          <Comparator />
         </div>
       </div>
     </header>
@@ -136,19 +163,30 @@ export function TopRail() {
 }
 
 /**
- * The integrity notice. Small, permanent, and never larger than the decision
- * it qualifies — but present on every screen, because a screenshot of any one
- * of them could otherwise be mistaken for a research result.
+ * The integrity notice. Small, permanent, never larger than the decision it
+ * qualifies — but present on every screen, because a screenshot of any one of
+ * them could otherwise be mistaken for a research result.
  */
-export function FixtureNotice({ label }: { label?: string }) {
+export function FixtureNotice({
+  label,
+  onBand = false,
+}: {
+  label?: string;
+  onBand?: boolean;
+}) {
   return (
-    <p className="flex items-center gap-2.5 border-l-2 border-open py-1 pl-3 text-[0.74rem] leading-snug text-slate">
-      <span className="eyebrow !text-open">
+    <p
+      className={`flex flex-wrap items-center gap-x-3 gap-y-1 border-l-2 py-1 pl-3 ${
+        onBand ? "border-open-dark" : "border-open"
+      }`}
+    >
+      <span className={`eyebrow ${onBand ? "!text-open-dark" : "!text-open"}`}>
         {label ?? "Demonstration fixture — not research evidence"}
       </span>
-      <span className="hidden md:inline">
-        These merchants are hand-declared for the demo. No number on this page is
-        a research result.
+      <span
+        className={`t-caption ${onBand ? "text-band-subtle" : "text-ink-subtle"}`}
+      >
+        Hand-declared merchants. No number here is a research result.
       </span>
     </p>
   );

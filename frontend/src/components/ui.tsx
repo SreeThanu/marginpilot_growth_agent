@@ -1,21 +1,210 @@
 /**
- * The small vocabulary every screen is built from.
+ * The vocabulary every screen is built from.
  *
- * Kept deliberately short. A product that ships forty one-off card variants
- * stops looking designed, so there is one panel, one chip, one figure and one
- * way of saying "this value is not available".
+ * Deliberately short, and deliberately not card-shaped. Most groupings in this
+ * product are lists of facts, and a list of facts reads better on hairlines
+ * than inside forty bordered boxes. A panel exists only where a genuinely
+ * separate concept needs a surface of its own.
+ *
+ * Every primitive that can appear on the dark band takes an `onBand` flag
+ * rather than guessing, because the two colour ladders are not interchangeable.
  */
 
 "use client";
 
 import type { ReactNode } from "react";
 
-import type { Tone } from "@/lib/format";
+import { RAIL_MARK, type RailState, type Tone } from "@/lib/format";
 
 /* -------------------------------------------------------------------------- */
-/* Surfaces                                                                    */
+/* Structure                                                                   */
 /* -------------------------------------------------------------------------- */
 
+/** The content measure. Everything aligns to this column. */
+export function Shell({
+  children,
+  className = "",
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={`mx-auto w-full max-w-[1240px] px-8 ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * The dark band — the one place the system states a verdict.
+ *
+ * Full-bleed by design. It is the page's spine, not a card on the page, and
+ * that is the whole reason the layout does not read as a dashboard.
+ */
+export function Band({
+  children,
+  className = "",
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <section className={`on-band bg-band text-band-ink ${className}`}>
+      {children}
+    </section>
+  );
+}
+
+export function Eyebrow({
+  children,
+  onBand = false,
+  className = "",
+}: {
+  children: ReactNode;
+  onBand?: boolean;
+  className?: string;
+}) {
+  return (
+    <p className={`eyebrow ${onBand ? "eyebrow-dark" : ""} ${className}`}>
+      {children}
+    </p>
+  );
+}
+
+export function SectionHead({
+  eyebrow,
+  title,
+  note,
+  onBand = false,
+  className = "",
+}: {
+  eyebrow: string;
+  title: string;
+  note?: string;
+  onBand?: boolean;
+  className?: string;
+}) {
+  return (
+    <div className={`max-w-[68ch] ${className}`}>
+      <Eyebrow onBand={onBand}>{eyebrow}</Eyebrow>
+      <h2
+        className={`t-headline mt-3 ${onBand ? "text-band-ink" : "text-ink"}`}
+      >
+        {title}
+      </h2>
+      {note ? (
+        <p
+          className={`t-small mt-2.5 ${
+            onBand ? "text-band-muted" : "text-ink-muted"
+          }`}
+        >
+          {note}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * A section heading below the page's own headline.
+ *
+ * The rung the scale was missing: a conceptual, sentence-length label that is
+ * not metadata and is not a display statement. Mono eyebrows keep the short
+ * work — identifiers, gates, hashes, timestamps, compact context.
+ */
+export function SubHeading({
+  children,
+  onBand = false,
+  className = "",
+}: {
+  children: ReactNode;
+  onBand?: boolean;
+  className?: string;
+}) {
+  return (
+    <h3
+      className={`t-section ${
+        onBand ? "text-band-ink" : "text-ink"
+      } ${className}`}
+    >
+      {children}
+    </h3>
+  );
+}
+
+/**
+ * One process rail, spoken in one state vocabulary.
+ *
+ * Overview draws the four-station control path with it; Experiment draws the
+ * five-station progression. A reader who learns the colours once on the first
+ * screen reads them without effort on the second — which is the entire reason
+ * this is a shared component rather than two similar lists.
+ */
+export function ProcessRail({
+  stages,
+}: {
+  stages: {
+    label: string;
+    value: string;
+    note: string;
+    state: RailState;
+    index?: string;
+  }[];
+}) {
+  return (
+    <ol
+      className={`grid grid-cols-1 sm:grid-cols-2 ${
+        stages.length === 5 ? "lg:grid-cols-5" : "lg:grid-cols-4"
+      }`}
+    >
+      {stages.map((stage) => {
+        const mark = RAIL_MARK[stage.state];
+        return (
+          <li key={stage.label} className={`border-t-2 pt-5 pr-8 ${mark.rail}`}>
+            <div className="flex items-baseline gap-2">
+              {stage.index ? (
+                <span className="figure text-[0.72rem] text-ink-subtle">
+                  {stage.index}
+                </span>
+              ) : null}
+              <Eyebrow>{stage.label}</Eyebrow>
+              <span
+                className={`ml-auto text-[0.8rem] ${mark.text}`}
+                aria-hidden="true"
+              >
+                {mark.glyph}
+              </span>
+            </div>
+            <p className="t-section mt-2.5 text-ink">{stage.value}</p>
+            <p className={`t-caption mt-1 ${mark.text}`}>{mark.word}</p>
+            <p className="t-caption mt-2.5 max-w-[32ch] text-ink-muted">
+              {stage.note}
+            </p>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+/** A hairline. Named so the intent is visible at the call site. */
+export function Rule({
+  onBand = false,
+  className = "",
+}: {
+  onBand?: boolean;
+  className?: string;
+}) {
+  return (
+    <hr
+      className={`border-0 border-t ${
+        onBand ? "border-band-rule" : "border-rule"
+      } ${className}`}
+    />
+  );
+}
+
+/** A bordered surface. Used only where a concept needs its own ground. */
 export function Panel({
   children,
   className = "",
@@ -26,45 +215,9 @@ export function Panel({
   as?: "section" | "div" | "article";
 }) {
   return (
-    <Tag
-      className={`rounded-[3px] border border-rule bg-surface shadow-[0_1px_2px_rgba(16,21,25,0.04)] ${className}`}
-    >
+    <Tag className={`rounded-[3px] border border-rule bg-surface ${className}`}>
       {children}
     </Tag>
-  );
-}
-
-export function Eyebrow({
-  children,
-  className = "",
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  return <p className={`eyebrow ${className}`}>{children}</p>;
-}
-
-export function SectionHeading({
-  eyebrow,
-  title,
-  note,
-}: {
-  eyebrow: string;
-  title: string;
-  note?: string;
-}) {
-  return (
-    <div className="mb-5">
-      <Eyebrow>{eyebrow}</Eyebrow>
-      <h2 className="mt-2 text-[1.35rem] font-medium tracking-[-0.015em] text-ink">
-        {title}
-      </h2>
-      {note ? (
-        <p className="mt-1.5 max-w-[62ch] text-[0.9rem] leading-relaxed text-slate">
-          {note}
-        </p>
-      ) : null}
-    </div>
   );
 }
 
@@ -72,23 +225,37 @@ export function SectionHeading({
 /* Tone                                                                        */
 /* -------------------------------------------------------------------------- */
 
-const TONE_TEXT: Record<Tone, string> = {
+const TEXT: Record<Tone, string> = {
   earn: "text-earn",
-  deficit: "text-deficit",
+  risk: "text-risk",
   open: "text-open",
   spend: "text-spend",
 };
 
-const TONE_CHIP: Record<Tone, string> = {
-  earn: "bg-earn-soft text-earn border-earn/20",
-  deficit: "bg-deficit-soft text-deficit border-deficit/20",
-  open: "bg-open-soft text-open border-open/20",
-  spend: "bg-spend-soft text-spend border-rule-strong",
+const TEXT_ON_BAND: Record<Tone, string> = {
+  earn: "text-earn-dark",
+  risk: "text-risk-dark",
+  open: "text-open-dark",
+  spend: "text-spend-dark",
 };
 
-export function toneText(tone: Tone): string {
-  return TONE_TEXT[tone];
+export function toneText(tone: Tone, onBand = false): string {
+  return onBand ? TEXT_ON_BAND[tone] : TEXT[tone];
 }
+
+const CHIP: Record<Tone, string> = {
+  earn: "border-earn/25 bg-earn-wash text-earn",
+  risk: "border-risk/25 bg-risk-wash text-risk",
+  open: "border-open/25 bg-open-wash text-open",
+  spend: "border-rule-strong bg-spend-wash text-spend",
+};
+
+const CHIP_ON_BAND: Record<Tone, string> = {
+  earn: "border-earn-dark/30 bg-earn-dark/10 text-earn-dark",
+  risk: "border-risk-dark/30 bg-risk-dark/10 text-risk-dark",
+  open: "border-open-dark/30 bg-open-dark/10 text-open-dark",
+  spend: "border-band-rule-strong bg-band-2 text-band-muted",
+};
 
 /**
  * A status pill. The glyph is not decoration: colour alone must never be the
@@ -99,16 +266,20 @@ export function Chip({
   tone = "spend",
   glyph,
   title,
+  onBand = false,
 }: {
   children: ReactNode;
   tone?: Tone;
   glyph?: string;
   title?: string;
+  onBand?: boolean;
 }) {
   return (
     <span
       title={title}
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-[3px] font-mono text-[0.7rem] font-medium tracking-[0.03em] ${TONE_CHIP[tone]}`}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-[3px] font-mono text-[0.685rem] font-medium tracking-[0.04em] whitespace-nowrap ${
+        onBand ? CHIP_ON_BAND[tone] : CHIP[tone]
+      }`}
     >
       {glyph ? <span aria-hidden="true">{glyph}</span> : null}
       {children}
@@ -117,58 +288,79 @@ export function Chip({
 }
 
 /* -------------------------------------------------------------------------- */
-/* Figures                                                                     */
+/* Figures and rows                                                            */
 /* -------------------------------------------------------------------------- */
 
 export function Figure({
   label,
   value,
   tone,
-  emphasis = false,
-  footnote,
+  size = "md",
+  note,
+  onBand = false,
 }: {
   label: string;
-  value: string;
+  value: ReactNode;
   tone?: Tone;
-  emphasis?: boolean;
-  footnote?: string;
+  size?: "md" | "lg";
+  note?: string;
+  onBand?: boolean;
 }) {
+  const colour = tone
+    ? toneText(tone, onBand)
+    : onBand
+      ? "text-band-ink"
+      : "text-ink";
   return (
     <div>
-      <Eyebrow>{label}</Eyebrow>
+      <Eyebrow onBand={onBand}>{label}</Eyebrow>
       <p
-        className={`figure mt-2 ${
-          emphasis
-            ? "text-[2.1rem] leading-none font-medium"
-            : "text-[1.35rem] leading-none"
-        } ${tone ? TONE_TEXT[tone] : "text-ink"}`}
+        className={`figure mt-2.5 leading-none ${
+          size === "lg"
+            ? "text-[2.35rem] font-medium"
+            : "text-[1.28rem]"
+        } ${colour}`}
       >
         {value}
       </p>
-      {footnote ? (
-        <p className="mt-2 text-[0.78rem] leading-snug text-slate-soft">
-          {footnote}
+      {note ? (
+        <p
+          className={`t-caption mt-2.5 max-w-[34ch] ${
+            onBand ? "text-band-subtle" : "text-ink-subtle"
+          }`}
+        >
+          {note}
         </p>
       ) : null}
     </div>
   );
 }
 
-/** A label/value pair for dense reference blocks. */
-export function Field({
+/** A label/value pair on a hairline. The default grouping in this product. */
+export function DataRow({
   label,
   value,
-  mono = true,
+  onBand = false,
 }: {
   label: string;
   value: ReactNode;
-  mono?: boolean;
+  onBand?: boolean;
 }) {
   return (
-    <div className="flex items-baseline justify-between gap-6 border-b border-rule py-2.5 last:border-b-0">
-      <span className="text-[0.82rem] text-slate">{label}</span>
+    <div
+      className={`flex items-baseline justify-between gap-8 border-b py-3 last:border-b-0 ${
+        onBand ? "border-band-rule" : "border-rule"
+      }`}
+    >
       <span
-        className={`text-right text-[0.85rem] text-ink ${mono ? "figure" : ""}`}
+        className={`t-small ${onBand ? "text-band-muted" : "text-ink-muted"}`}
+      >
+        {label}
+      </span>
+      <span
+        className={`figure text-right text-[0.86rem] ${
+          onBand ? "text-band-ink" : "text-ink"
+        }`}
       >
         {value}
       </span>
@@ -177,20 +369,26 @@ export function Field({
 }
 
 /* -------------------------------------------------------------------------- */
-/* Absence                                                                     */
+/* Absence and failure                                                         */
 /* -------------------------------------------------------------------------- */
 
 /**
- * The single way this product says it does not have a number. It is a phrase,
- * never a dash and never a zero, because a zero is a measurement.
+ * The single way this product says it has no number. A phrase, never a dash
+ * and never a zero — a zero is a measurement.
  */
 export function Unavailable({
   reason = "Not available",
+  onBand = false,
 }: {
   reason?: string;
+  onBand?: boolean;
 }) {
   return (
-    <span className="figure text-[0.85rem] text-slate-soft italic">
+    <span
+      className={`text-[0.82rem] italic ${
+        onBand ? "text-band-subtle" : "text-ink-subtle"
+      }`}
+    >
       {reason}
     </span>
   );
@@ -198,14 +396,12 @@ export function Unavailable({
 
 export function Loading({ label = "Reading the engine" }: { label?: string }) {
   return (
-    <div
-      role="status"
-      aria-live="polite"
-      className="flex items-center gap-3 py-16 text-slate"
-    >
-      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-slate-soft" />
-      <span className="eyebrow">{label}…</span>
-    </div>
+    <Shell className="py-28">
+      <div role="status" aria-live="polite" className="flex items-center gap-3">
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-ink-subtle" />
+        <span className="eyebrow">{label}…</span>
+      </div>
+    </Shell>
   );
 }
 
@@ -217,32 +413,31 @@ export function ErrorState({
   onRetry?: () => void;
 }) {
   return (
-    <Panel className="p-6">
-      <Eyebrow className="!text-deficit">Unavailable</Eyebrow>
-      <p className="mt-2 max-w-[60ch] text-[0.95rem] leading-relaxed text-ink">
-        {message}
-      </p>
-      <p className="mt-3 max-w-[60ch] text-[0.85rem] leading-relaxed text-slate">
-        No figure is shown in place of the missing one. Start the engine with{" "}
-        <code className="figure rounded-[2px] bg-sunk px-1.5 py-0.5 text-[0.8rem]">
-          python -m api
-        </code>{" "}
-        from the repository root, then try again.
-      </p>
-      {onRetry ? (
-        <button
-          type="button"
-          onClick={onRetry}
-          className="mt-5 rounded-[2px] border border-ink px-3.5 py-1.5 text-[0.82rem] font-medium text-ink transition-colors hover:bg-ink hover:text-surface"
-        >
-          Try again
-        </button>
-      ) : null}
-    </Panel>
+    <Shell className="py-20">
+      <div className="max-w-[62ch] border-l-2 border-risk pl-6">
+        <Eyebrow className="!text-risk">Engine unavailable</Eyebrow>
+        <p className="t-lead mt-3 text-ink">{message}</p>
+        <p className="t-small mt-3 text-ink-muted">
+          No figure is shown in place of the missing one. Start the engine with{" "}
+          <code className="figure rounded-[2px] bg-sunk px-1.5 py-0.5 text-[0.8rem]">
+            python -m api
+          </code>{" "}
+          from the repository root, then try again.
+        </p>
+        {onRetry ? (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="mt-6 rounded-[3px] bg-ink px-4 py-2 text-[0.85rem] font-medium text-surface transition-opacity hover:opacity-85"
+          >
+            Try again
+          </button>
+        ) : null}
+      </div>
+    </Shell>
   );
 }
 
-/** A short empty state that explains why a screen has nothing to show. */
 export function EmptyState({
   title,
   body,
@@ -253,12 +448,10 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <Panel className="p-8">
-      <h3 className="text-[1.05rem] font-medium text-ink">{title}</h3>
-      <p className="mt-2 max-w-[58ch] text-[0.9rem] leading-relaxed text-slate">
-        {body}
-      </p>
-      {action ? <div className="mt-5">{action}</div> : null}
-    </Panel>
+    <div className="max-w-[62ch] border-l-2 border-rule-strong pl-6">
+      <h3 className="t-title text-ink">{title}</h3>
+      <p className="t-small mt-2.5 text-ink-muted">{body}</p>
+      {action ? <div className="mt-6">{action}</div> : null}
+    </div>
   );
 }

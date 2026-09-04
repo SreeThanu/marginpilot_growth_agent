@@ -1,10 +1,11 @@
 /**
  * Who the decision is about, what was proposed, and what to do next.
  *
- * The context strip carries only what is needed to follow the arithmetic on the
- * rest of the page: how many customers, what an order is worth, what margin it
- * carries, and what the offer costs. Everything else about the merchant lives
- * behind a disclosure.
+ * The context is a rule, not a card. It carries only what a reader needs to
+ * follow the arithmetic above it — how many customers, what an order earns,
+ * what the offer costs — and everything else about the merchant sits behind a
+ * disclosure. Merchant metadata is the least important thing on this page and
+ * is sized accordingly.
  */
 
 "use client";
@@ -14,6 +15,7 @@ import type { ReactNode } from "react";
 
 import { count, percent, rupees, rupeesExact } from "@/lib/format";
 import type {
+  CampaignHistory,
   Decision,
   Intervention,
   Merchant,
@@ -21,22 +23,22 @@ import type {
   Recommendation,
 } from "@/types/domain";
 import { withScenario, type ScenarioId } from "./ScenarioContext";
-import { Chip, Eyebrow, Panel } from "./ui";
+import { Chip, Eyebrow, SubHeading } from "./ui";
 
 /* -------------------------------------------------------------------------- */
-/* Context strip                                                               */
+/* Context                                                                     */
 /* -------------------------------------------------------------------------- */
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-w-[7.5rem] border-l border-rule pl-4 first:border-l-0 first:pl-0">
+    <div>
       <p className="eyebrow">{label}</p>
       <p className="figure mt-1.5 text-[0.95rem] text-ink">{value}</p>
     </div>
   );
 }
 
-export function MerchantStrip({
+export function MerchantContext({
   title,
   story,
   merchant,
@@ -48,39 +50,36 @@ export function MerchantStrip({
   intervention: Intervention | null;
 }) {
   return (
-    <Panel className="px-5 py-5">
-      <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-4">
-        <div className="max-w-[34ch]">
-          <Eyebrow>Merchant</Eyebrow>
-          <h2 className="mt-1.5 text-[1.15rem] font-medium tracking-[-0.015em] text-ink">
-            {title}
-          </h2>
-          <p className="figure mt-1 text-[0.72rem] text-slate-soft">
-            {merchant.merchant_id}
-          </p>
+    <div>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-10 gap-y-3">
+        <div>
+          <Eyebrow>Merchant under evaluation</Eyebrow>
+          <h2 className="t-title mt-2 text-ink">{title}</h2>
         </div>
-
-        <div className="flex flex-wrap gap-x-4 gap-y-4">
-          <Stat label="Customers" value={count(merchant.population)} />
-          <Stat label="Avg order" value={rupees(merchant.observed_aov_inr)} />
-          <Stat label="Margin" value={percent(merchant.observed_margin, 0)} />
-          <Stat
-            label="Contribution / order"
-            value={rupees(merchant.contribution_per_order_inr)}
-          />
-          <Stat label="Conversion" value={percent(merchant.observed_conversion)} />
-          <Stat label="Budget" value={rupees(merchant.budget_inr)} />
-        </div>
+        <p className="figure t-caption text-ink-subtle">
+          {merchant.merchant_id}
+        </p>
       </div>
 
-      <p className="mt-4 max-w-[76ch] border-t border-rule pt-4 text-[0.88rem] leading-relaxed text-slate">
-        {story}
-      </p>
+      <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-6 border-t border-rule pt-6 sm:grid-cols-3 lg:grid-cols-6">
+        <Stat label="Customers" value={count(merchant.population)} />
+        <Stat label="Avg order" value={rupees(merchant.observed_aov_inr)} />
+        <Stat label="Margin" value={percent(merchant.observed_margin, 0)} />
+        <Stat
+          label="Contribution / order"
+          value={rupees(merchant.contribution_per_order_inr)}
+        />
+        <Stat
+          label="Conversion"
+          value={percent(merchant.observed_conversion)}
+        />
+        <Stat label="Budget" value={rupees(merchant.budget_inr)} />
+      </div>
 
       {intervention ? (
-        <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-rule pt-4">
+        <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-rule pt-5">
           <Eyebrow>Offer</Eyebrow>
-          <span className="text-[0.9rem] font-medium text-ink">
+          <span className="t-small font-medium text-ink">
             {intervention.name}
           </span>
           <Chip tone="spend">
@@ -89,47 +88,50 @@ export function MerchantStrip({
           <Chip tone="spend">
             {percent(intervention.depth_at_observed_aov, 1)} depth
           </Chip>
-          <span className="w-full max-w-[70ch] text-[0.84rem] leading-relaxed text-slate">
-            {intervention.description}
-          </span>
         </div>
       ) : null}
 
-      {merchant.context.length ? (
-        <details className="group mt-4 border-t border-rule pt-3">
-          <summary className="cursor-pointer list-none text-[0.8rem] text-slate transition-colors hover:text-ink">
-            <span className="mr-2 inline-block text-slate-soft transition-transform group-open:rotate-90">
-              ▸
-            </span>
-            What the assistant was allowed to read
-          </summary>
-          <ul className="mt-3 space-y-1.5">
+      <details className="group mt-5">
+        <summary className="t-caption cursor-pointer list-none text-ink-muted transition-colors hover:text-ink">
+          <span className="mr-2 inline-block text-ink-subtle transition-transform group-open:rotate-90">
+            ▸
+          </span>
+          Merchant story, offer detail, and what the assistant was allowed to
+          read
+        </summary>
+        <div className="mt-4 grid gap-x-14 gap-y-6 border-t border-rule pt-5 lg:grid-cols-2">
+          <div className="space-y-4">
+            <p className="t-small max-w-[58ch] text-ink-muted">{story}</p>
+            {intervention ? (
+              <p className="t-small max-w-[58ch] text-ink-muted">
+                {intervention.description}
+              </p>
+            ) : null}
+          </div>
+          <ul className="space-y-1.5">
             {merchant.context.map((line) => (
-              <li
-                key={line}
-                className="figure text-[0.78rem] leading-relaxed text-slate"
-              >
+              <li key={line} className="figure t-caption text-ink-muted">
                 {line}
               </li>
             ))}
           </ul>
-        </details>
-      ) : null}
-    </Panel>
+        </div>
+      </details>
+    </div>
   );
 }
 
 /* -------------------------------------------------------------------------- */
-/* The agent's proposal                                                        */
+/* The assistant's proposal                                                    */
 /* -------------------------------------------------------------------------- */
 
 /**
  * What the assistant said, in its own terms.
  *
- * Shown as a proposal rather than a conversation: the useful thing about the
- * model's contribution is the hypothesis and the mechanism it names, not the
- * chat it arrived in. A reply that failed validation is shown as a refusal with
- * the validator's own reason, never as a partial proposal.
+ * A proposal, not a conversation: the useful thing about the model's
+ * contribution is the hypothesis and the mechanism it names. A reply that
+ * failed validation is shown as a refusal carrying the validator's own reason,
+ * never as a partial proposal.
  */
 export function AgentProposal({
   envelope,
@@ -140,100 +142,101 @@ export function AgentProposal({
 }) {
   if (!envelope.accepted || !envelope.proposal) {
     return (
-      <Panel className="p-5">
-        <Eyebrow className="!text-deficit">AI proposal refused</Eyebrow>
-        <p className="mt-2 max-w-[62ch] text-[0.92rem] leading-relaxed text-ink">
+      <div className="border-l-2 border-risk pl-5">
+        <Eyebrow className="!text-risk">AI proposal refused</Eyebrow>
+        <p className="t-small mt-2.5 max-w-[58ch] text-ink">
           {envelope.rejected_because ?? "The reply could not be used."}
         </p>
-        <p className="mt-2 text-[0.82rem] text-slate">
-          Nothing was proposed to the policy layer, and nothing was spent.
+        <p className="t-caption mt-2 text-ink-muted">
+          Nothing reached the policy layer, and nothing was spent.
         </p>
-      </Panel>
+      </div>
     );
   }
 
   const p = envelope.proposal;
 
   return (
-    <Panel className="p-5">
+    <div>
       <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <Eyebrow>AI proposal</Eyebrow>
+        <SubHeading>What the assistant proposed</SubHeading>
         <Chip tone="open" glyph="◇">
           Evidence: {p.evidence_basis.toLowerCase()}
         </Chip>
       </div>
 
-      <dl className="mt-4 grid gap-x-8 gap-y-4 sm:grid-cols-2">
+      <p className="t-lead mt-4 max-w-[52ch] text-ink">{p.hypothesis}</p>
+      <p className="t-small mt-3 max-w-[52ch] text-ink-muted">{p.mechanism}</p>
+
+      <dl className="mt-7 grid grid-cols-2 gap-x-8 gap-y-5">
         <div>
-          <dt className="text-[0.78rem] text-slate-soft">Intervention</dt>
-          <dd className="figure mt-1 text-[0.88rem] text-ink">
+          <dt className="eyebrow">Intervention</dt>
+          <dd className="figure mt-1.5 text-[0.85rem] text-ink">
             {p.intervention_id}
           </dd>
         </div>
         <div>
-          <dt className="text-[0.78rem] text-slate-soft">Cohort</dt>
-          <dd className="figure mt-1 text-[0.88rem] text-ink">
+          <dt className="eyebrow">Cohort</dt>
+          <dd className="figure mt-1.5 text-[0.85rem] text-ink">
             {p.cohort_id === "ALL"
-              ? `Whole base — ${count(merchant.population)} customers`
+              ? `Whole base · ${count(merchant.population)}`
               : p.cohort_id}
           </dd>
         </div>
-        <div className="sm:col-span-2">
-          <dt className="text-[0.78rem] text-slate-soft">Hypothesis</dt>
-          <dd className="mt-1 max-w-[64ch] text-[0.92rem] leading-relaxed text-ink">
-            {p.hypothesis}
-          </dd>
-        </div>
-        <div className="sm:col-span-2">
-          <dt className="text-[0.78rem] text-slate-soft">Mechanism</dt>
-          <dd className="mt-1 max-w-[64ch] text-[0.92rem] leading-relaxed text-slate">
-            {p.mechanism}
-          </dd>
-        </div>
         <div>
-          <dt className="text-[0.78rem] text-slate-soft">Expected lift</dt>
-          <dd className="figure mt-1 text-[0.88rem] text-ink">
+          <dt className="eyebrow">Expected lift</dt>
+          <dd className="figure mt-1.5 text-[0.85rem] text-ink">
             {percent(p.expected_lift_absolute, 2)} absolute
           </dd>
         </div>
         <div>
-          <dt className="text-[0.78rem] text-slate-soft">Read from</dt>
-          <dd className="mt-1 flex flex-wrap gap-1.5">
-            {p.citations.map((c) => (
-              <span
-                key={c}
-                className="figure rounded-[2px] bg-sunk px-1.5 py-0.5 text-[0.72rem] text-slate"
-              >
-                {c}
-              </span>
-            ))}
+          <dt className="eyebrow">Read from</dt>
+          <dd className="figure mt-1.5 text-[0.85rem] text-ink">
+            {p.citations.join(", ")}
           </dd>
         </div>
       </dl>
-    </Panel>
+    </div>
   );
 }
 
 /* -------------------------------------------------------------------------- */
-/* History                                                                     */
+/* Prior evidence                                                              */
 /* -------------------------------------------------------------------------- */
 
-export function HistoryNote({
-  treated,
-  netPerCustomer,
-  standardError,
+export function PriorEvidence({
+  history,
 }: {
-  treated: number;
-  netPerCustomer: number;
-  standardError: number;
+  history: CampaignHistory | null;
 }) {
   return (
-    <p className="text-[0.86rem] leading-relaxed text-slate">
-      The only prior evidence is one campaign on {count(treated)} customers:{" "}
-      <span className="figure text-ink">{rupeesExact(netPerCustomer)}</span> net
-      per treated customer, standard error{" "}
-      <span className="figure text-ink">{rupeesExact(standardError)}</span>.
-    </p>
+    <div>
+      <SubHeading>What was known before</SubHeading>
+      {history ? (
+        <p className="t-small mt-4 max-w-[46ch] text-ink">
+          One past campaign on{" "}
+          <span className="figure">{count(history.treated_customers)}</span>{" "}
+          customers:{" "}
+          <span className="figure">
+            {rupeesExact(history.net_per_treated_customer_inr)}
+          </span>{" "}
+          net per treated customer, standard error{" "}
+          <span className="figure">
+            {rupeesExact(history.standard_error_inr)}
+          </span>
+          .
+        </p>
+      ) : (
+        <p className="t-small mt-4 text-ink-subtle italic">
+          No prior campaign is recorded for this offer.
+        </p>
+      )}
+      <p className="t-caption mt-4 max-w-[46ch] text-ink-muted">
+        History and priors are enough to justify asking a question. Only a
+        measurement on this merchant can authorise spending — which is why an
+        evidence basis is carried on every screen.
+      </p>
+    </div>
   );
 }
 
@@ -241,7 +244,7 @@ export function HistoryNote({
 /* Next action                                                                 */
 /* -------------------------------------------------------------------------- */
 
-function ActionLink({
+export function ActionLink({
   href,
   children,
   primary = false,
@@ -253,9 +256,9 @@ function ActionLink({
   return (
     <Link
       href={href}
-      className={`inline-flex items-center gap-2 rounded-[2px] px-4 py-2 text-[0.85rem] font-medium transition-colors ${
+      className={`inline-flex items-center gap-2 rounded-[3px] px-4 py-2 text-[0.85rem] font-medium transition-colors ${
         primary
-          ? "bg-ink text-surface hover:bg-ink/85"
+          ? "bg-ink text-surface hover:opacity-85"
           : "border border-rule-strong text-ink hover:bg-sunk"
       }`}
     >
@@ -268,10 +271,10 @@ function ActionLink({
 /**
  * What the merchant does next.
  *
- * Each action navigates to evidence that already exists. None of them launches
- * a campaign, moves money, or re-runs a decision — this product's actuator is
- * the Python engine, and a button here that claimed otherwise would be a lie
- * about where authority sits.
+ * Each action navigates to evidence that already exists. None launches a
+ * campaign, moves money, or re-runs a decision — the actuator is the Python
+ * engine, and a button here that implied otherwise would misstate where
+ * authority sits.
  */
 export function NextAction({
   decision,
@@ -295,28 +298,26 @@ export function NextAction({
   };
 
   return (
-    <Panel className="flex flex-wrap items-center justify-between gap-5 px-5 py-5">
+    <div className="flex flex-wrap items-center justify-between gap-x-10 gap-y-5">
       <div>
         <Eyebrow>Next action</Eyebrow>
-        <p className="mt-2 max-w-[52ch] text-[0.95rem] leading-relaxed text-ink">
-          {copy[decision]}
-        </p>
+        <p className="t-lead mt-2.5 max-w-[50ch] text-ink">{copy[decision]}</p>
       </div>
       <div className="flex flex-wrap gap-2.5">
         {decision === "PROMOTE" && hasExperiment ? (
           <ActionLink href={withScenario("/experiment", scenario)} primary>
-            View experiment evidence
+            View the evidence
           </ActionLink>
         ) : null}
         {decision === "RUN_EXPERIMENT_FIRST" ? (
           <ActionLink href={withScenario("/experiment", scenario)} primary>
-            View experiment plan
+            View the experiment plan
           </ActionLink>
         ) : null}
         <ActionLink href={withScenario("/audit", scenario)}>
-          View decision record
+          View the decision record
         </ActionLink>
       </div>
-    </Panel>
+    </div>
   );
 }

@@ -1,106 +1,229 @@
 @import "tailwindcss";
 
-/* --------------------------------------------------------------------------
-   MarginPilot — the ledger palette.
+/* ==========================================================================
+   MarginPilot — "The Instrument"
 
-   Four semantic colours and nothing else. Contribution earned is viridian,
-   incentive spent is graphite (spending is not a fault, only an entry), a
-   deficit is brick, and an open question is bronze. Every one of them is
-   paired with a word on screen: a reader who cannot separate the hues still
-   reads the decision.
-   -------------------------------------------------------------------------- */
+   One structural idea carries the design: a full-bleed dark band is where the
+   system states its verdict, and warm paper is where a human reads the record.
+   Dark is judgement; light is evidence. That boundary is why there are two
+   colour ladders below rather than one — every token has a counterpart for the
+   surface it will be read on.
+
+   Four hues, each with a job. Viridian is the brand accent *and* the colour of
+   contribution earned, so the accent can never drift into decoration. Amber is
+   an open question. Brick is value destroyed. Graphite is money spent — an
+   entry, not a fault. Nothing else is coloured.
+
+   Depth comes from the surface ladder and hairlines. There are no drop shadows
+   and no gradients.
+   ========================================================================== */
 
 :root {
   color-scheme: light;
 
-  --ground: #f6f6f3;
+  /* -- paper: where the record is read ---------------------------------- */
+  --canvas: #f7f6f3;
   --surface: #ffffff;
-  --surface-sunk: #f1f1ed;
-  --ink: #101519;
-  --slate: #59636c;
-  --slate-soft: #8a939b;
-  --rule: #e0e2dd;
-  --rule-strong: #c9ccc5;
+  --sunk: #efeee9;
+  --ink: #14181c;
+  --ink-muted: #58616a;
+  --ink-subtle: #8c949c;
+  --rule: #e4e2dc;
+  --rule-strong: #ccc9c1;
 
-  --earn: #1b6b4e;
-  --earn-soft: #e6f0eb;
-  --spend: #626d76;
-  --spend-soft: #eceeef;
-  --deficit: #a0392c;
-  --deficit-soft: #f6e9e7;
-  --open: #85641c;
-  --open-soft: #f5eedd;
+  /* -- band: where the system speaks ------------------------------------ */
+  --band: #101519;
+  --band-1: #171d23;
+  --band-2: #1f272e;
+  --band-ink: #f3f5f4;
+  --band-muted: #98a2aa;
+  --band-subtle: #69737b;
+  --band-rule: #262f36;
+  --band-rule-strong: #3a444c;
+
+  /* -- semantics, paired to their surface -------------------------------- */
+  --earn: #0f6b49;
+  --earn-dark: #45c98c;
+  --earn-wash: #e7f1ec;
+
+  --spend: #69727a;
+  --spend-dark: #8d979f;
+  --spend-wash: #eceeef;
+
+  --risk: #a3342a;
+  --risk-dark: #ef7d6d;
+  --risk-wash: #f7e9e7;
+
+  --open: #8a6410;
+  --open-dark: #dfa63a;
+  --open-wash: #f6efdf;
 }
 
 @theme inline {
-  --color-ground: var(--ground);
+  --color-canvas: var(--canvas);
   --color-surface: var(--surface);
-  --color-sunk: var(--surface-sunk);
+  --color-sunk: var(--sunk);
   --color-ink: var(--ink);
-  --color-slate: var(--slate);
-  --color-slate-soft: var(--slate-soft);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
   --color-rule: var(--rule);
   --color-rule-strong: var(--rule-strong);
-  --color-earn: var(--earn);
-  --color-earn-soft: var(--earn-soft);
-  --color-spend: var(--spend);
-  --color-spend-soft: var(--spend-soft);
-  --color-deficit: var(--deficit);
-  --color-deficit-soft: var(--deficit-soft);
-  --color-open: var(--open);
-  --color-open-soft: var(--open-soft);
 
-  --font-sans: var(--font-schibsted), ui-sans-serif, system-ui, sans-serif;
+  --color-band: var(--band);
+  --color-band-1: var(--band-1);
+  --color-band-2: var(--band-2);
+  --color-band-ink: var(--band-ink);
+  --color-band-muted: var(--band-muted);
+  --color-band-subtle: var(--band-subtle);
+  --color-band-rule: var(--band-rule);
+  --color-band-rule-strong: var(--band-rule-strong);
+
+  --color-earn: var(--earn);
+  --color-earn-dark: var(--earn-dark);
+  --color-earn-wash: var(--earn-wash);
+  --color-spend: var(--spend);
+  --color-spend-dark: var(--spend-dark);
+  --color-spend-wash: var(--spend-wash);
+  --color-risk: var(--risk);
+  --color-risk-dark: var(--risk-dark);
+  --color-risk-wash: var(--risk-wash);
+  --color-open: var(--open);
+  --color-open-dark: var(--open-dark);
+  --color-open-wash: var(--open-wash);
+
+  --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", monospace;
 }
 
 html {
-  background: var(--ground);
+  background: var(--canvas);
 }
 
 body {
-  background: var(--ground);
+  background: var(--canvas);
   color: var(--ink);
   font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-/* Figures are read down a column, so they are always tabular and never
-   re-flow as their digits change. */
-.figure {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1;
-  letter-spacing: -0.02em;
+/* --------------------------------------------------------------------------
+   Type roles. Display carries aggressive negative tracking; the eyebrow answers
+   it with positive tracking, so the two ends of the scale read as a deliberate
+   pair rather than as one font at two sizes.
+   -------------------------------------------------------------------------- */
+
+.t-display {
+  font-size: clamp(2.6rem, 5.2vw, 4.05rem);
+  line-height: 0.96;
+  font-weight: 600;
+  letter-spacing: -0.042em;
+}
+
+.t-headline {
+  font-size: 1.6rem;
+  line-height: 1.18;
+  font-weight: 600;
+  letter-spacing: -0.024em;
+}
+
+.t-title {
+  font-size: 1.16rem;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: -0.016em;
+}
+
+/*
+ * The rung the type scale was missing. A sentence-length conceptual label —
+ * "what the promotion earns, and what the incentive takes back" — is a heading,
+ * and setting it as a mono micro-label left the page with metadata and display
+ * type and nothing in between. Mono eyebrows keep the short work: identifiers,
+ * gates, hashes, timestamps, compact context.
+ */
+.t-section {
+  font-size: 1.02rem;
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: -0.014em;
+}
+
+.t-lead {
+  font-size: 1.05rem;
+  line-height: 1.55;
+  letter-spacing: -0.008em;
+}
+
+.t-small {
+  font-size: 0.845rem;
+  line-height: 1.55;
+}
+
+.t-caption {
+  font-size: 0.78rem;
+  line-height: 1.45;
 }
 
 .eyebrow {
   font-family: var(--font-mono);
-  font-size: 0.6875rem;
+  font-size: 0.665rem;
   font-weight: 500;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.17em;
   text-transform: uppercase;
-  color: var(--slate-soft);
+  color: var(--ink-subtle);
 }
 
-/* Focus is visible everywhere, in the ink rather than the browser's blue, so
-   keyboard use looks like part of the design instead of an escape hatch. */
+.eyebrow-dark {
+  color: var(--band-subtle);
+}
+
+/* Figures are read down a column: always tabular, never re-flowing. */
+.figure {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.025em;
+}
+
+/* --------------------------------------------------------------------------
+   Focus, selection, scrollbars
+   -------------------------------------------------------------------------- */
+
 :focus-visible {
-  outline: 2px solid var(--ink);
+  outline: 2px solid var(--earn);
   outline-offset: 3px;
   border-radius: 2px;
 }
 
+.on-band :focus-visible {
+  outline-color: var(--earn-dark);
+}
+
 ::selection {
-  background: var(--earn-soft);
+  background: var(--earn-wash);
   color: var(--ink);
+}
+
+/* --------------------------------------------------------------------------
+   Motion. One orchestrated moment per scenario change — the verdict wipes in
+   and the ledger extents travel. Nothing else moves on its own.
+   -------------------------------------------------------------------------- */
+
+@keyframes mp-wipe {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 -2% 0 0);
+  }
 }
 
 @keyframes mp-rise {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(7px);
   }
   to {
     opacity: 1;
@@ -108,26 +231,41 @@ body {
   }
 }
 
-@keyframes mp-wipe {
+@keyframes mp-fade {
   from {
-    clip-path: inset(0 100% 0 0);
+    opacity: 0;
   }
   to {
-    clip-path: inset(0 0 0 0);
+    opacity: 1;
   }
-}
-
-.mp-rise {
-  animation: mp-rise 420ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
 .mp-wipe {
-  animation: mp-wipe 620ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation: mp-wipe 640ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.mp-rise {
+  animation: mp-rise 460ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.mp-fade {
+  animation: mp-fade 500ms ease both;
+}
+
+.mp-d1 {
+  animation-delay: 70ms;
+}
+.mp-d2 {
+  animation-delay: 140ms;
+}
+.mp-d3 {
+  animation-delay: 210ms;
 }
 
 .mp-extent {
-  transition: width 620ms cubic-bezier(0.22, 0.61, 0.36, 1),
-    left 620ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition:
+    width 700ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    left 700ms cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -135,6 +273,7 @@ body {
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }

@@ -1,13 +1,15 @@
 /**
- * The decision, the ladder it came down, and the model's part in it.
+ * The verdict, the control path that produced it, and the reasoning behind it.
  *
- * The order on screen is the order a merchant asks the questions in: what was
- * decided, what it earns, which rule settled it, and only then what the
- * assistant had suggested. The model's proposal is deliberately *below* the
- * decision — it is an input to the answer, not the answer.
+ * The band is where the system speaks: decision, the arithmetic that settles
+ * it, and — inline, in the same glance — what the assistant had asked for. The
+ * override is not a section further down the page; on a merchant where policy
+ * overrules the model, that fact is legible in the first screen.
  */
 
 "use client";
+
+import type { ReactNode } from "react";
 
 import {
   DECISION_LABEL,
@@ -16,66 +18,299 @@ import {
   GATE_NAMES,
   GATE_ORDER,
   codeText,
+  count,
+  economicTone,
   percent,
   rupees,
+  type RailState,
 } from "@/lib/format";
-import type { Recommendation } from "@/types/domain";
-import { Chip, Eyebrow, Panel, toneText } from "./ui";
+import type { Experiment, Recommendation } from "@/types/domain";
+import { ContributionRule } from "./ContributionRule";
+import {
+  Band,
+  Chip,
+  DataRow,
+  Eyebrow,
+  ProcessRail,
+  Rule,
+  Shell,
+  SubHeading,
+  toneText,
+} from "./ui";
 
 /* -------------------------------------------------------------------------- */
-/* Hero                                                                        */
+/* The decision band                                                           */
 /* -------------------------------------------------------------------------- */
 
-export function DecisionHero({
+/**
+ * The verdict line: what the assistant asked for, and what the policy returned.
+ *
+ * Kept to one row so it can sit inside the hero. Where the two disagree the row
+ * says so plainly; where they agree it says the policy decided independently,
+ * because agreement is not evidence that the model is reliable and this row
+ * must never imply that it is.
+ */
+function VerdictLine({
   recommendation,
-  question = "Should this merchant promote?",
+  onBand = true,
 }: {
   recommendation: Recommendation;
-  question?: string;
+  onBand?: boolean;
 }) {
-  const tone = DECISION_TONE[recommendation.decision];
+  const requested = recommendation.model_requested;
+  const overruled = recommendation.overruled_the_model;
 
   return (
-    <div className="mp-rise">
-      <Eyebrow>Growth decision</Eyebrow>
-      <p className="mt-3 text-[1.05rem] text-slate">{question}</p>
-      <h1
-        key={recommendation.decision}
-        className={`mp-wipe mt-2 text-[clamp(2.4rem,6vw,3.9rem)] leading-[0.98] font-semibold tracking-[-0.035em] ${toneText(
-          tone,
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+      <span className="eyebrow eyebrow-dark">AI proposal</span>
+      <span className="t-small text-band-muted">
+        {requested ? DECISION_LABEL[requested] : "No decision requested"}
+      </span>
+      <span aria-hidden="true" className="text-band-subtle">
+        →
+      </span>
+      <span className="eyebrow eyebrow-dark">Policy</span>
+      <span
+        className={`t-small font-medium ${toneText(
+          DECISION_TONE[recommendation.decision],
+          onBand,
         )}`}
       >
         {DECISION_LABEL[recommendation.decision]}
-      </h1>
-      <p className="mt-4 max-w-[52ch] text-[1.02rem] leading-relaxed text-ink">
-        {DECISION_SUBTITLE[recommendation.decision]}
-      </p>
-
-      <div className="mt-5 flex flex-wrap gap-2">
-        <Chip
-          tone={recommendation.evidence_basis === "EXPERIMENT" ? "earn" : "open"}
-          glyph={recommendation.evidence_basis === "EXPERIMENT" ? "◆" : "◇"}
-        >
-          Evidence: {recommendation.evidence_basis.toLowerCase()}
-        </Chip>
-        {recommendation.gates_passed.length ? (
-          <Chip tone="spend" glyph="✓">
-            Gates {recommendation.gates_passed.join(" ")}
-          </Chip>
-        ) : null}
-        {recommendation.binding_constraints.map((code) => (
-          <Chip key={code} tone="deficit" glyph="■" title={codeText(code)}>
-            {code}
-          </Chip>
-        ))}
-        {recommendation.unresolved.map((code) => (
-          <Chip key={code} tone="open" glyph="?" title={codeText(code)}>
-            {code}
-          </Chip>
-        ))}
-      </div>
+      </span>
+      <Chip
+        tone={overruled ? "risk" : "spend"}
+        glyph={overruled ? "■" : "="}
+        onBand={onBand}
+      >
+        {overruled ? "Model overruled" : "Decided independently"}
+      </Chip>
     </div>
   );
+}
+
+export function DecisionBand({
+  recommendation,
+  scenarioKey,
+}: {
+  recommendation: Recommendation;
+  scenarioKey: string;
+}) {
+  const tone = DECISION_TONE[recommendation.decision];
+  const measured = recommendation.evidence_basis === "EXPERIMENT";
+  const netTone = economicTone(
+    recommendation.evidence_basis,
+    recommendation.expected_net_contribution_inr,
+  );
+
+  return (
+    <Band>
+      <Shell className="pt-14 pb-16">
+        <div className="grid gap-x-16 gap-y-12 lg:grid-cols-[1.05fr_0.95fr]">
+          {/* -- the verdict ------------------------------------------------ */}
+          <div key={scenarioKey}>
+            <Eyebrow onBand>Decision</Eyebrow>
+            <h1
+              className={`t-display mp-wipe mt-4 ${toneText(tone, true)}`}
+            >
+              {DECISION_LABEL[recommendation.decision]}
+            </h1>
+            <p className="t-lead mp-rise mp-d1 mt-5 max-w-[40ch] text-band-ink">
+              {DECISION_SUBTITLE[recommendation.decision]}
+            </p>
+
+            <div className="mp-rise mp-d2 mt-8">
+              <VerdictLine recommendation={recommendation} />
+            </div>
+
+            <div className="mp-rise mp-d3 mt-6 flex flex-wrap gap-2">
+              <Chip
+                tone={measured ? "earn" : "open"}
+                glyph={measured ? "◆" : "◇"}
+                onBand
+              >
+                Evidence: {recommendation.evidence_basis.toLowerCase()}
+              </Chip>
+              {recommendation.gates_passed.length ? (
+                <Chip tone="spend" glyph="✓" onBand>
+                  Gates {recommendation.gates_passed.join(" ")}
+                </Chip>
+              ) : null}
+              {recommendation.binding_constraints.map((code) => (
+                <Chip
+                  key={code}
+                  tone="risk"
+                  glyph="■"
+                  onBand
+                  title={codeText(code)}
+                >
+                  {code}
+                </Chip>
+              ))}
+              {recommendation.unresolved.map((code) => (
+                <Chip
+                  key={code}
+                  tone="open"
+                  glyph="?"
+                  onBand
+                  title={codeText(code)}
+                >
+                  {code}
+                </Chip>
+              ))}
+            </div>
+          </div>
+
+          {/* -- the arithmetic --------------------------------------------- */}
+          <div className="mp-fade mp-d1 self-center">
+            <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+              <div>
+                <Eyebrow onBand>Incremental contribution</Eyebrow>
+                <p
+                  className={`figure mt-2.5 text-[1.28rem] leading-none ${
+                    measured ? "text-earn-dark" : "text-open-dark"
+                  }`}
+                >
+                  {rupees(
+                    recommendation.expected_incremental_contribution_inr,
+                  )}
+                </p>
+              </div>
+              <div>
+                <Eyebrow onBand>Incentive cost</Eyebrow>
+                <p className="figure mt-2.5 text-[1.28rem] leading-none text-spend-dark">
+                  {rupees(recommendation.expected_incentive_cost_inr)}
+                </p>
+              </div>
+            </div>
+
+            <Rule onBand className="my-7" />
+
+            {/*
+              "Potential" reads wrong over a loss, so the label follows the
+              tone: banked, potential, or expected-and-negative.
+            */}
+            <Eyebrow onBand>
+              {netTone === "earn"
+                ? "Net contribution"
+                : netTone === "open"
+                  ? "Potential net contribution"
+                  : "Expected net contribution"}
+            </Eyebrow>
+            <p
+              className={`figure mt-3 text-[2.6rem] leading-none font-medium ${toneText(
+                netTone,
+                true,
+              )}`}
+            >
+              {rupees(recommendation.expected_net_contribution_inr)}
+            </p>
+            <p className="t-caption mt-3 max-w-[38ch] text-band-subtle">
+              {measured
+                ? "Projected from the measured pilot across the rollout the budget can fund."
+                : "Expected at the lift the assistant proposed. Not a measurement."}
+            </p>
+          </div>
+        </div>
+
+        {/* -- the ledger --------------------------------------------------- */}
+        <Rule onBand className="mt-14" />
+        <div key={`${scenarioKey}-ledger`}>
+          <SubHeading onBand className="mt-7">
+            What the promotion earns, and what the incentive takes back
+          </SubHeading>
+          <ContributionRule
+            contributionInr={
+              recommendation.expected_incremental_contribution_inr
+            }
+            incentiveInr={recommendation.expected_incentive_cost_inr}
+            netInr={recommendation.expected_net_contribution_inr}
+            measured={measured}
+            basisNote={
+              measured
+                ? "measured at the pre-committed horizon, then projected to the funded rollout"
+                : "expected at the lift the assistant proposed"
+            }
+          />
+        </div>
+      </Shell>
+    </Band>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* The control path                                                            */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Proposal → policy → experiment → rollout, drawn as the sequence it is.
+ *
+ * This is the product's architecture made literal, and it is why the
+ * thirty-second version of the pitch needs no narration. Each stage reads its
+ * state off fields the engine already returned — nothing is decided here — and
+ * it speaks the same state vocabulary the Experiment progression uses, so the
+ * colours are learned once and read everywhere.
+ */
+export function ControlPath({
+  recommendation,
+  experiment,
+}: {
+  recommendation: Recommendation;
+  experiment: Experiment | null;
+}) {
+  const requested = recommendation.model_requested;
+  const rolloutPassed = recommendation.gates_passed.includes("G6");
+  const refused = recommendation.decision === "DO_NOT_PROMOTE";
+
+  const stages: {
+    label: string;
+    value: string;
+    note: string;
+    state: RailState;
+  }[] = [
+    {
+      label: "Proposal",
+      value: requested ? DECISION_LABEL[requested] : "None requested",
+      note: "The assistant may ask. The request carries no authority.",
+      state: "complete",
+    },
+    {
+      label: "Policy",
+      value: DECISION_LABEL[recommendation.decision],
+      note: recommendation.overruled_the_model
+        ? "Deterministic gates overruled the request."
+        : "Deterministic gates priced the request independently.",
+      state: refused ? "blocked" : "complete",
+    },
+    {
+      label: "Experiment",
+      value: experiment
+        ? `${count(experiment.horizon_per_arm)} per arm`
+        : recommendation.experiment_required
+          ? `${count(recommendation.experiment_horizon_per_arm)} per arm, not run`
+          : "Not warranted",
+      note: experiment
+        ? "Read once at the pre-committed horizon."
+        : recommendation.experiment_required
+          ? "Rollout stays closed until this is measured."
+          : "The arithmetic settles it before a test is worth running.",
+      state: experiment
+        ? "complete"
+        : recommendation.experiment_required
+          ? "current"
+          : "not-reached",
+    },
+    {
+      label: "Rollout",
+      value: rolloutPassed ? "G6 passed" : refused ? "Held" : "Not reached",
+      note: rolloutPassed
+        ? "Re-priced against the rollout the budget can actually fund."
+        : "No spend is authorised without a measured result clearing G6.",
+      state: rolloutPassed ? "complete" : refused ? "blocked" : "not-reached",
+    },
+  ];
+
+  return <ProcessRail stages={stages} />;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -93,20 +328,26 @@ function gateState(gate: string, recommendation: Recommendation): GateState {
   return "not-recorded";
 }
 
-const GATE_MARK: Record<GateState, { glyph: string; text: string; word: string }> =
-  {
-    passed: { glyph: "✓", text: "text-earn", word: "Passed" },
-    binding: { glyph: "■", text: "text-deficit", word: "Stopped here" },
-    open: { glyph: "?", text: "text-open", word: "Open question" },
-    "not-recorded": { glyph: "·", text: "text-slate-soft", word: "Not recorded" },
-  };
+const GATE_MARK: Record<
+  GateState,
+  { glyph: string; text: string; word: string }
+> = {
+  passed: { glyph: "✓", text: "text-earn", word: "Passed" },
+  binding: { glyph: "■", text: "text-risk", word: "Stopped here" },
+  open: { glyph: "?", text: "text-open", word: "Open question" },
+  "not-recorded": {
+    glyph: "·",
+    text: "text-ink-subtle",
+    word: "Not recorded on this path",
+  },
+};
 
 /**
- * Six ordered gates, drawn as the sequence they actually are.
+ * Six ordered gates as a rule-separated list rather than six boxes.
  *
  * The two entry points run different subsets — G1 to G5 before an experiment,
- * G1 to G3 and G6 after one — so a gate that is neither passed nor binding is
- * shown as "not recorded" rather than as a failure.
+ * G1 to G3 and G6 after one — so a gate that is neither passed nor binding
+ * reads as "not recorded on this path" rather than as a failure.
  */
 export function GateLadder({
   recommendation,
@@ -115,27 +356,34 @@ export function GateLadder({
 }) {
   return (
     <div>
-      <ol className="grid grid-cols-2 gap-px overflow-hidden rounded-[3px] border border-rule bg-rule sm:grid-cols-3 lg:grid-cols-6">
+      <ol>
         {GATE_ORDER.map((gate) => {
           const state = gateState(gate, recommendation);
           const mark = GATE_MARK[state];
           return (
-            <li key={gate} className="bg-surface px-3.5 py-3">
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="eyebrow">{gate}</span>
-                <span className={`text-[0.9rem] ${mark.text}`} aria-hidden="true">
+            <li
+              key={gate}
+              className="flex items-baseline gap-5 border-b border-rule py-3.5 last:border-b-0"
+            >
+              <span className="figure w-7 shrink-0 text-[0.78rem] text-ink-subtle">
+                {gate}
+              </span>
+              <span className="t-small min-w-0 flex-1 text-ink">
+                {GATE_NAMES[gate]}
+              </span>
+              <span
+                className={`t-caption shrink-0 text-right ${mark.text}`}
+              >
+                <span aria-hidden="true" className="mr-2">
                   {mark.glyph}
                 </span>
-              </div>
-              <p className="mt-1.5 text-[0.8rem] leading-tight font-medium text-ink">
-                {GATE_NAMES[gate]}
-              </p>
-              <p className={`mt-1 text-[0.72rem] ${mark.text}`}>{mark.word}</p>
+                {mark.word}
+              </span>
             </li>
           );
         })}
       </ol>
-      <p className="mt-2.5 text-[0.76rem] leading-relaxed text-slate-soft">
+      <p className="t-caption mt-4 max-w-[70ch] text-ink-subtle">
         The pre-experiment path runs G1 to G5 and cannot return Promote. G6 is
         reached only with a measured result, and is the sole route to a rollout.
       </p>
@@ -144,80 +392,19 @@ export function GateLadder({
 }
 
 /* -------------------------------------------------------------------------- */
-/* Model to policy                                                             */
+/* Reasoning                                                                   */
 /* -------------------------------------------------------------------------- */
 
-/**
- * The claim the product is built on, shown rather than asserted: the assistant
- * asked for something, and a deterministic layer answered. Where they agree it
- * says so plainly — agreement is not evidence that the model is reliable, and
- * this panel never suggests it is.
- */
-export function ProposalToPolicy({
-  recommendation,
-}: {
-  recommendation: Recommendation;
-}) {
-  const requested = recommendation.model_requested;
-  const overruled = recommendation.overruled_the_model;
-
+function Detail({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <Panel className="overflow-hidden">
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr]">
-        <div className="p-5">
-          <Eyebrow>AI proposal</Eyebrow>
-          <p className="mt-2.5 text-[1.05rem] font-medium text-slate">
-            {requested ? DECISION_LABEL[requested] : "No decision requested"}
-          </p>
-          <p className="mt-1.5 text-[0.8rem] text-slate-soft">
-            Advisory. Recorded so it can be overruled.
-          </p>
-        </div>
-
-        <div
-          aria-hidden="true"
-          className="flex items-center justify-center border-y border-rule px-5 py-3 text-slate-soft md:border-x md:border-y-0"
-        >
-          <span className="hidden md:inline">→</span>
-          <span className="md:hidden">↓</span>
-        </div>
-
-        <div className="p-5">
-          <Eyebrow>MarginPilot policy</Eyebrow>
-          <p
-            className={`mt-2.5 text-[1.05rem] font-medium ${toneText(
-              DECISION_TONE[recommendation.decision],
-            )}`}
-          >
-            {DECISION_LABEL[recommendation.decision]}
-            {!overruled && requested ? (
-              <span className="ml-2 text-[0.85rem] font-normal text-slate">
-                agrees
-              </span>
-            ) : null}
-          </p>
-          <p className="mt-1.5 text-[0.8rem] text-slate-soft">
-            {overruled
-              ? "Policy overruled the model."
-              : "Decided independently; the outcome matched the request."}
-          </p>
-        </div>
-      </div>
-
-      {overruled ? (
-        <p className="border-t border-rule bg-sunk px-5 py-3.5 text-[0.85rem] leading-relaxed text-ink">
-          {recommendation.rationale}
-        </p>
-      ) : null}
-    </Panel>
+    <div>
+      <Eyebrow>{label}</Eyebrow>
+      <div className="t-small mt-2.5 max-w-[54ch] text-ink">{children}</div>
+    </div>
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/* Why                                                                         */
-/* -------------------------------------------------------------------------- */
-
-export function WhyPanel({
+export function Reasoning({
   recommendation,
 }: {
   recommendation: Recommendation;
@@ -225,131 +412,87 @@ export function WhyPanel({
   const breakEven = recommendation.required_break_even_lift_absolute;
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div>
-          <Eyebrow>Diagnosis</Eyebrow>
-          <p className="mt-2 max-w-[58ch] text-[0.95rem] leading-relaxed text-ink">
-            {recommendation.diagnosis}
-          </p>
-        </div>
-        <div>
-          <Eyebrow>Rationale</Eyebrow>
-          <p className="mt-2 max-w-[58ch] text-[0.95rem] leading-relaxed text-ink">
-            {recommendation.rationale}
-          </p>
-        </div>
+    <div className="grid gap-x-16 gap-y-10 lg:grid-cols-[1fr_1fr]">
+      <div className="space-y-8">
+        <Detail label="Diagnosis">{recommendation.diagnosis}</Detail>
+        <Detail label="Rationale">
+          {/* Engine-authored, rendered verbatim. Not a summary written after. */}
+          {recommendation.rationale}
+        </Detail>
+
+        {recommendation.assumptions.length ? (
+          <Detail label="Assumptions">
+            <ul className="space-y-1.5">
+              {recommendation.assumptions.map((a) => (
+                <li key={a} className="text-ink-muted">
+                  {a}
+                </li>
+              ))}
+            </ul>
+          </Detail>
+        ) : null}
       </div>
 
-      <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-[3px] border border-rule bg-rule lg:grid-cols-4">
-        <div className="bg-surface px-4 py-3">
-          <dt className="eyebrow">Break-even lift</dt>
-          <dd className="figure mt-1.5 text-[0.95rem] text-ink">
-            {breakEven === null ? (
-              <span className="text-[0.85rem] text-slate-soft italic">
+      <div>
+        <DataRow
+          label="Break-even lift this offer must clear"
+          value={
+            breakEven === null ? (
+              <span className="t-small text-ink-subtle italic">
                 Unreachable at any lift
               </span>
             ) : (
               percent(breakEven, 2)
-            )}
-          </dd>
-        </div>
-        <div className="bg-surface px-4 py-3">
-          <dt className="eyebrow">Customers covered</dt>
-          <dd className="figure mt-1.5 text-[0.95rem] text-ink">
-            {recommendation.customers_treated.toLocaleString("en-US")}
-          </dd>
-        </div>
-        <div className="bg-surface px-4 py-3">
-          <dt className="eyebrow">Experiment cost</dt>
-          <dd className="figure mt-1.5 text-[0.95rem] text-ink">
-            {recommendation.experiment_required ? (
+            )
+          }
+        />
+        <DataRow
+          label="Customers covered"
+          value={count(recommendation.customers_treated)}
+        />
+        <DataRow
+          label="Experiment cost"
+          value={
+            recommendation.experiment_required ? (
               rupees(recommendation.experiment_cost_inr)
             ) : (
-              <span className="text-[0.85rem] text-slate-soft italic">
+              <span className="t-small text-ink-subtle italic">
                 No experiment recommended
               </span>
-            )}
-          </dd>
-        </div>
-        <div className="bg-surface px-4 py-3">
-          <dt className="eyebrow">Read from</dt>
-          <dd className="mt-1.5 flex flex-wrap gap-1.5">
-            {recommendation.citations.length ? (
-              recommendation.citations.map((c) => (
-                <span
-                  key={c}
-                  className="figure rounded-[2px] bg-sunk px-1.5 py-0.5 text-[0.72rem] text-slate"
-                >
-                  {c}
-                </span>
-              ))
-            ) : (
-              <span className="text-[0.85rem] text-slate-soft italic">
-                Not available
-              </span>
-            )}
-          </dd>
-        </div>
-      </dl>
+            )
+          }
+        />
+        <DataRow
+          label="Evidence basis"
+          value={recommendation.evidence_basis.toLowerCase()}
+        />
+        <DataRow
+          label="Brief fields read"
+          value={recommendation.citations.join(", ") || "—"}
+        />
 
-      {recommendation.binding_constraints.length ||
-      recommendation.unresolved.length ||
-      recommendation.assumptions.length ? (
-        <details className="group rounded-[3px] border border-rule bg-surface">
-          <summary className="cursor-pointer list-none px-4 py-3 text-[0.85rem] font-medium text-ink transition-colors hover:bg-sunk">
-            <span className="mr-2 inline-block text-slate-soft transition-transform group-open:rotate-90">
-              ▸
-            </span>
-            Constraints, open questions and assumptions
-          </summary>
-          <div className="space-y-5 border-t border-rule px-4 py-4">
-            {recommendation.binding_constraints.length ? (
-              <div>
-                <Eyebrow className="!text-deficit">Binding constraint</Eyebrow>
-                <ul className="mt-2 space-y-2">
-                  {recommendation.binding_constraints.map((code) => (
-                    <li key={code} className="text-[0.87rem] leading-relaxed">
-                      <span className="figure text-deficit">{code}</span>{" "}
-                      <span className="text-slate">— {codeText(code)}</span>
-                    </li>
-                  ))}
-                </ul>
+        {recommendation.binding_constraints.length ||
+        recommendation.unresolved.length ? (
+          <div className="mt-8 space-y-5">
+            {recommendation.binding_constraints.map((code) => (
+              <div key={code} className="border-l-2 border-risk pl-4">
+                <p className="figure text-[0.74rem] text-risk">{code}</p>
+                <p className="t-small mt-1.5 max-w-[46ch] text-ink-muted">
+                  {codeText(code)}
+                </p>
               </div>
-            ) : null}
-
-            {recommendation.unresolved.length ? (
-              <div>
-                <Eyebrow className="!text-open">Unresolved</Eyebrow>
-                <ul className="mt-2 space-y-2">
-                  {recommendation.unresolved.map((code) => (
-                    <li key={code} className="text-[0.87rem] leading-relaxed">
-                      <span className="figure text-open">{code}</span>{" "}
-                      <span className="text-slate">— {codeText(code)}</span>
-                    </li>
-                  ))}
-                </ul>
+            ))}
+            {recommendation.unresolved.map((code) => (
+              <div key={code} className="border-l-2 border-open pl-4">
+                <p className="figure text-[0.74rem] text-open">{code}</p>
+                <p className="t-small mt-1.5 max-w-[46ch] text-ink-muted">
+                  {codeText(code)}
+                </p>
               </div>
-            ) : null}
-
-            {recommendation.assumptions.length ? (
-              <div>
-                <Eyebrow>Assumptions</Eyebrow>
-                <ul className="mt-2 space-y-1.5">
-                  {recommendation.assumptions.map((a) => (
-                    <li
-                      key={a}
-                      className="text-[0.87rem] leading-relaxed text-slate"
-                    >
-                      {a}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
+            ))}
           </div>
-        </details>
-      ) : null}
+        ) : null}
+      </div>
     </div>
   );
 }
