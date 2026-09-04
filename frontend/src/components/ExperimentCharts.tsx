@@ -37,10 +37,13 @@ function ArmChart({
   arms,
   valueOf,
   formatValue,
+  measure,
 }: {
   arms: Arm[];
   valueOf: (arm: Arm) => number;
   formatValue: (value: number) => string;
+  /** What the bars measure, for the chart's accessible name. */
+  measure: string;
 }) {
   const rows = arms.map((arm) => ({
     name: arm.name,
@@ -49,8 +52,18 @@ function ArmChart({
   }));
   const top = Math.max(...rows.map((r) => r.value)) * 1.32;
 
+  /*
+   * Recharts renders a bare <svg> with no accessible name, so the comparison is
+   * silent to a screen reader. The ledger already states its arithmetic in an
+   * sr-only sentence; this mirrors that, reading the same figures the bars are
+   * labelled with rather than any new quantity.
+   */
+  const description = `${measure} by arm. ${rows
+    .map((r) => `${r.name} ${r.label}`)
+    .join(", ")}.`;
+
   return (
-    <div className="h-[180px] w-full">
+    <div className="h-[180px] w-full" role="img" aria-label={description}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={rows}
@@ -101,6 +114,7 @@ export function ConversionChart({ arms }: { arms: Arm[] }) {
         arms={arms}
         valueOf={(a) => a.conversion_rate}
         formatValue={(v) => percent(v, 2)}
+        measure="Conversion"
       />
     </div>
   );
@@ -114,6 +128,7 @@ export function ContributionChart({ arms }: { arms: Arm[] }) {
         arms={arms}
         valueOf={(a) => a.contribution_mean_inr}
         formatValue={(v) => rupeesExact(v)}
+        measure="Contribution per customer"
       />
     </div>
   );

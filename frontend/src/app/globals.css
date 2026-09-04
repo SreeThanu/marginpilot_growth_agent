@@ -27,7 +27,13 @@
   --sunk: #efeee9;
   --ink: #14181c;
   --ink-muted: #58616a;
-  --ink-subtle: #8c949c;
+  /*
+   * Darkened from #8c949c, which measured 2.84:1 on --canvas — under the 4.5:1
+   * floor for the size this tier is set at. It carries the eyebrow labels, the
+   * gate identifiers and the metadata captions, and at the old value a reader
+   * misread a label badly enough to file it as a spelling bug.
+   */
+  --ink-subtle: #69727a;
   --rule: #e4e2dc;
   --rule-strong: #ccc9c1;
 
@@ -37,7 +43,12 @@
   --band-2: #1f272e;
   --band-ink: #f3f5f4;
   --band-muted: #98a2aa;
-  --band-subtle: #69737b;
+  /*
+   * Lightened from #69737b, which measured 3.79:1 against the band — the
+   * dark-side counterpart of the --ink-subtle problem. This token carries the
+   * eyebrow labels on every dark surface.
+   */
+  --band-subtle: #7d888f;
   --band-rule: #262f36;
   --band-rule-strong: #3a444c;
 
@@ -46,7 +57,12 @@
   --earn-dark: #45c98c;
   --earn-wash: #e7f1ec;
 
-  --spend: #69727a;
+  /*
+   * Darkened from #69727a, which measured 4.21:1 as chip text on --spend-wash.
+   * Still graphite — spending is an entry, not a fault — just dark enough to
+   * read at chip size.
+   */
+  --spend: #626b73;
   --spend-dark: #8d979f;
   --spend-wash: #eceeef;
 
@@ -115,6 +131,26 @@ body {
    pair rather than as one font at two sizes.
    -------------------------------------------------------------------------- */
 
+/*
+ * The opening statement. The idea leads; the verdict follows as its
+ * consequence, so the premise gets the display size and the decision is set a
+ * step below it.
+ */
+.t-statement {
+  font-size: clamp(1.9rem, 3.7vw, 2.85rem);
+  line-height: 1.08;
+  font-weight: 600;
+  letter-spacing: -0.032em;
+}
+
+/* The verdict. Deliberately smaller than the statement above it. */
+.t-verdict {
+  font-size: clamp(1.65rem, 2.9vw, 2.2rem);
+  line-height: 1.05;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
 .t-display {
   font-size: clamp(2.6rem, 5.2vw, 4.05rem);
   line-height: 0.96;
@@ -168,7 +204,9 @@ body {
 
 .eyebrow {
   font-family: var(--font-mono);
-  font-size: 0.665rem;
+  /* 0.665rem rendered at 10.6px, which is below where uppercase mono at this
+     tracking stays legible. Family, case and tracking are unchanged. */
+  font-size: 0.72rem;
   font-weight: 500;
   letter-spacing: 0.17em;
   text-transform: uppercase;

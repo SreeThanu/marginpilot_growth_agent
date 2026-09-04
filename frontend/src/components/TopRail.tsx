@@ -108,9 +108,16 @@ export function TopRail() {
   const { scenario } = useScenarioId();
 
   return (
-    <header className="on-band bg-band text-band-ink">
+    /*
+     * Sticky, because the nav was previously unreachable from anywhere but the
+     * top of the page: the header is `static`, so at scrollY 1500 its bottom sat
+     * 1356px above the viewport. Routing was never broken — the control simply
+     * was not on screen. The chrome is kept short (the thesis moved to the
+     * landing, where it now opens the page) so pinning it costs little height.
+     */
+    <header className="on-band sticky top-0 z-50 bg-band text-band-ink">
       <div className="mx-auto max-w-[1240px] px-8">
-        <div className="flex flex-wrap items-center gap-x-10 gap-y-4 py-4">
+        <div className="flex flex-wrap items-center gap-x-10 gap-y-4 py-3.5">
           <Link
             href={withScenario("/", scenario)}
             className="flex items-center gap-2.5 rounded-[2px]"
@@ -121,12 +128,6 @@ export function TopRail() {
             />
             <span className="t-title text-band-ink">MarginPilot</span>
           </Link>
-
-          {/* The thesis. The one sentence a judge must leave with. */}
-          <p className="t-small hidden max-w-[54ch] text-band-muted lg:block">
-            A promotion can lift conversions and still make a merchant poorer.
-            This decides whether the economics justify the spend.
-          </p>
 
           <nav aria-label="Sections" className="ml-auto flex items-center gap-1">
             {NAV.map((item) => {

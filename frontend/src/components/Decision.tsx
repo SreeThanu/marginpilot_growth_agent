@@ -89,6 +89,40 @@ function VerdictLine({
   );
 }
 
+/**
+ * The premise, on its own band.
+ *
+ * Lifted out of the decision band so it reaches the first paint. It has no data
+ * dependency, and leaving it inside the data-gated render meant the one
+ * sentence the whole product turns on was missing from the server HTML and
+ * appeared only after the engine answered.
+ */
+export function PremiseBand() {
+  return (
+    <Band>
+      <Shell className="pt-12 pb-10">
+        {/*
+          The measure is set in rem, not ch: `ch` resolves against this
+          wrapper's body font rather than the statement's display size, which
+          collapsed the sentence to seven lines and pushed the verdict off the
+          first screen.
+        */}
+        <div className="max-w-[44rem]">
+          <Eyebrow onBand>The premise</Eyebrow>
+          <p className="t-statement mt-4 text-band-ink">
+            A promotion can lift conversions and still make the merchant poorer.
+          </p>
+          <p className="t-small mt-5 max-w-[58ch] text-band-muted">
+            MarginPilot decides whether the economics justify the spend. Below
+            is that judgement applied to one merchant.
+          </p>
+        </div>
+        <Rule onBand className="mt-10" />
+      </Shell>
+    </Band>
+  );
+}
+
 export function DecisionBand({
   recommendation,
   scenarioKey,
@@ -105,25 +139,30 @@ export function DecisionBand({
 
   return (
     <Band>
-      <Shell className="pt-14 pb-16">
+      <Shell className="pb-16">
         <div className="grid gap-x-16 gap-y-12 lg:grid-cols-[1.05fr_0.95fr]">
-          {/* -- the verdict ------------------------------------------------ */}
+          {/* -- the verdict, as the consequence ---------------------------- */}
           <div key={scenarioKey}>
-            <Eyebrow onBand>Decision</Eyebrow>
-            <h1
-              className={`t-display mp-wipe mt-4 ${toneText(tone, true)}`}
-            >
+            <Eyebrow onBand>
+              Merchant {scenarioKey} · the policy&rsquo;s answer
+            </Eyebrow>
+            {/*
+              Rendered statically. The clip-reveal used to paint a partially
+              masked headline ("Prom…") on every scenario switch, and the
+              staggered fades left the metrics column blank for a beat.
+            */}
+            <h1 className={`t-verdict mt-4 ${toneText(tone, true)}`}>
               {DECISION_LABEL[recommendation.decision]}
             </h1>
-            <p className="t-lead mp-rise mp-d1 mt-5 max-w-[40ch] text-band-ink">
+            <p className="t-lead mt-4 max-w-[40ch] text-band-ink">
               {DECISION_SUBTITLE[recommendation.decision]}
             </p>
 
-            <div className="mp-rise mp-d2 mt-8">
+            <div className="mt-8">
               <VerdictLine recommendation={recommendation} />
             </div>
 
-            <div className="mp-rise mp-d3 mt-6 flex flex-wrap gap-2">
+            <div className="mt-6 flex flex-wrap gap-2">
               <Chip
                 tone={measured ? "earn" : "open"}
                 glyph={measured ? "◆" : "◇"}
@@ -162,7 +201,7 @@ export function DecisionBand({
           </div>
 
           {/* -- the arithmetic --------------------------------------------- */}
-          <div className="mp-fade mp-d1 self-center">
+          <div className="self-start">
             <div className="grid grid-cols-2 gap-x-8 gap-y-6">
               <div>
                 <Eyebrow onBand>Incremental contribution</Eyebrow>
@@ -210,13 +249,89 @@ export function DecisionBand({
                 ? "Projected from the measured pilot across the rollout the budget can fund."
                 : "Expected at the lift the assistant proposed. Not a measurement."}
             </p>
+
           </div>
         </div>
+
+        {/*
+          Why a promising merchant still does not get a rollout.
+          Rendered only where the engine itself asked for an experiment, so it
+          appears for the merchant waiting on evidence and stays out of the way
+          for the two that are not. Every figure is a field the engine
+          returned; nothing here is derived.
+        */}
+        {recommendation.experiment_required ? (
+          <>
+            <Rule onBand className="mt-12" />
+            <div className="mt-9 grid gap-x-16 gap-y-8 lg:grid-cols-[1.05fr_0.95fr]">
+              <div>
+                <Eyebrow onBand>What would unlock a rollout</Eyebrow>
+                <div className="mt-4">
+                  <DataRow
+                    onBand
+                    label="Lift this offer must clear to break even"
+                    value={
+                      recommendation.required_break_even_lift_absolute === null
+                        ? "—"
+                        : percent(
+                            recommendation.required_break_even_lift_absolute,
+                            2,
+                          )
+                    }
+                  />
+                  <DataRow
+                    onBand
+                    label="Controlled test the policy asks for"
+                    value={`${count(
+                      recommendation.experiment_horizon_per_arm,
+                    )} per arm`}
+                  />
+                  <DataRow
+                    onBand
+                    label="Cost of running it"
+                    value={rupees(recommendation.experiment_cost_inr)}
+                  />
+                  <DataRow
+                    onBand
+                    label="Confidence rests on"
+                    value={recommendation.evidence_basis.toLowerCase()}
+                  />
+                  <DataRow
+                    onBand
+                    label="Measured result"
+                    value={
+                      <span className="text-band-subtle italic">
+                        Not yet measured
+                      </span>
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="self-center">
+                {recommendation.unresolved.map((code) => (
+                  <div
+                    key={code}
+                    className="border-l-2 border-open-dark pl-5"
+                  >
+                    <p className="figure text-[0.74rem] text-open-dark">
+                      {code}
+                    </p>
+                    <p className="t-small mt-2 max-w-[46ch] text-band-muted">
+                      {codeText(code)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        ) : null}
 
         {/* -- the ledger --------------------------------------------------- */}
         <Rule onBand className="mt-14" />
         <div key={`${scenarioKey}-ledger`}>
-          <SubHeading onBand className="mt-7">
+          {/* level 2: this is the first heading after the page's h1. */}
+          <SubHeading onBand level={2} className="mt-7">
             What the promotion earns, and what the incentive takes back
           </SubHeading>
           <ContributionRule

@@ -1,17 +1,17 @@
 /**
  * The ledger — this product's one picture, drawn on the decision band.
  *
- * Three metric tiles can state the contribution and the incentive without ever
- * making you feel the subtraction between them. So the arithmetic is drawn:
- * contribution runs right from zero, the incentive is taken back off its tip,
- * and whatever the incentive does not consume is the net. When the incentive is
- * longer than the contribution the remainder lands left of zero, in the deficit
- * field — which is the entire argument of the product, in one line, without a
- * sentence of explanation.
+ * A diverging chart on a single zero-anchored axis, because the arithmetic is
+ * the argument. Contribution runs right from zero. The incentive is then drawn
+ * back from the contribution's tip in the opposing direction, and wherever it
+ * comes to rest is the net — read directly off the axis rather than off a
+ * caption. When the incentive is longer than the contribution it crosses zero,
+ * and the overhang on the far side *is* the loss.
  *
- * Every extent is a proportion of numbers the engine returned. Nothing here
- * computes an economic quantity: it converts three given rupee figures into
- * three widths.
+ * Every extent is a proportion of three numbers the engine returned:
+ * contribution, incentive, net. Nothing here computes an economic quantity — it
+ * converts given rupee figures into pixel positions, and the only values shown
+ * as text are those same three fields.
  */
 
 "use client";
@@ -31,55 +31,41 @@ interface Props {
 }
 
 /**
- * A contribution or incentive extent.
+ * One extent on the axis.
  *
- * The contribution bar is solid viridian only when a measurement stands behind
- * it. Where the figure rests on a prior or on history it is drawn as an
- * outlined amber extent instead — present, sized correctly, and visibly not
- * yet banked. The width is the same either way; only the confidence reads
- * differently.
+ * `fill` and `text` are decided by the caller, because what a bar means differs
+ * per row: contribution is earned or projected, the incentive is a cost, and
+ * the resolved net is a gain or a loss.
  */
-function Bar({
+function Extent({
   left,
   width,
   top,
-  kind,
-  measured,
+  height = 34,
+  fill,
+  labelInside,
+  labelOutside,
   label,
 }: {
   left: number;
   width: number;
   top: number;
-  kind: "earn" | "spend";
-  measured: boolean;
+  height?: number;
+  fill: string;
+  labelInside: string;
+  labelOutside: string;
   label: string;
 }) {
   const inside = width >= INSIDE_LABEL_MIN_WIDTH;
-  const projected = kind === "earn" && !measured;
-
-  const fill =
-    kind === "spend"
-      ? "bg-spend-dark/45"
-      : measured
-        ? "bg-earn-dark/85"
-        : "border border-dashed border-open-dark/70 bg-open-dark/15";
-
-  const insideText =
-    kind === "earn" && measured
-      ? "text-band"
-      : projected
-        ? "text-open-dark"
-        : "text-band-ink/85";
-
   return (
     <>
       <div
-        className={`mp-extent absolute flex h-[34px] items-center justify-end rounded-[2px] px-3 ${fill}`}
-        style={{ top, left: `${left}%`, width: `${width}%` }}
+        className={`mp-extent absolute flex items-center justify-end rounded-[2px] px-3 ${fill}`}
+        style={{ top, left: `${left}%`, width: `${width}%`, height }}
       >
         {inside ? (
           <span
-            className={`figure text-[0.72rem] font-medium whitespace-nowrap ${insideText}`}
+            className={`figure text-[0.72rem] font-medium whitespace-nowrap ${labelInside}`}
           >
             {label}
           </span>
@@ -87,14 +73,11 @@ function Bar({
       </div>
       {!inside ? (
         <span
-          className={`figure absolute text-[0.72rem] font-medium whitespace-nowrap ${
-            kind === "earn"
-              ? measured
-                ? "text-earn-dark"
-                : "text-open-dark"
-              : "text-band-muted"
-          }`}
-          style={{ top: top + 9, left: `calc(${left + width}% + 10px)` }}
+          className={`figure absolute text-[0.72rem] font-medium whitespace-nowrap ${labelOutside}`}
+          style={{
+            top: top + height / 2 - 8,
+            left: `calc(${left + width}% + 10px)`,
+          }}
         >
           {label}
         </span>
@@ -126,94 +109,135 @@ export function ContributionRule({
   const contributionX = scale(contributionInr);
   const netX = scale(netInr);
 
+  // Row 1: contribution, right from zero.
   const earnedLeft = Math.min(zeroX, contributionX);
   const earnedWidth = Math.abs(contributionX - zeroX);
-  const spentLeft = Math.min(netX, contributionX);
-  const spentWidth = Math.abs(contributionX - netX);
+
+  // Row 2: the incentive, taken back from the contribution's tip. Where it ends
+  // is the net. The portion still covered by contribution reads as cost; any
+  // portion beyond zero is the overhang, and that overhang is the loss.
+  const coveredLeft = Math.min(Math.max(netX, zeroX), contributionX);
+  const coveredWidth = Math.abs(contributionX - Math.max(netX, zeroX));
+  const overhangLeft = Math.min(netX, zeroX);
+  const overhangWidth = negative ? Math.abs(zeroX - netX) : 0;
+
+  // Row 3: the resolved position — what the subtraction actually left.
+  const netLeft = Math.min(zeroX, netX);
+  const netWidth = Math.abs(netX - zeroX);
 
   // Viridian is reserved for a net a measurement stands behind. A positive net
   // resting on a prior is potential, and reads amber so it cannot be mistaken
-  // for money already banked.
-  const netMarker = negative
-    ? "bg-risk-dark"
+  // for money already banked. A negative net is value destroyed: brick.
+  const resultFill = negative
+    ? "bg-risk-dark/85"
     : measured
-      ? "bg-earn-dark"
-      : "bg-open-dark";
-  const netText = negative
-    ? "text-risk-dark"
+      ? "bg-earn-dark/85"
+      : "bg-open-dark/25";
+  /*
+   * Marked important because this class also lands on `.eyebrow`, whose own
+   * `color` otherwise wins the cascade and painted the row label grey. The
+   * negative branch already carried the flag, so only these two were affected —
+   * the loss row rendered brick while the gain rows did not render viridian or
+   * amber at all. This restores the colour the code always intended.
+   */
+  const resultText = negative
+    ? "!text-risk-dark"
     : measured
-      ? "text-earn-dark"
-      : "text-open-dark";
-
-  // The net label rides above its marker, pulled inside the frame at the edges.
-  const netStyle =
-    netX < 13
-      ? { left: 0 }
-      : netX > 87
-        ? { right: 0 }
-        : { left: `${netX}%`, transform: "translateX(-50%)" };
+      ? "!text-earn-dark"
+      : "!text-open-dark";
 
   return (
     <figure className="mt-9">
-      <div className="relative h-[168px] w-full select-none">
-        {/* The deficit field. Present only when the net lands inside it. */}
+      <div className="relative h-[214px] w-full select-none">
+        {/* The deficit field, behind everything left of zero. */}
         {negative ? (
           <div
             aria-hidden="true"
-            className="absolute top-[52px] bottom-[28px] left-0 bg-risk-dark/12"
+            className="absolute top-[26px] bottom-[30px] left-0 bg-risk-dark/10"
             style={{ width: `${zeroX}%` }}
           />
         ) : null}
 
-        {/* Zero. The line every figure on this graphic is measured against. */}
+        {/* Zero. The line every extent on this graphic is measured from. */}
         <div
           aria-hidden="true"
-          className="absolute top-[48px] bottom-[24px] w-px bg-band-rule-strong"
+          className="absolute top-[22px] bottom-[26px] w-px bg-band-rule-strong"
           style={{ left: `${zeroX}%` }}
         />
         <span
           aria-hidden="true"
-          className="figure absolute bottom-0 -translate-x-1/2 text-[0.68rem] text-band-subtle"
+          className="figure absolute bottom-[6px] -translate-x-1/2 text-[0.68rem] text-band-subtle"
           style={{ left: `${zeroX}%` }}
         >
           0
         </span>
 
-        {/* Where the subtraction lands. */}
-        <div
-          aria-hidden="true"
-          className={`mp-extent absolute top-[48px] h-[86px] w-[2px] ${netMarker}`}
-          style={{ left: `${netX}%` }}
-        />
-        <div className="absolute top-0 flex flex-col" style={netStyle}>
-          <span className="eyebrow eyebrow-dark">Net contribution</span>
-          <span
-            className={`figure mt-1.5 text-[1.05rem] font-medium whitespace-nowrap ${netText}`}
-          >
-            {rupees(netInr)}
-          </span>
-        </div>
-
-        {/* Contribution earned, then the incentive taken back off its tip. */}
-        <Bar
+        {/* Row 1 — what the promotion earns. */}
+        <span className="eyebrow eyebrow-dark absolute top-0">
+          Contribution earned
+        </span>
+        <Extent
           left={earnedLeft}
           width={earnedWidth}
-          top={52}
-          kind="earn"
-          measured={measured}
-          label={`+ ${rupees(contributionInr)} contribution`}
+          top={26}
+          fill={
+            measured
+              ? "bg-earn-dark/85"
+              : "border border-dashed border-open-dark/70 bg-open-dark/15"
+          }
+          labelInside={measured ? "text-band" : "text-open-dark"}
+          labelOutside={measured ? "text-earn-dark" : "text-open-dark"}
+          label={`+ ${rupees(contributionInr)}`}
         />
-        <Bar
-          left={spentLeft}
-          width={spentWidth}
-          top={94}
-          kind="spend"
-          measured={measured}
-          label={`− ${rupees(incentiveInr)} incentive`}
+
+        {/* Row 2 — what the incentive takes back, drawn against it. */}
+        <span
+          className="eyebrow eyebrow-dark absolute"
+          style={{ top: 74 }}
+        >
+          Incentive paid
+        </span>
+        <Extent
+          left={coveredLeft}
+          width={coveredWidth}
+          top={100}
+          fill="bg-spend-dark/45"
+          labelInside="text-band-ink/85"
+          labelOutside="text-band-muted"
+          label={`− ${rupees(incentiveInr)}`}
+        />
+        {/* The overhang past zero. This is the loss, and it is brick. */}
+        {overhangWidth > 0 ? (
+          <div
+            className="mp-extent absolute h-[34px] rounded-[2px] bg-risk-dark/80"
+            style={{
+              top: 100,
+              left: `${overhangLeft}%`,
+              width: `${overhangWidth}%`,
+            }}
+          />
+        ) : null}
+
+        {/* Row 3 — where the subtraction came to rest. */}
+        <span
+          className={`eyebrow absolute ${resultText}`}
+          style={{ top: 148 }}
+        >
+          {negative ? "Value destroyed" : measured ? "Net earned" : "Net, if it holds"}
+        </span>
+        <Extent
+          left={netLeft}
+          width={netWidth}
+          top={168}
+          height={22}
+          fill={resultFill}
+          labelInside={negative || measured ? "text-band" : "text-open-dark"}
+          labelOutside={resultText}
+          label={rupees(netInr)}
         />
       </div>
 
-      <figcaption className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-band-rule pt-3.5">
+      <figcaption className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-band-rule pt-3.5">
         <span
           className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-[3px] font-mono text-[0.685rem] font-medium tracking-[0.06em] ${
             measured

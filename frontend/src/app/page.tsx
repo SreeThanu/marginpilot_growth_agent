@@ -16,6 +16,7 @@ import {
   ControlPath,
   DecisionBand,
   GateLadder,
+  PremiseBand,
   Reasoning,
 } from "@/components/Decision";
 import {
@@ -39,15 +40,30 @@ export default function OverviewPage() {
   const { scenario } = useScenarioId();
   const { data, error, loading, retry } = useScenario(scenario);
 
-  if (error) return <ErrorState message={error.message} onRetry={retry} />;
-  if (loading || !data) return <Loading label="Deciding" />;
+  // The premise is static and renders before the engine answers, so the idea
+  // the product turns on is present at first paint rather than after the fetch.
+  if (error)
+    return (
+      <>
+        <PremiseBand />
+        <ErrorState message={error.message} onRetry={retry} />
+      </>
+    );
+  if (loading || !data)
+    return (
+      <>
+        <PremiseBand />
+        <Loading label="Deciding" />
+      </>
+    );
 
   const final = data.final;
   const changedItsMind = data.initial.decision !== final.decision;
 
   return (
     <>
-      {/* -- the verdict, continuous with the chrome above it --------------- */}
+      {/* -- premise, then the verdict it produces on this merchant --------- */}
+      <PremiseBand />
       <DecisionBand recommendation={final} scenarioKey={data.scenario} />
 
       <Shell className="pt-5">

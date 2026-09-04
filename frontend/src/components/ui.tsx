@@ -116,19 +116,28 @@ export function SubHeading({
   children,
   onBand = false,
   className = "",
+  level = 3,
 }: {
   children: ReactNode;
   onBand?: boolean;
   className?: string;
+  /**
+   * The outline level, not the size — `.t-section` styles both identically, so
+   * this changes what a screen reader hears and nothing a sighted reader sees.
+   * The decision band passes 2 because its ledger heading is the first heading
+   * after the page's h1, and jumping h1 → h3 breaks the document outline.
+   */
+  level?: 2 | 3;
 }) {
+  const Tag = level === 2 ? "h2" : "h3";
   return (
-    <h3
+    <Tag
       className={`t-section ${
         onBand ? "text-band-ink" : "text-ink"
       } ${className}`}
     >
       {children}
-    </h3>
+    </Tag>
   );
 }
 
