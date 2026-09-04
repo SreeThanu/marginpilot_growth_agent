@@ -3,7 +3,7 @@
 # Day 2: `worlds` and `test` are wired. The rest are declared now so the interface
 # is fixed before the code exists, and echo their build day until implemented.
 
-.PHONY: worlds demo snapshot eval audit adversarial test
+.PHONY: worlds demo snapshot eval audit adversarial test api web
 
 PYTHON ?= python
 WORLDS_DIR ?= worlds
@@ -34,6 +34,14 @@ audit:
 ## Run the seven adversarial scenarios; each must produce a logged refusal
 adversarial:
 	$(PYTHON) -m src.eval.adversarial
+
+## Serve the read-only JSON adapter the web frontend reads (http://127.0.0.1:8000)
+api:
+	$(PYTHON) -m api
+
+## Run the judge-facing web frontend in development (needs `make api` in another shell)
+web:
+	cd frontend && npm run dev
 
 ## Run the test suite
 test:

@@ -40,7 +40,29 @@ def test_gitignore_covers_every_generated_path() -> None:
 #: headline rests on it. Without it the dashboard cannot be built from a clean
 #: clone. Listed here by name so that tracking anything *else* under data/ still
 #: fails — the exception is one file, not a relaxed rule.
-TRACKED_EVIDENCE = {"data/holdout_results.json"}
+#: Generated files that are deliberately tracked because a reported result
+#: whose raw output is absent from the repo is a claim rather than evidence.
+#: Listed by exact name, never by pattern: the point of the check is that every
+#: exception is a decision someone made and can be grepped for.
+TRACKED_EVIDENCE = {
+    "data/holdout_results.json",
+    # The Cycle 2 dev ablation behind docs/simulator.md §4k, and the basis for
+    # not opening the Cycle 2 holdout. src/eval/devreport.py re-derives §4k's
+    # corrected table from these without calling a model.
+    "results/cycle2_dev_neither.json",
+    "results/cycle2_dev_break_even_only.json",
+    "results/cycle2_dev_history_only.json",
+    "results/cycle2_dev_both.json",
+} | {
+    # The Cycle 3 control-arm replication behind §4m's noise floor. Enumerated
+    # rather than globbed, so the replicate count stays a decision on the record.
+    f"results/cycle3_noise_neither_rep{i}.json" for i in range(1, 9)
+} | {
+    # The Fix A replicates behind §4n's primary contrast. Two, not the seven
+    # planned: the run stopped when the API credits were exhausted, and the
+    # count is left visible rather than rounded up in prose.
+    f"results/cycle3_fixa_rep{i}.json" for i in range(1, 3)
+}
 
 
 def test_nothing_generated_is_tracked_by_git() -> None:

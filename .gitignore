@@ -61,3 +61,11 @@ data/*
 .idea/
 .vscode/
 *.swp
+
+# Cycle 2 corpus. Same generator, fresh seeds; Cycle 1 stays at worlds/ so the
+# pre-registered §4i result remains reproducible from disk.
+worlds_cycle2/
+
+# Cycle 2 dev ablation: the evidence behind docs/simulator.md §4k. Committed
+# because a reported result whose raw output is not in the repo is a claim.
+!results/cycle2_dev_*.json

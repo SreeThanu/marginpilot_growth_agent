@@ -100,7 +100,11 @@ if featured:
         "Net incremental contribution",
         rupees(featured["net_contribution_inr"]),
         f"{rupees(featured['net_contribution_inr'])} at pilot scale",
-        delta_color="inverse",      # red: contribution went down
+        # "normal", so the sign carries the meaning: a negative contribution is
+        # a loss and renders red. "inverse" flipped that and painted a
+        # -Rs.4,269 loss GREEN beside a KILL verdict — the same defect already
+        # fixed on the P(net > 0) metric, in the same direction.
+        delta_color="normal",
     )
     st.caption(
         "The discount is paid to every treated buyer, including the ones who would "

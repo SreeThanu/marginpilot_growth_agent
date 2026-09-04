@@ -446,7 +446,13 @@ src/
 └── ui/             # Streamlit dashboard
 ```
 
+Full component walkthrough, including where ground truth lives, how the holdout seal is enforced, and where promotion cost enters net contribution: [`docs/architecture.md`](docs/architecture.md).
+
 **Deliberately not used:** Kafka, Kubernetes, Docker, vector databases, multi-agent swarms, reinforcement learning, custom models, MCP layers. The interesting part is the decision architecture and the evaluation, not the technology count.
+
+### Post-hoc analysis
+
+Exploratory analyses performed **after** Cycle 2 closed — targeting, heterogeneity, ceilings, source provenance, reproducibility, and a feasibility audit of an external dataset — live under [`analysis/posthoc/`](analysis/posthoc/), separated from the pre-registered cycle work in [`docs/simulator.md`](docs/simulator.md). None of it was pre-registered, none of it modified Cycle 1 or Cycle 2, none of it opened a sealed holdout, and none of it ran the LLM. [`analysis/posthoc/evidence-ledger.md`](analysis/posthoc/evidence-ledger.md) records what that work does and does not establish.
 
 ## Stack
 

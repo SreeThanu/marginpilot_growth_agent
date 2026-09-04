@@ -17,6 +17,8 @@ are the merchant's own numbers, not the simulator's parameters.
 
 from __future__ import annotations
 
+import hashlib
+
 from dataclasses import dataclass
 from enum import Enum
 from typing import Protocol, Sequence, Union, runtime_checkable
@@ -69,6 +71,48 @@ class CustomerView:
 
 
 @dataclass(frozen=True, slots=True)
+class InterventionHistory:
+    """What a past campaign of this type actually returned for this merchant.
+
+    Cycle 2, Fix B. The agent previously reasoned about interventions from their
+    descriptions; a merchant with any promotional history knows which offer
+    types have paid before.
+
+    Deliberately a *small* past campaign — 300 treated customers — so the figure
+    is informative without being decisive. A large enough history would make
+    selection arithmetic and the agent would win by reading one number, which
+    would measure nothing about reasoning. ``sample_size`` is exposed so the
+    agent can weigh the estimate rather than trust it.
+
+    Realized outcomes only. The latent that produced them is not here.
+    """
+
+    intervention_id: str
+    treated_customers: int
+    orders: int
+    #: Realized *incremental* net contribution per treated customer, measured
+    #: against a control arm the merchant held back at the time.
+    #:
+    #: Incremental, not gross. Gross contribution on treated orders counts the
+    #: buyers who would have bought anyway and makes every campaign look
+    #: profitable — which is the exact error this project exists to demonstrate.
+    #: A history built that way would push the agent toward more spending, not
+    #: better spending.
+    net_per_treated_customer_inr: float
+    #: Standard error of that mean. The honest width of the estimate.
+    standard_error_inr: float
+
+    @property
+    def sample_size(self) -> int:
+        return self.treated_customers
+
+    @property
+    def looks_profitable(self) -> bool:
+        """Point estimate only, and stated as such — not authority to act."""
+        return self.net_per_treated_customer_inr > 0
+
+
+@dataclass(frozen=True, slots=True)
 class SegmentView:
     """A segment as the merchant knows it: name, size, and the qualitative note.
 
@@ -100,10 +144,18 @@ class MerchantView:
     segments: tuple[SegmentView, ...]
     customers: tuple[CustomerView, ...]
     interventions: tuple[Intervention, ...]
+    #: Past campaign results per intervention (Cycle 2, Fix B). Empty in Cycle 1.
+    history: tuple[InterventionHistory, ...] = ()
 
     @property
     def projected_revenue_inr(self) -> float:
         return self.population * self.observed_conversion * self.observed_aov_inr
+
+    def history_for(self, intervention_id: str) -> "InterventionHistory | None":
+        for entry in self.history:
+            if entry.intervention_id == intervention_id:
+                return entry
+        return None
 
     def intervention(self, intervention_id: str) -> Intervention:
         for candidate in self.interventions:
@@ -181,6 +233,93 @@ class Strategy(Protocol):
         ...
 
 
+#: Size of the past campaign the merchant remembers, per intervention.
+#: Small on purpose — see InterventionHistory.
+HISTORY_SAMPLE = 300
+
+
+def _intervention_history(world: World) -> tuple[InterventionHistory, ...]:
+    """Simulate one small past campaign per intervention, against a control arm.
+
+    Drawn from the world's own response model, so it reflects that world's true
+    affinities the way a real merchant's history would — through sampling noise,
+    not as a clean readout. Seeded from the world id via blake2b, so a world's
+    history is stable across runs and processes, and identical for every
+    strategy that sees it.
+
+    **Both arms are simulated.** The merchant held back a control group at the
+    time, so the figure is an incremental effect rather than the gross
+    contribution of treated orders. Without a control the history would report
+    every campaign as profitable, which is precisely the mistake the project
+    is about, and would make this fix actively harmful.
+
+    Uses the response model, never ``Y(0)``/``Y(1)``: this is a past campaign
+    the merchant ran, not a peek at the experiment about to be run.
+    """
+    import numpy as np
+
+    from src.world.generator import intervention_affinity, treated_conversion_probability
+
+    margin = float(np.mean([p.contribution_margin for p in world.products]))
+    # blake2b, not Python's hash(): string hashing is salted per process, so
+    # hash() would give the same world a different past campaign on every run
+    # and the history would not be reproducible. Same reason
+    # src/experiment/randomize.py refuses it for arm assignment.
+    seed = int.from_bytes(
+        hashlib.blake2b(world.world_id.encode("utf-8"), digest_size=8).digest(), "big"
+    )
+    rng = np.random.default_rng(seed)
+    sample = world.customers[:HISTORY_SAMPLE]
+
+    control = world.customers[HISTORY_SAMPLE : HISTORY_SAMPLE * 2]
+
+    entries = []
+    for intervention in world.interventions:
+        affinity = intervention_affinity(world.params, intervention)
+
+        treated_values, orders = [], 0
+        for customer in sample:
+            basket = customer.expected_order_value_inr
+            if intervention.bundle_added_value_inr:
+                basket += intervention.bundle_added_value_inr
+            p1 = treated_conversion_probability(customer, intervention, basket, affinity)
+            if rng.random() < p1:
+                orders += 1
+                treated_values.append(basket * margin - intervention.incentive_cost_inr(basket))
+            else:
+                treated_values.append(0.0)
+
+        control_values = []
+        for customer in control:
+            converted = rng.random() < customer.baseline_purchase_prob
+            control_values.append(customer.expected_order_value_inr * margin if converted else 0.0)
+
+        treated_arr = np.asarray(treated_values, dtype=float)
+        control_arr = np.asarray(control_values, dtype=float)
+        if len(control_arr) == 0:
+            control_arr = np.zeros(1)
+
+        # Two-sample difference of means, and its standard error. The same
+        # estimator src/experiment/evaluator.py uses at the horizon.
+        effect = float(treated_arr.mean() - control_arr.mean())
+        se = float(
+            np.sqrt(
+                treated_arr.var(ddof=1) / len(treated_arr)
+                + control_arr.var(ddof=1) / max(len(control_arr), 2)
+            )
+        )
+        entries.append(
+            InterventionHistory(
+                intervention_id=intervention.intervention_id,
+                treated_customers=len(sample),
+                orders=orders,
+                net_per_treated_customer_inr=effect,
+                standard_error_inr=se,
+            )
+        )
+    return tuple(entries)
+
+
 def merchant_view(world: World) -> MerchantView:
     """Project a world down to what a merchant can actually see.
 
@@ -229,4 +368,5 @@ def merchant_view(world: World) -> MerchantView:
             for s in world.segments
         ),
         interventions=world.interventions,
+        history=_intervention_history(world),
     )

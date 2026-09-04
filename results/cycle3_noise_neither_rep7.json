@@ -1,0 +1,811 @@
+{
+ "summary": {
+  "arm": "neither",
+  "worlds": 20,
+  "errors": 0,
+  "error_detail": [],
+  "ran": 14,
+  "skipped": 6,
+  "selection_accuracy": "2/14",
+  "history_match_rate": "3/14",
+  "correct_where_history_disagreed": 0,
+  "mix": {
+   "int_shipping": 12,
+   "int_bundle": 2
+  },
+  "net_of_choices_inr": -1290098.5074510002,
+  "net_if_always_best_inr": -305802.72054000944
+ },
+ "rows": [
+  {
+   "world_id": "world_20001",
+   "decision": "run",
+   "chosen": "int_shipping",
+   "truth_best": "int_bundle",
+   "history_best": "int_flat",
+   "true_net_of_choice": -12675.150000000003,
+   "true_net_of_best": 13128.150689999695,
+   "assessment": {
+    "decision": "run",
+    "hypothesis_id": "hyp_world_20001_c0",
+    "intervention_id": "int_shipping",
+    "prediction": "Free shipping will lift conversion from 13.30% to at least 17.50% (+4.20% absolute lift), exceeding the 16.78% break-even threshold by converting cart abandoners and small-basket regulars.",
+    "reasoning": "Shipping cost is explicitly cited as the primary checkout barrier by Cart abandoners (9% of audience) and Small-basket regulars (18% of audience). Additionally, a key competitor recently lowered their free-shipping threshold to Rs.399, exacerbating conversion drift and AOV decline. Waiving the Rs.50 fee directly addresses customer friction across 27% of the total user base.",
+    "citations": [
+     {
+      "field": "SEGMENTS",
+      "quote": "Support tickets from this group mention shipping cost more than product price.",
+      "inference": "Shipping costs are the primary cause of checkout abandonment for the 9% Cart abandoner segment."
+     },
+     {
+      "field": "SEGMENTS",
+      "quote": "Free-shipping thresholds are the main thing standing between them and a bigger basket.",
+      "inference": "Shipping fees actively prevent the 18% Small-basket regular segment from completing orders or increasing basket size."
+     },
+     {
+      "field": "COMPETITOR ACTIVITY",
+      "quote": "A competitor's free-shipping threshold dropped to Rs.399, below this merchant's.",
+      "inference": "Competitor policy changes are actively siphoning price-sensitive orders away from Saanjh & Sons."
+     }
+    ],
+    "expected_effect_absolute": 0.042,
+    "mde_contribution_per_customer_inr": 1.2,
+    "success_condition": "Observed conversion rate in the treatment group reaches or exceeds 16.78% (an absolute lift of +3.48%), delivering incremental contribution per visitor above the baseline Rs.32.05.",
+    "failure_condition": "Observed conversion rate in the treatment group remains below 16.78%, resulting in net contribution loss due to absorbing the Rs.50 shipping cost per order.",
+    "selection_rationale": "Baseline contribution per order is Rs.241 (34.9% of Rs.690 AOV) at 13.30% conversion, yielding baseline EV of Rs.32.05 per visitor. 1) int_flat (Rs.20 off): Post-discount margin Rs.221, break-even conversion = 14.50% (+1.20% lift). 2) int_pct (8% off, Rs.55.20 cost): Post-discount margin Rs.185.80, break-even conversion = 17.25% (+3.95% lift). 3) int_shipping (Rs.50 cost): Post-discount margin Rs.191.00, break-even conversion = 16.78% (+3.48% lift). 4) int_bundle (Rs.133 added AOV, Rs.90.50 discount): Post-discount margin Rs.196.70, break-even conversion = 16.30% (+3.00% lift). int_flat is mathematically the most affordable. While int_flat has the lowest mathematical break-even hurdle (+1.20%), a Rs.20 discount does not eliminate the Rs.50 shipping fee that customers explicitly complain about. int_shipping directly addresses the specific friction point holding back 27% of visitors, making its required +3.48% absolute conversion lift highly attainable.",
+    "created_at": "2026-08-28T20:34:45.969734+00:00"
+   }
+  },
+  {
+   "world_id": "world_20002",
+   "decision": "skip",
+   "chosen": null,
+   "truth_best": "int_bundle",
+   "history_best": "int_shipping",
+   "true_net_of_choice": 0.0,
+   "true_net_of_best": 15184.73016800092,
+   "assessment": {
+    "decision": "skip",
+    "reasoning": "Indigo Thread India is facing structural margin compression where promotional spending has repeatedly failed to produce positive financial returns. Contribution margin sits at 25.6% (Rs.822 per order), and recent freight rate increases have thinned margins further. Trading history shows discount depth creeping up over three quarters without driving revenue, and last month's 15% off campaign directly degraded net financial performance. CS data indicates customers are constrained by fulfillment delays and stockouts rather than pricing, while competitors are stepping back from discounts. Spending scarce experiment budget (where one experiment costs ~2.8x annual promo profits) under these unit economics presents severe negative expected value.",
+    "citations": [
+     {
+      "field": "TRADING NOTES",
+      "quote": "Margins slipped after the last freight rate increase.",
+      "inference": "Unit economics are already under pressure from rising shipping costs, making shipping subsidies or price cuts financially unfeasible."
+     },
+     {
+      "field": "TRADING NOTES",
+      "quote": "Discount depth has crept up over three quarters without a corresponding revenue trend.",
+      "inference": "Historical discounting has failed to build incremental volume, acting as an uncompensated margin leak."
+     },
+     {
+      "field": "TRADING NOTES",
+      "quote": "Last month's blanket 15% off cleared stock but the finance sheet looked worse after it.",
+      "inference": "Clearing inventory via price cuts destroys incremental contribution margin."
+     },
+     {
+      "field": "CUSTOMER SERVICE THEMES",
+      "quote": "Complaints that delivery took longer than the estimate in tier-2 cities.",
+      "inference": "The primary operational driver of customer dissatisfaction and drop-off is logistics speed, not price point."
+     },
+     {
+      "field": "COMPETITOR ACTIVITY",
+      "quote": "Two competitors have pulled back on discounting since the last festival window.",
+      "inference": "The market is retreating from price competition, giving the merchant room to maintain price discipline."
+     }
+    ],
+    "would_run_if": "We would consider running an experiment if logistics reliability in tier-2 cities was resolved, freight costs normalized, and gross contribution margins expanded beyond 40% on targeted lines to safely absorb promotional cost lines.",
+    "best_option_considered": "int_shipping (Free shipping waiving Rs.160 fee) targeted at the Cart abandoners segment (12% of customer base).",
+    "expected_value_reasoning": "Waiving the Rs.160 shipping fee reduces contribution per order from Rs.822 to Rs.662\u2014a direct 19.5% margin reduction on every order that would have converted anyway. To reach break-even on contribution, conversion among targeted cart abandoners would need to increase by at least 24.2%. Given that delivery delays are a primary source of friction and competitors are reducing discounts, this conversion lift is highly unlikely to materialize, making the experiment an unprofitable risk.",
+    "created_at": "2026-08-28T20:35:25.910721+00:00"
+   }
+  },
+  {
+   "world_id": "world_20003",
+   "decision": "skip",
+   "chosen": null,
+   "truth_best": "int_bundle",
+   "history_best": "int_shipping",
+   "true_net_of_choice": 0.0,
+   "true_net_of_best": -11302.618160999993,
+   "assessment": {
+    "decision": "skip",
+    "reasoning": "With only 1 experiment remaining (costing ~2.8x the annual profit pool generated by promotions) and a current Post-Diwali demand lull, testing any promotion right now is expected to be value-destructive. A full 37% of customers are Gift buyers who prioritize delivery speed over price, 20% are Lapsing Loyalists insensitive to price cuts, and Deal Seekers represent only 6% of the customer base. During a severe seasonal lull, price cuts primarily subsidize baseline purchases rather than generating the required 16% to 45% relative conversion lifts needed to break even on incremental contribution.",
+    "citations": [
+     {
+      "field": "SEASONAL CONTEXT",
+      "quote": "Post-Diwali lull; demand falls back hard for about three weeks",
+      "inference": "Organic purchase intent across the customer base is sharply reduced, making it nearly impossible to hit incremental conversion thresholds needed to cover promotion costs."
+     },
+     {
+      "field": "TRADING NOTES",
+      "quote": "Last month's blanket 15% off cleared stock but the finance sheet looked worse after it.",
+      "inference": "Un-targeted discounting has already proven to destroy overall contribution margin despite moving unit volume."
+     },
+     {
+      "field": "TRADING NOTES",
+      "quote": "A previous free-shipping trial was called a success on conversion; nobody checked contribution.",
+      "inference": "Conversion lifts from free shipping previously masked a net erosion in contribution margin per order."
+     },
+     {
+      "field": "SEGMENTS",
+      "quote": "Gift buyers (37%): Order in festival windows, ship to addresses other than their own, and care more about delivery date than price.",
+      "inference": "The largest customer segment is insensitive to price promotions outside festival windows."
+     }
+    ],
+    "would_run_if": "We were operating outside a seasonal demand lull, had a higher proportion of price-sensitive deal-seekers (above 20%), or possessed inventory margin buffers that allowed a targeted bundle offer to achieve break-even at a realistic conversion lift.",
+    "best_option_considered": "int_bundle (Bundle offer: 2 co-bought SKUs at 6% off, adding ~Rs.55 basket value)",
+    "expected_value_reasoning": "Even int_bundle, the most efficient intervention, increases average order value to Rs. 680 but yields Rs. 153.68 contribution per order post-discount. To maintain baseline contribution per user of Rs. 11.10 (at 6.2% conversion and Rs. 179 contribution), conversion would need to increase from 6.20% to 7.22% (+1.02% absolute / +16.5% relative). During a post-Diwali lull with 57% of customers either price-insensitive (Gift buyers) or unresponsive to discounts (Lapsing loyalists), achieving this incremental conversion lift is highly improbable, making the expected value negative relative to the high cost of consuming our final experiment.",
+    "created_at": "2026-08-28T20:35:43.713035+00:00"
+   }
+  },
+  {
+   "world_id": "world_20004",
+   "decision": "run",
+   "chosen": "int_bundle",
+   "truth_best": "int_pct",
+   "history_best": "int_flat",
+   "true_net_of_choice": -52947.7119760008,
+   "true_net_of_best": 50723.21522400008,
+   "assessment": {
+    "decision": "run",
+    "hypothesis_id": "hyp_world_20004_c0",
+    "intervention_id": "int_bundle",
+    "prediction": "int_bundle will increase average order value by expanding basket size, lifting conversion from 12.6% to 14.5% (+1.9% absolute lift) while preserving contribution margin per order.",
+    "reasoning": "Chai Chapter & Sons has seen falling AOV for two straight months and learned that blanket discounting (15% off last month) degraded overall financial performance despite clearing volume. Customer service feedback highlights organic demand for bundling SKUs that customers already purchase together. The bundle offer (int_bundle) incentivises a higher basket value (+Rs.156) at a minimal 4% price concession, directly countering declining AOV without sacrificing unit contribution like flat discounts or free shipping.",
+    "citations": [
+     {
+      "field": "TRADING NOTES",
+      "quote": "Average order value has fallen for two straight months.",
+      "inference": "Interventions must focus on driving basket size up rather than discounting single items."
+     },
+     {
+      "field": "TRADING NOTES",
+      "quote": "Last month's blanket 15% off cleared stock but the finance sheet looked worse after it.",
+      "inference": "Deep price cuts destroy contribution margin and fail to produce profitable incremental volume."
+     },
+     {
+      "field": "CUSTOMER SERVICE THEMES",
+      "quote": "Requests to bundle two SKUs that customers already buy together.",
+      "inference": "There is explicit customer demand for co-buying packaged sets, making bundle adoption high and low-friction."
+     }
+    ],
+    "expected_effect_absolute": 0.019,
+    "mde_contribution_per_customer_inr": 12.5,
+    "success_condition": "Observed conversion rate increases by at least 1.4% absolute (to >= 14.0%) alongside a rise in average order value, resulting in positive incremental contribution per treated customer.",
+    "failure_condition": "Conversion rate increases by less than 0.9% absolute or AOV fails to increase, leading to lower net contribution per customer compared to control.",
+    "selection_rationale": "Base contribution per order is Rs. 981 at 12.6% conversion (Rs. 123.61 per visitor). 1) int_shipping waives Rs. 240, reducing per-order contribution to Rs. 741; requires 16.68% conversion (+4.08% absolute lift). 2) int_pct (5% off) reduces contribution to Rs. 840; requires 14.71% conversion (+2.11% absolute lift). 3) int_flat (Rs. 120 off) reduces contribution to Rs. 861; requires 14.36% conversion (+1.76% absolute lift). 4) int_bundle adds ~Rs. 156 in basket value at a 4% discount, yielding ~Rs. 916 contribution per order; requires only 13.49% conversion (+0.89% absolute lift). int_bundle has the lowest break-even hurdle. int_bundle requires the lowest incremental conversion lift (+0.89%) to break even because it expands basket value rather than solely discounting base order revenue. Given that AOV is falling and CS logs confirm demand for bundling co-bought SKUs, int_bundle addresses the root cause of declining revenue per session at minimum margin risk.",
+    "created_at": "2026-08-28T20:36:05.231711+00:00"
+   }
+  },
+  {
+   "world_id": "world_20005",
+   "decision": "run",
+   "chosen": "int_shipping",
+   "truth_best": "int_bundle",
+   "history_best": "int_bundle",
+   "true_net_of_choice": -519271.75499999966,
+   "true_net_of_best": -437332.382488013,
+   "assessment": {
+    "decision": "run",
+    "hypothesis_id": "hyp_world_20005_c0",
+    "intervention_id": "int_shipping",
+    "prediction": "Offering free shipping will lift overall store conversion from 21.2% to at least 25.7% (+4.5 percentage points), driven primarily by unlocking conversions among the 28% Small-basket regular segment who currently bounce at checkout due to shipping fees.",
+    "reasoning": "Nodewire's trading notes state that traffic is increasingly mobile and bounce-heavy, while customer segments reveal that Small-basket regulars (28% of customer base) make frequent small orders where free-shipping thresholds are the primary barrier to completion. Meanwhile, 51% of customers are Gift buyers who are price-insensitive regarding delivery date, meaning they won't be cannibalized heavily by standard free shipping. Absorbing the Rs.160 shipping fee reduces per-order contribution from Rs.946 to Rs.786, making int_shipping the least dilutive intervention with the lowest break-even hurdle.",
+    "citations": [
+     {
+      "field": "SEGMENTS",
+      "quote": "Small-basket regulars (28%): Order often but small \u2014 single items, rarely bundles. Free-shipping thresholds are the main thing standing between them and a bigger basket.",
+      "inference": "Shipping costs are the explicitly identified friction point preventing conversion for nearly a third of the audience."
+     },
+     {
+      "field": "TRADING NOTES",
+      "quote": "Traffic is increasingly mobile and increasingly bounce-heavy.",
+      "inference": "Eliminating friction at shipping selection directly targets high mobile drop-off rates."
+     },
+     {
+      "field": "SEGMENTS",
+      "quote": "Gift buyers (51%): Order in festival windows, ship to addresses other than their own, and care more about delivery date than price.",
+      "inference": "The majority segment is insensitive to minor price variations, limiting deadweight loss from granting free shipping."
+     }
+    ],
+    "expected_effect_absolute": 0.045,
+    "mde_contribution_per_customer_inr": 8.5,
+    "success_condition": "Observed conversion rate in the treatment arm reaches 25.52% or higher (+4.32 percentage points), maintaining expected net contribution per visitor at or above Rs. 200.55.",
+    "failure_condition": "Observed conversion rate in the treatment arm remains below 25.52%, indicating that waiving the Rs.160 fee fails to generate enough incremental order volume to offset margin dilution.",
+    "selection_rationale": "Baseline EV = 21.2% * Rs.946 = Rs.200.55 per visitor. 1) int_shipping: Contribution = Rs.786 (946-160). Break-even conversion = 200.55 / 786 = 25.52% (+4.32% lift; 16.9% incremental share of converts). 2) int_bundle: Estimated contribution = Rs.779.68. Break-even conversion = 25.72% (+4.52% lift; 17.6% incremental share). 3) int_pct: Contribution = Rs.716.88. Break-even conversion = 27.98% (+6.78% lift; 24.2% incremental share). 4) int_flat: Contribution = Rs.696. Break-even conversion = 28.82% (+7.62% lift; 26.4% incremental share). int_shipping requires the lowest incremental conversion hurdle. int_shipping is the most economically viable option because it requires the lowest absolute conversion lift (+4.32 percentage points / 16.9% incremental convert share) to achieve contribution break-even, while directly addressing the single documented purchase barrier for the 28% Small-basket regular segment.",
+    "created_at": "2026-08-28T20:36:51.196213+00:00"
+   }
+  },
+  {
+   "world_id": "world_20006",
+   "decision": "run",
+   "chosen": "int_shipping",
+   "truth_best": "int_bundle",
+   "history_best": "int_flat",
+   "true_net_of_choice": -83373.77499999995,
+   "true_net_of_best": 99673.72279199985,
+   "assessment": {
+    "decision": "run",
+    "hypothesis_id": "hyp_world_20006_c0",
+    "intervention_id": "int_shipping",
+    "prediction": "Waiving the Rs.60 shipping fee will convert cart abandoners and small-basket regulars, lifting overall conversion by at least 5.5 percentage points (from 17.1% to 22.6%), achieving net incremental contribution.",
+    "reasoning": "While previous blanket price discounts (15% off) destroyed contribution margins, customer feedback and segment data point explicitly to shipping cost\u2014not baseline product price\u2014as the core friction point. Cart abandoners (9%) cite shipping cost in support tickets, small-basket regulars (18%) are bottlenecked by shipping thresholds, and competitors recently lowered their threshold to Rs.399. Removing shipping fees directly targets the exact barrier preventing 27% of customers from converting.",
+    "citations": [
+     {
+      "field": "CUSTOMER SERVICE THEMES",
+      "quote": "Repeated questions about whether shipping is free above a threshold.",
+      "inference": "Shipping fees generate explicit checkout friction and hesitation across shoppers."
+     },
+     {
+      "field": "SEGMENTS",
+      "quote": "Reach checkout and stop. Support tickets from this group mention shipping cost more than product price.",
+      "inference": "Cart abandoners leave at final payment specifically due to shipping charges rather than item price."
+     },
+     {
+      "field": "SEGMENTS",
+      "quote": "Order often but small \u2014 single items, rarely bundles. Free-shipping thresholds are the main thing standing between them and a bigger basket.",
+      "inference": "Shipping costs disproportionately deter high-frequency, small-basket purchasers."
+     },
+     {
+      "field": "COMPETITOR ACTIVITY",
+      "quote": "A competitor's free-shipping threshold dropped to Rs.399, below this merchant's.",
+      "inference": "Market pressure on shipping friction has intensified, compounding cart abandonment."
+     }
+    ],
+    "expected_effect_absolute": 0.055,
+    "mde_contribution_per_customer_inr": 1.5,
+    "success_condition": "Observed conversion rate increases to 22.6% or higher, generating net positive incremental contribution per customer above the baseline Rs.43.09.",
+    "failure_condition": "Observed conversion rate remains below 22.44%, indicating the Rs.60 fee waiver fails to generate enough incremental orders to offset the absorbed shipping cost.",
+    "selection_rationale": "Baseline contribution is Rs.43.09/customer (17.1% * Rs.252). For int_shipping (cost Rs.60/order), new margin per order is Rs.192, requiring 22.44% conversion (+5.34% absolute lift). For int_flat (cost Rs.60), break-even conversion is also 22.44% (+5.34% lift). For int_pct (6% off = Rs.48.90 cost), new margin is Rs.203.10, requiring 21.22% conversion (+4.12% lift). For int_bundle (4% off on Rs.898 basket = Rs.241.56 net margin), break-even conversion is 17.84% (+0.74% lift). int_bundle has the lowest numerical break-even threshold. Although int_bundle requires a smaller conversion lift (+0.74%), it relies on multi-item interest. In contrast, int_shipping directly addresses the specific obstacle documented across customer support tickets, competitor moves, and 27% of the customer base (Cart Abandoners + Small-Basket Regulars), making it the single intervention with a high probability of exceeding its break-even threshold (+5.34%).",
+    "created_at": "2026-08-28T20:37:47.175797+00:00"
+   }
+  },
+  {
+   "world_id": "world_20007",
+   "decision": "run",
+   "chosen": "int_shipping",
+   "truth_best": "int_bundle",
+   "history_best": "int_pct",
+   "true_net_of_choice": -40915.84,
+   "true_net_of_best": 74279.73592800023,
+   "assessment": {
+    "decision": "run",
+    "hypothesis_id": "hyp_world_20007_c0",
+    "intervention_id": "int_shipping",
+    "prediction": "Waiving the Rs.110 shipping fee via int_shipping will increase conversion among checkout abandoners from the baseline 11.2% to at least 13.1% (+1.9 percentage points), exceeding the 12.84% break-even conversion threshold.",
+    "reasoning": "Trading notes show that broad discounting has failed to drive revenue ('Discount depth has crept up over three quarters without a corresponding revenue trend'). However, customer service data identifies a specific, friction-based blocker: cart abandoners (21% of traffic) explicitly complain about shipping costs ('Support tickets from this group mention shipping cost more than product price'). Removing the Rs.110 shipping fee directly addresses this drop-off cause without diluting product price perception across price-insensitive segments like Bulk Regulars.",
+    "citations": [
+     {
+      "field": "CUSTOMER SERVICE THEMES",
+      "quote": "Repeated questions about whether shipping is free above a threshold.",
+      "inference": "Shipping fees are a primary source of checkout friction and pre-purchase customer inquiry."
+     },
+     {
+      "field": "SEGMENTS",
+      "quote": "Reach checkout and stop. Support tickets from this group mention shipping cost more than product price.",
+      "inference": "The 21% cart abandoner segment is bottlenecked specifically by shipping fees rather than item pricing."
+     },
+     {
+      "field": "TRADING NOTES",
+      "quote": "Discount depth has crept up over three quarters without a corresponding revenue trend.",
+      "inference": "Un-targeted price discounts destroy contribution margin without yielding incremental conversion, necessitating a specific fee-removal approach."
+     }
+    ],
+    "expected_effect_absolute": 0.019,
+    "mde_contribution_per_customer_inr": 2.5,
+    "success_condition": "Observed conversion rate in the treatment group reaches or exceeds 13.1% (+1.9% absolute lift), generating incremental contribution per customer above Rs.0.",
+    "failure_condition": "Observed conversion rate remains below 12.84%, failing to cover the Rs.110 cost line per order waived.",
+    "selection_rationale": "Baseline baseline contribution is Rs.863 per order at 11.2% conversion (Rs.96.66 contribution/customer). Break-even conversion rates: int_bundle requires 11.68% (+0.48% lift, contribution Rs.827.87/order); int_shipping requires 12.84% (+1.64% lift, contribution Rs.753/order); int_pct requires 13.34% (+2.14% lift, contribution Rs.724.64/order); int_flat requires 13.37% (+2.17% lift, contribution Rs.723/order). int_bundle has the lowest numerical break-even requirement, but int_shipping is the most affordable friction-targeted offer. While int_bundle has a lower theoretical break-even lift (+0.48%), it relies on multi-item purchases from a 16-SKU catalog. int_shipping requires a modest +1.64% absolute lift (to 12.84%), which is highly achievable given that 21% of users currently drop off at checkout specifically due to shipping fees.",
+    "created_at": "2026-08-28T20:38:33.392440+00:00"
+   }
+  },
+  {
+   "world_id": "world_20008",
+   "decision": "run",
+   "chosen": "int_shipping",
+   "truth_best": "int_bundle",
+   "history_best": "int_shipping",
+   "true_net_of_choice": -182111.47999999978,
+   "true_net_of_best": -100261.4521759968,
+   "assessment": {
+    "decision": "run",
+    "hypothesis_id": "hyp_world_20008_c0",
+    "intervention_id": "int_shipping",
+    "prediction": "Waiving the Rs.60 shipping fee will increase conversion rate from 19.9% to at least 24.1% (a +4.2 percentage point absolute lift), surpassing the break-even threshold of 23.81%.",
+    "reasoning": "Both customer service inquiries and cart abandoner support tickets explicitly name shipping cost as the key friction point at checkout. Removing this specific barrier directly addresses documented intent-to-buy drop-offs, making it the highest-confidence candidate to deliver net incremental contribution.",
+    "citations": [
+     {
+      "field": "CUSTOMER SERVICE THEMES",
+      "quote": "Repeated questions about whether shipping is free above a threshold.",
+      "inference": "Customers actively seek ways to avoid shipping fees prior to completing their orders."
+     },
+     {
+      "field": "SEGMENTS",
+      "quote": "Cart abandoners (8%): Reach checkout and stop. Support tickets from this group mention shipping cost more than product price.",
+      "inference": "Shipping costs are the primary cause of abandonment at the final step of the funnel rather than core SKU pricing."
+     }
+    ],
+    "expected_effect_absolute": 0.042,
+    "mde_contribution_per_customer_inr": 4.5,
+    "success_condition": "Conversion rate in the int_shipping arm reaches or exceeds 23.81% (an absolute lift of >= 3.91 percentage points), resulting in positive incremental contribution per visitor.",
+    "failure_condition": "Conversion rate in the int_shipping arm stays below 23.81%, proving the revenue from incremental orders does not offset the Rs.60 cost per order.",
+    "selection_rationale": "Baseline contribution per visitor is Rs.72.64 (19.9% conversion * Rs.365 margin). int_flat (Rs.50 off) reduces order contribution to Rs.315, requiring 23.06% conversion (+3.16% lift). int_pct (8% off / ~Rs.86) reduces order contribution to Rs.278.84, requiring 26.05% conversion (+6.15% lift). int_shipping (Rs.60 fee waived) reduces order contribution to Rs.305, requiring 23.81% conversion (+3.91% lift). int_bundle (~Rs.45.84 net discount for Rs.69 add-on) yields Rs.342.48 contribution, requiring 21.21% conversion (+1.31% lift). int_bundle is mathematically most affordable, but int_shipping directly aligns with qualitative customer evidence. Although int_bundle has a lower hurdle rate (+1.31%), int_shipping is chosen for the merchant's single allowable experiment because customer support records explicitly establish shipping fees as the bottleneck holding back conversion.",
+    "created_at": "2026-08-28T20:39:23.897919+00:00"
+   }
+  },
+  {
+   "world_id": "world_20009",
+   "decision": "skip",
+   "chosen": null,
+   "truth_best": "int_bundle",
+   "history_best": "int_pct",
+   "true_net_of_choice": 0.0,
+   "true_net_of_best": -82701.70214400002,
+   "assessment": {
+    "decision": "skip",
+    "reasoning": "Experimentation is extremely scarce and costly (costing ~2.8x the annual promotional profit pool), making a risky experiment financially unviable for Dhaanya Labs. The merchant's trading history shows that discounting destroys value ('finance sheet looked worse after it'), and 69% of the customer base consists of segments that are either price-insensitive (Gift buyers 27%, Bulk regulars 15%) or insensitive to discounts (Lapsing loyalists 27%). Furthermore, major customer drop-offs stem from operational frictions\u2014such as damaged packaging on heavy SKUs and lack of Cash on Delivery\u2014rather than price resistance. Attempting to lift conversion via promotions will bleed margin on high-AOV orders without addressing the root causes of drop-off.",
+    "citations": [
+     {
+      "field": "TRADING NOTES",
+      "quote": "Last month's blanket 15% off cleared stock but the finance sheet looked worse after it.",
+      "inference": "Price cuts fail to generate sufficient incremental contribution to offset margin loss on base buyers."
+     },
+     {
+      "field": "MERCHANT",
+      "quote": "customer base that skews toward tier-2 buyers placing larger, less frequent orders.",
+      "inference": "High baseline AOV (Rs.2,132) means un-targeted discounts heavily subsidize orders that would happen regardless."
+     },
+     {
+      "field": "SEGMENTS",
+      "quote": "Gift buyers (27%): Order in festival windows, ship to addresses other than their own, and care more about delivery date than price.",
+      "inference": "The largest customer segment does not respond to price reductions, rendering discounts pure margin leakage."
+     },
+     {
+      "field": "CUSTOMER SERVICE THEMES",
+      "quote": "Feedback that packaging arrives damaged on the heavier SKUs.",
+      "inference": "Drop-off and negative customer experience are driven by packaging failures rather than product pricing."
+     }
+    ],
+    "would_run_if": "We would consider running an intervention if packaging issues on heavy SKUs were resolved, Cash on Delivery was implemented, and the merchant had a dedicated clearance mechanism specifically targeting the deadstock inventory (Classic cold brew concentrate and Premium tea tins) without discounting the core top 3 SKUs that generate over half of revenue.",
+    "best_option_considered": "int_bundle (Bundle offer of two co-bought SKUs at 6% off, adding ~Rs.566 in basket value)",
+    "expected_value_reasoning": "int_bundle was the strongest contender because it targets basket building rather than outright discounting on existing purchases. At an increased AOV of Rs.2,698 and a 6% discount (Rs.161.88 discount per order), the contribution per bundle order would be Rs.461.36. To break even against the baseline contribution per visitor (Rs.63.96), overall conversion would need to rise from 13.0% to 13.86%. However, because the single available experiment costs roughly 2.8x the entire annual promotional profit pool, a modest lift in bundle conversion cannot recover the fixed cost of testing, especially given that bulk and gift buyers are not seeking bundles at a minor discount.",
+    "created_at": "2026-08-28T20:40:11.291722+00:00"
+   }
+  },
+  {
+   "world_id": "world_20010",
+   "decision": "run",
+   "chosen": "int_bundle",
+   "truth_best": "int_bundle",
+   "history_best": "int_bundle",
+   "true_net_of_choice": -11949.17047499991,
+   "true_net_of_best": -11949.17047499991,
+   "assessment": {
+    "decision": "run",
+    "hypothesis_id": "hyp_world_20010_c0",
+    "intervention_id": "int_bundle",
+    "prediction": "Offering the SKU bundle will increase average basket size by adding ~Rs.319 to order value and lift conversion rate from 17.3% to at least 20.0%, generating net incremental contribution per visitor.",
+    "reasoning": "Customer service logs show clear organic demand for product bundling ('Requests to bundle two SKUs that customers already buy together'). Unconditional site-wide discounts failed previously ('Last month's blanket 15% off cleared stock but the finance sheet looked worse after it'), proving that margin-dilutive price cuts without basket expansion destroy profitability. By adding Rs.319 in basket value at a modest 9% discount, int_bundle expands gross margin dollars per order, making the break-even hurdle easily achievable compared to flat price cuts.",
+    "citations": [
+     {
+      "field": "CUSTOMER SERVICE THEMES",
+      "quote": "Requests to bundle two SKUs that customers already buy together.",
+      "inference": "Customers are explicitly requesting bundled options for co-bought SKUs, showing strong existing purchase intent for combined packages."
+     },
+     {
+      "field": "TRADING NOTES",
+      "quote": "Last month's blanket 15% off cleared stock but the finance sheet looked worse after it.",
+      "inference": "Straight discounts degrade unit economics without increasing basket size enough to recover lost contribution."
+     }
+    ],
+    "expected_effect_absolute": 0.027,
+    "mde_contribution_per_customer_inr": 3.5,
+    "success_condition": "Conversion rate exceeds 19.85% (+2.55 percentage points) while AOV expands toward Rs.1,380, raising contribution per visitor above the baseline of Rs.50.17.",
+    "failure_condition": "Conversion rate stays below 19.85% or order values fail to expand, resulting in net contribution per visitor dropping below Rs.50.17.",
+    "selection_rationale": "Baseline contribution per visitor is Rs.50.17 (17.3% * Rs.290). Break-even conversion targets for each intervention: int_flat (Rs.30 discount, Rs.260 margin) requires 19.30% conversion (+2.00% lift); int_shipping (Rs.70 fee waiver, Rs.220 margin) requires 22.80% conversion (+5.50% lift); int_pct (8% off / Rs.85 discount, Rs.205 margin) requires 24.47% conversion (+7.17% lift); int_bundle (Rs.319 added basket value, 9% off total = Rs.252.72 margin) requires 19.85% conversion (+2.55% lift). int_flat has the lowest pure conversion hurdle (+2.00%), but int_bundle is the most economically viable intervention because it drives basket expansion. int_bundle is chosen over int_flat because it directly addresses verified customer demand in support tickets while expanding average order value by Rs.319. This protects unit economics against recent freight rate increases and avoids the margin destruction experienced during last month's blanket 15% sale.",
+    "created_at": "2026-08-28T20:40:30.739933+00:00"
+   }
+  },
+  {
+   "world_id": "world_20011",
+   "decision": "run",
+   "chosen": "int_shipping",
+   "truth_best": "int_bundle",
+   "history_best": "int_pct",
+   "true_net_of_choice": -12450.570000000005,
+   "true_net_of_best": 10821.55751599994,
+   "assessment": {
+    "decision": "run",
+    "hypothesis_id": "hyp_world_20011_c0",
+    "intervention_id": "int_shipping",
+    "prediction": "Waiving the Rs.40 shipping fee will increase conversion among checkout visitors from 6.1% to at least 7.5%, generating positive net incremental contribution despite the Rs.40 cost per order.",
+    "reasoning": "Previous blanket price discounting (15% off) cleared stock but destroyed net contribution. However, customer support feedback indicates that shipping fees\u2014not product pricing\u2014are the primary conversion barrier for Cart abandoners (16% of traffic) and Small-basket regulars (14% of traffic). Waiving the Rs.40 fee reduces unit contribution from Rs.252 to Rs.212, requiring a modest conversion lift from 6.1% to 7.25% (+1.15% absolute) to break even. Given that 30% of customer traffic is explicitly friction-sensitive to shipping fees, this experiment has a grounded, high-probability mechanism for positive net contribution.",
+    "citations": [
+     {
+      "field": "SEGMENTS",
+      "quote": "Cart abandoners (16%): Reach checkout and stop. Support tickets from this group mention shipping cost more than product price.",
+      "inference": "Shipping costs are the primary friction causing 16% of users to abandon checkout."
+     },
+     {
+      "field": "SEGMENTS",
+      "quote": "Small-basket regulars (14%): Order often but small \u2014 single items, rarely bundles. Free-shipping thresholds are the main thing standing between them and a bigger basket.",
+      "inference": "Shipping fee elimination directly unlocks conversion and order frequency for an additional 14% segment."
+     },
+     {
+      "field": "TRADING NOTES",
+      "quote": "Last month's blanket 15% off cleared stock but the finance sheet looked worse after it.",
+      "inference": "Direct price discounting degrades margin without sufficient volume elasticity, confirming fee-based friction removal is preferable to price cuts."
+     }
+    ],
+    "expected_effect_absolute": 0.014,
+    "mde_contribution_per_customer_inr": 0.5,
+    "success_condition": "Treatment group conversion exceeds 7.25% (a +1.15% absolute lift over baseline 6.1%), yielding a net contribution per customer above the baseline of Rs.15.37.",
+    "failure_condition": "Treatment group conversion remains below 7.25%, failing to offset the Rs.40 shipping fee cost per order and reducing overall net contribution.",
+    "selection_rationale": "Baseline contribution per customer is Rs.15.37 (6.1% * Rs.252). For int_shipping (Rs.40 cost), post-discount unit contribution is Rs.212, requiring 7.25% conversion (+1.15% absolute lift). For int_bundle (Rs.51.60 discount on Rs.1,290 basket), unit contribution is Rs.238.65, requiring 6.44% conversion (+0.34% absolute lift). For int_flat (Rs.50 off), unit contribution is Rs.202, requiring 7.61% conversion (+1.51% absolute lift). For int_pct (7% off / Rs.78.33 cost), unit contribution is Rs.173.67, requiring 8.85% conversion (+2.75% absolute lift). While int_bundle has a lower mathematical conversion threshold, int_shipping directly addresses the explicit friction documented across 30% of the customer base (Cart abandoners and Small-basket regulars who cite shipping fee friction). It achieves break-even at a lower cost per order (Rs.40) than flat or percentage price cuts, making it the highest-confidence experiment to generate positive net contribution.",
+    "created_at": "2026-08-28T20:41:25.982788+00:00"
+   }
+  },
+  {
+   "world_id": "world_20012",
+   "decision": "run",
+   "chosen": "int_shipping",
+   "truth_best": "int_bundle",
+   "history_best": "int_flat",
+   "true_net_of_choice": -169709.9200000001,
+   "true_net_of_best": -2207.127678000059,
+   "assessment": {
+    "decision": "run",
+    "hypothesis_id": "hyp_world_20012_c0",
+    "intervention_id": "int_shipping",
+    "prediction": "Waiving the Rs.110 shipping fee will increase overall conversion rate from 7.2% to at least 8.5% (+1.3 pp absolute lift), generating net positive incremental contribution above the reduced margin of Rs.855 per order.",
+    "reasoning": "Cart abandoners represent 44% of total traffic and support tickets explicitly show shipping cost is their primary barrier. Additionally, small-basket regulars (14%) are held back by shipping thresholds, and a competitor recently dropped their free-shipping threshold to Rs.399. A prior free-shipping trial raised conversion but contribution was never measured; running this single experiment provides the essential contribution audit needed to settle whether waiving shipping fees creates net profit.",
+    "citations": [
+     {
+      "field": "SEGMENTS",
+      "quote": "Cart abandoners (44%): Reach checkout and stop. Support tickets from this group mention shipping cost more than product price.",
+      "inference": "Shipping fees are the primary point of drop-off for nearly half of all site visitors."
+     },
+     {
+      "field": "TRADING NOTES",
+      "quote": "A previous free-shipping trial was called a success on conversion; nobody checked contribution.",
+      "inference": "Free shipping is known to drive conversion for this catalogue, but testing contribution impact is required before committing margin."
+     },
+     {
+      "field": "COMPETITOR ACTIVITY",
+      "quote": "A competitor's free-shipping threshold dropped to Rs.399, below this merchant's.",
+      "inference": "Competitive friction on shipping costs has increased, compounding cart abandonment."
+     }
+    ],
+    "expected_effect_absolute": 0.013,
+    "mde_contribution_per_customer_inr": 8.0,
+    "success_condition": "Treatment arm conversion rate exceeds 8.13%, delivering average contribution per visitor above the Rs.69.48 baseline.",
+    "failure_condition": "Treatment arm conversion rate falls below 8.13%, demonstrating that the conversion lift does not recover the Rs.110 shipping cost per order.",
+    "selection_rationale": "Baseline contribution per visitor is Rs.69.48 (7.2% * Rs.965). int_shipping (Rs.110 cost) reduces margin to Rs.855, requiring 8.13% conversion (+0.93 pp lift) to break even. int_flat (Rs.170 cost) reduces margin to Rs.795, requiring 8.74% conversion (+1.54 pp lift). int_pct (5% / Rs.154.10 cost) reduces margin to Rs.810.90, requiring 8.57% conversion (+1.37 pp lift). int_bundle (4% off Rs.3,423 basket) yields Rs.934.48 margin, requiring 7.44% conversion (+0.24 pp lift). int_shipping addresses the single largest customer segment barrier (44% cart abandoners citing shipping fee) with a modest break-even conversion threshold of 8.13% (+0.93 pp lift), while directly resolving the unaudited contribution question from the past trial.",
+    "created_at": "2026-08-28T20:42:15.410998+00:00"
+   }
+  },
+  {
+   "world_id": "world_20013",
+   "decision": "skip",
+   "chosen": null,
+   "truth_best": "int_bundle",
+   "history_best": "int_shipping",
+   "true_net_of_choice": 0.0,
+   "true_net_of_best": 597041.2054299858,
+   "assessment": {
+    "decision": "skip",
+    "reasoning": "None of the available interventions are expected to generate net positive incremental contribution. Historical trading shows discount depth creeping up over three quarters without revenue gains, and competitors successfully raised prices without losing share, proving low price sensitivity. Furthermore, key customer friction points (sizing confusion, trial size requests) are operational and information barriers rather than price barriers. Mathematically, the strongest intervention (int_shipping) requires a +5.12 percentage point lift in baseline conversion to break even, but cart abandoners represent only 3% of total traffic\u2014meaning even a 100% conversion of cart abandoners would fail to cover the cost of subsidising orders that would have converted anyway.",
+    "citations": [
+     {
+      "field": "TRADING NOTES",
+      "quote": "Discount depth has crept up over three quarters without a corresponding revenue trend.",
+      "inference": "Prior discounting has diluted margins without driving incremental order volume, indicating promotions do not generate sufficient elasticity."
+     },
+     {
+      "field": "SEGMENTS",
+      "quote": "Cart abandoners (3%): Reach checkout and stop. Support tickets from this group mention shipping cost more than product price.",
+      "inference": "Cart abandoners make up only 3% of traffic. Even converting 100% of this segment (+3.0% absolute conversion) cannot meet the +5.12% absolute conversion lift required to break even on a Rs. 100 free shipping subsidy."
+     },
+     {
+      "field": "COMPETITOR ACTIVITY",
+      "quote": "The nearest competitor raised prices ~8% and has not lost visible share.",
+      "inference": "The market demonstrates low price sensitivity, making price cuts or discounts ineffective levers for driving incremental margin."
+     },
+     {
+      "field": "CUSTOMER SERVICE THEMES",
+      "quote": "Sizing confusion driving a visible share of returns.",
+      "inference": "Conversion and return issues are driven by product description and sizing clarity, which monetary promotions cannot fix."
+     }
+    ],
+    "would_run_if": "We would run an experiment if cart abandoners accounted for >12% of total traffic (making free shipping break-even achievable), or if we could isolate free shipping strictly to conditional basket thresholds (e.g., spend > Rs. 1,800) rather than sitewide subsidies on buyers who would convert at full price.",
+    "best_option_considered": "int_shipping (Waiving Rs.100 shipping fee)",
+    "expected_value_reasoning": "At a baseline conversion of 18.6% and contribution per order of Rs. 463, waiving Rs. 100 reduces per-order contribution to Rs. 363. To maintain baseline contribution per visitor (Rs. 86.12), overall conversion must rise to 23.72% (+5.12% absolute lift). Because cart abandoners represent only 3% of total visitors, even converting every single cart abandoner yields a maximum conversion ceiling of 21.6%, leaving the experiment guaranteed to lose net contribution.",
+    "created_at": "2026-08-28T20:42:59.953889+00:00"
+   }
+  },
+  {
+   "world_id": "world_20014",
+   "decision": "run",
+   "chosen": "int_shipping",
+   "truth_best": "int_shipping",
+   "history_best": "int_shipping",
+   "true_net_of_choice": -48711.320000000014,
+   "true_net_of_best": -48711.320000000014,
+   "assessment": {
+    "decision": "run",
+    "hypothesis_id": "hyp_world_20014_c0",
+    "intervention_id": "int_shipping",
+    "prediction": "Waiving the Rs.30 shipping fee will increase conversion rate from 19.0% to 22.5% (+3.5% absolute lift), generating positive incremental contribution per customer above the baseline of Rs.39.33.",
+    "reasoning": "Shipping cost is the primary friction point cited across customer service inquiries and two major segments comprising 64% of the merchant's customer base (40% Cart abandoners and 24% Small-basket regulars). At Rs.30 per order, int_shipping has the lowest cost per order of all direct price interventions, requiring an absolute conversion lift of just +3.22 percentage points to break even on contribution. Because 40% of customers currently reach checkout and abandon specifically due to shipping fees, addressing this blocker directly is very likely to achieve the required lift.",
+    "citations": [
+     {
+      "field": "SEGMENTS",
+      "quote": "Cart abandoners (40%): Reach checkout and stop. Support tickets from this group mention shipping cost more than product price.",
+      "inference": "Shipping fees are the primary drop-off driver for 40% of all traffic, making shipping fee waiver the highest-leverage lever to recover abandoners."
+     },
+     {
+      "field": "SEGMENTS",
+      "quote": "Small-basket regulars (24%): Order often but small \u2014 single items, rarely bundles. Free-shipping thresholds are the main thing standing between them and a bigger basket.",
+      "inference": "An additional 24% of users are held back by shipping fee friction, bringing total addressable demand sensitive to shipping to 64%."
+     },
+     {
+      "field": "CUSTOMER SERVICE THEMES",
+      "quote": "Repeated questions about whether shipping is free above a threshold.",
+      "inference": "Shipping cost uncertainty is a top-of-funnel friction point across inbound customer communications."
+     },
+     {
+      "field": "TRADING NOTES",
+      "quote": "A previous free-shipping trial was called a success on conversion; nobody checked contribution.",
+      "inference": "Free shipping is known to drive conversion lift for this brand; testing it with contribution tracking will validate whether the lift exceeds the Rs.30 unit cost."
+     }
+    ],
+    "expected_effect_absolute": 0.035,
+    "mde_contribution_per_customer_inr": 0.57,
+    "success_condition": "Observed conversion rate under int_shipping reaches or exceeds 22.22% (+3.22% absolute lift), resulting in net contribution per customer greater than Rs.39.33.",
+    "failure_condition": "Observed conversion rate under int_shipping remains below 22.22%, resulting in net contribution per customer falling below the baseline Rs.39.33.",
+    "selection_rationale": "Baseline contribution per customer = 19.0% * Rs.207 = Rs.39.33. (1) int_shipping: Cost Rs.30/order -> margin Rs.177. Break-even conversion = 39.33 / 177 = 22.22% (+3.22% lift). (2) int_pct: Cost Rs.38.85/order -> margin Rs.168.15. Break-even conversion = 39.33 / 168.15 = 23.39% (+4.39% lift). (3) int_flat: Cost Rs.60/order -> margin Rs.147. Break-even conversion = 39.33 / 147 = 26.75% (+7.75% lift). (4) int_bundle: Assuming Rs.85 AOV increase and 5% discount (cost Rs.43.10), margin Rs.186.19. Break-even conversion = 39.33 / 186.19 = 21.12% (+2.12% lift), but relies on customers voluntarily adopting bundles. int_shipping directly addresses the documented friction point of 64% of customers at a low cost of Rs.30 per order. It requires a modest +3.22% conversion lift to break even, compared to +4.39% for int_pct and +7.75% for int_flat, making it the highest-confidence, lowest-risk test for incremental contribution.",
+    "created_at": "2026-08-28T20:43:33.740552+00:00"
+   }
+  },
+  {
+   "world_id": "world_20015",
+   "decision": "skip",
+   "chosen": null,
+   "truth_best": "int_bundle",
+   "history_best": "int_flat",
+   "true_net_of_choice": 0.0,
+   "true_net_of_best": 78587.52208599812,
+   "assessment": {
+    "decision": "skip",
+    "reasoning": "Saanjh India is operating with compressed margins following a recent freight rate increase and during a quiet seasonal stretch without a festival anchor. A previous free-shipping trial was deemed successful on conversion alone without measuring contribution, masking true margin erosion. Testing any promotion now\u2014such as free shipping (costing Rs.30/order) or flat/percent discounts\u2014requires significant incremental conversion lifts just to break even on contribution (e.g., free shipping requires conversion to rise from 15.6% to 16.59%). Because 14% of customers are price-insensitive Bulk Regulars and 17% are Lapsing Loyalists who already know the catalog, sitewide or broad promotions heavily subsidize full-price baseline demand. Given that a single experiment costs roughly 2.8x the annual promotional profit pool and only 1 experiment slot remains, spending it during an off-peak period against aggressive competitor discounting (20% off sitewide) carries a negative expected value.",
+    "citations": [
+     {
+      "field": "TRADING NOTES",
+      "quote": "Margins slipped after the last freight rate increase.",
+      "inference": "Higher freight costs mean unit margins are already reduced, making any further margin concession (like free shipping or discounts) harder to recover through incremental conversion volume."
+     },
+     {
+      "field": "TRADING NOTES",
+      "quote": "A previous free-shipping trial was called a success on conversion; nobody checked contribution.",
+      "inference": "Historical conversion metrics gave a false positive signal because net contribution loss was ignored; under higher freight rates, shipping subsidies are even more contribution-negative."
+     },
+     {
+      "field": "COMPETITOR ACTIVITY",
+      "quote": "A larger competitor has been running 20% off sitewide for three weeks.",
+      "inference": "Discounting in response to aggressive competitor promotions during a low-demand period risks entering a margin-destroying price war without driving net positive contribution."
+     },
+     {
+      "field": "SEASONAL CONTEXT",
+      "quote": "A quiet stretch with no festival anchor",
+      "inference": "Baseline purchase intent is low, meaning price cuts will mostly yield baseline subsidy rather than converting new high-intent buyers."
+     },
+     {
+      "field": "SEGMENTS",
+      "quote": "Bulk regulars (14%): Bulk buyers, price-insensitive, order on salary week.",
+      "inference": "A significant share of current orders comes from price-insensitive customers who buy on routine schedules, making promotions pure margin leakage on baseline revenue."
+     }
+    ],
+    "would_run_if": "We would consider running an experiment if a high-traffic festival window provided strong organic buying intent, unit freight costs normalized, and targeting tools allowed isolating genuine cart abandoners without subsidizing price-insensitive bulk regulars or lapsing loyalists.",
+    "best_option_considered": "int_shipping (Free shipping), which waives the Rs.30 fee. It has the lowest break-even threshold among single-discount options (requiring absolute conversion to rise from 15.6% to 16.59%, a +0.99% lift). However, because Cart Abandoners represent only 9% of traffic while price-insensitive groups make up 31%+, leakage to baseline orders would easily wipe out incremental gains.",
+    "expected_value_reasoning": "Experimentation is scarce and expensive, costing ~2.8x the annual promotional profit pool with only 1 slot remaining. Running an experiment when traffic is seasonal low and margins are squeezed by freight rates yields a high probability of net contribution loss while permanently burning the merchant's single decision slot.",
+    "created_at": "2026-08-28T20:44:36.099062+00:00"
+   }
+  },
+  {
+   "world_id": "world_20016",
+   "decision": "run",
+   "chosen": "int_shipping",
+   "truth_best": "int_bundle",
+   "history_best": "int_bundle",
+   "true_net_of_choice": -116608.89500000005,
+   "true_net_of_best": -110010.8793169993,
+   "assessment": {
+    "decision": "run",
+    "hypothesis_id": "hyp_world_20016_c0",
+    "intervention_id": "int_shipping",
+    "prediction": "Waiving the Rs.80 shipping fee via int_shipping will increase conversion from 15.30% to at least 17.80% (+2.50% absolute lift), generating a net positive incremental contribution per visitor despite absorbing the shipping fee as a cost line.",
+    "reasoning": "Cart abandoners (24% of customers) and Small-basket regulars (24% of customers) together represent 48% of the audience. Both segments specifically highlight shipping costs as their primary conversion barrier. Because int_shipping carries the lowest unit cost (Rs. 80 per converted order), it has the lowest break-even conversion threshold (+1.66% absolute lift) while directly targeting the documented friction of nearly half the merchant's customer base.",
+    "citations": [
+     {
+      "field": "SEGMENTS",
+      "quote": "Cart abandoners (24%): Reach checkout and stop. Support tickets from this group mention shipping cost more than product price.",
+      "inference": "Shipping costs are the explicit friction point causing drop-off at checkout for 24% of traffic."
+     },
+     {
+      "field": "SEGMENTS",
+      "quote": "Small-basket regulars (24%): Order often but small \u2014 single items, rarely bundles. Free-shipping thresholds are the main thing standing between them and a bigger basket.",
+      "inference": "Removing shipping cost friction directly targets the key barrier for another 24% of customers."
+     },
+     {
+      "field": "NUMBERS",
+      "quote": "observed conversion: 15.3%",
+      "inference": "Baseline conversion rate against which incremental lift must be evaluated."
+     }
+    ],
+    "expected_effect_absolute": 0.025,
+    "mde_contribution_per_customer_inr": 13.6,
+    "success_condition": "Observed conversion rate in the int_shipping treatment group reaches or exceeds 16.96% (a +1.66% absolute lift), maintaining or improving total contribution per customer above Rs. 125.15.",
+    "failure_condition": "Observed conversion rate in the int_shipping treatment group remains below 16.96%, resulting in a net contribution loss per visitor compared to the control group.",
+    "selection_rationale": "Baseline contribution per order is Rs. 818 at 15.30% conversion, yielding Rs. 125.15 contribution per visitor. 1) int_shipping: Costs Rs. 80/order, reducing unit contribution to Rs. 738. Break-even conversion is 125.15 / 738 = 16.96% (+1.66% absolute lift). 2) int_flat: Costs Rs. 140/order, reducing unit contribution to Rs. 678. Break-even conversion is 125.15 / 678 = 18.46% (+3.16% absolute lift). 3) int_bundle: 11% off a Rs. 2,541 combined basket gives a Rs. 279.51 discount, yielding Rs. 678.45 net contribution. Break-even conversion is 125.15 / 678.45 = 18.45% (+3.15% absolute lift). 4) int_pct: 10% off AOV (Rs. 2,169) costs Rs. 216.90/order, reducing unit contribution to Rs. 601.10. Break-even conversion is 125.15 / 601.10 = 20.82% (+5.52% absolute lift). int_shipping is the most affordable intervention by a wide margin. int_shipping requires the lowest incremental conversion lift (+1.66% absolute) of all available options to break even, and its mechanism addresses the specific checkout friction cited in support tickets by 48% of the customer base (Cart abandoners and Small-basket regulars).",
+    "created_at": "2026-08-28T20:45:08.872443+00:00"
+   }
+  },
+  {
+   "world_id": "world_20017",
+   "decision": "skip",
+   "chosen": null,
+   "truth_best": "int_bundle",
+   "history_best": "int_bundle",
+   "true_net_of_choice": 0.0,
+   "true_net_of_best": 37098.69936399955,
+   "assessment": {
+    "decision": "skip",
+    "reasoning": "Nutbox Labs faces operational and inventory bottlenecks rather than structural price resistance. The nearest competitor successfully passed an 8% price increase without losing market share, proving category demand is resilient to price. Meanwhile, conversion drift is tied to non-price issues: damaged packaging on heavier SKUs and stockouts of popular lines. Furthermore, 27% of customers are price-insensitive bulk buyers who order on fixed salary-week schedules; discounting them subsidizes purchases that would occur at full margin. With only 1 experiment available (costing 2.8x the annual promotional profit pool), running a discount campaign would dilute contribution margin without solving the root causes of conversion drift.",
+    "citations": [
+     {
+      "field": "COMPETITOR ACTIVITY",
+      "quote": "The nearest competitor raised prices ~8% and has not lost visible share.",
+      "inference": "The category demonstrates pricing power, meaning discounting is unnecessary and destroys margin."
+     },
+     {
+      "field": "CUSTOMER SERVICE THEMES",
+      "quote": "Feedback that packaging arrives damaged on the heavier SKUs.",
+      "inference": "Conversion and AOV declines are driven by packaging/fulfillment quality failures on heavy SKUs rather than high prices."
+     },
+     {
+      "field": "CUSTOMER SERVICE THEMES",
+      "quote": "Questions about restock dates for a line that has been out of stock.",
+      "inference": "Lost revenue is partially due to stockouts of key lines, which discounts cannot remediate."
+     },
+     {
+      "field": "SEGMENTS",
+      "quote": "Bulk buyers, price-insensitive, order on salary week. They buy the same four or five SKUs on a near-fixed cycle and rarely browse.",
+      "inference": "A broad discount will be absorbed by price-insensitive repeat buyers (27% of customer base) who convert regardless, resulting in net contribution loss."
+     }
+    ],
+    "would_run_if": "We would consider running an experiment if packaging issues were resolved, stockout lines were replenished, and we could strictly isolate an intervention (such as int_bundle) to the 11% Small-basket regulars without leakage to price-insensitive Bulk regulars or coupon-stacking Deal seekers.",
+    "best_option_considered": "int_bundle (Bundle offer at 6% off, adding ~Rs.167 in basket value)",
+    "expected_value_reasoning": "int_bundle targets the declining AOV by adding Rs.167 in basket size, requiring a conversion lift from 8.1% to 9.2% to break even. However, because treatments cannot be restricted solely to small-basket buyers, price-insensitive Bulk Regulars (27%) would claim the bundle discount on orders they already make, eroding baseline contribution by Rs.129 per order and producing a negative net expected value.",
+    "created_at": "2026-08-28T20:46:29.065492+00:00"
+   }
+  },
+  {
+   "world_id": "world_20018",
+   "decision": "run",
+   "chosen": "int_shipping",
+   "truth_best": "int_bundle",
+   "history_best": "int_flat",
+   "true_net_of_choice": -16006.919999999996,
+   "true_net_of_best": 24355.562000000198,
+   "assessment": {
+    "decision": "run",
+    "hypothesis_id": "hyp_world_20018_c0",
+    "intervention_id": "int_shipping",
+    "prediction": "Waiving the Rs.50 shipping fee will remove the primary checkout friction for cart abandoners, increasing overall conversion from 4.60% to at least 5.80% (+1.20% absolute lift), exceeding the break-even threshold of 5.73%.",
+    "reasoning": "Sessions are growing while flat revenue indicates conversion drift at checkout. Cart abandoners represent 28% of the merchant's audience, and both segment behavioral data and support tickets confirm that shipping fees are the primary barrier preventing checkout completion. Removing the Rs.50 shipping fee directly addresses this validated bottleneck without giving away margin to non-price-sensitive buyers.",
+    "citations": [
+     {
+      "field": "SEGMENTS",
+      "quote": "Cart abandoners (28%): Reach checkout and stop. Support tickets from this group mention shipping cost more than product price.",
+      "inference": "The largest addressable intent leak (28% of traffic) is caused specifically by shipping charges at checkout."
+     },
+     {
+      "field": "CUSTOMER SERVICE THEMES",
+      "quote": "Repeated questions about whether shipping is free above a threshold.",
+      "inference": "Shipping costs represent an explicit customer inquiry theme and a known psychological barrier to order completion."
+     },
+     {
+      "field": "TRADING NOTES",
+      "quote": "Revenue is flat quarter on quarter while sessions are up, so conversion is drifting down.",
+      "inference": "Top-of-funnel interest is healthy, confirming that the leak occurs at conversion/checkout."
+     }
+    ],
+    "expected_effect_absolute": 0.012,
+    "mde_contribution_per_customer_inr": 0.35,
+    "success_condition": "Observed conversion rate during the experiment rises above 5.73%, resulting in an incremental contribution per customer exceeding the baseline of Rs.11.64.",
+    "failure_condition": "Observed conversion rate remains below 5.73%, indicating that waiving the Rs.50 shipping fee did not generate enough incremental orders to offset the Rs.50 per-order margin reduction.",
+    "selection_rationale": "Baseline contribution per customer is Rs.11.64 (4.6% conversion * Rs.253 margin/order). For int_shipping (Rs.50 cost/order), margin per order becomes Rs.203, requiring 5.73% conversion (+1.13% absolute lift). For int_bundle (Rs.71.19 discount on Rs.1017 basket), net margin is Rs.236.96, requiring 4.91% conversion (+0.31% absolute lift). For int_flat (Rs.70 discount), margin is Rs.183, requiring 6.36% conversion (+1.76% absolute lift). For int_pct (9% off = Rs.75.24), margin is Rs.177.76, requiring 6.55% conversion (+1.95% absolute lift). While int_bundle has the lowest absolute conversion lift barrier, int_shipping directly targets the 28% Cart Abandoner segment whose explicit drop-off cause is shipping fee friction. int_shipping directly targets the strongest diagnostic signal in the merchant's data: 28% of traffic abandoning carts specifically due to shipping fees. Its required conversion lift (+1.13%) is realistic given that it resolves the exact objection stated in customer support tickets.",
+    "created_at": "2026-08-28T20:46:52.424013+00:00"
+   }
+  },
+  {
+   "world_id": "world_20019",
+   "decision": "run",
+   "chosen": "int_shipping",
+   "truth_best": "int_bundle",
+   "history_best": "int_bundle",
+   "true_net_of_choice": -11090.749999999998,
+   "true_net_of_best": 19990.377871999885,
+   "assessment": {
+    "decision": "run",
+    "hypothesis_id": "hyp_world_20019_c0",
+    "intervention_id": "int_shipping",
+    "prediction": "Waiving the Rs.110 shipping fee will increase total conversion from 5.20% to at least 6.10% (+0.90 percentage points absolute lift), generating incremental contribution by converting drop-offs among the 44% cart abandoner segment.",
+    "reasoning": "Nestwell Labs has traffic growth with drifting conversion ('sessions are up, so conversion is drifting down'). The largest segment by far is Cart Abandoners (44%), whose support tickets explicitly cite shipping cost over product price as their reason for stopping at checkout. Offering free shipping directly removes this specific friction point. Furthermore, int_shipping costs Rs. 110 per order, requiring the lowest break-even conversion lift (+0.74 percentage points to 5.94%), making it the most capital-efficient hypothesis to test with the merchant's single remaining experiment.",
+    "citations": [
+     {
+      "field": "SEGMENTS",
+      "quote": "Cart abandoners (44%): Reach checkout and stop. Support tickets from this group mention shipping cost more than product price.",
+      "inference": "Shipping fees are the primary friction point causing 44% of potential buyers to abandon at checkout."
+     },
+     {
+      "field": "TRADING NOTES",
+      "quote": "Revenue is flat quarter on quarter while sessions are up, so conversion is drifting down.",
+      "inference": "The merchant is attracting top-of-funnel traffic, but drop-off at checkout is eroding overall conversion."
+     },
+     {
+      "field": "TRADING NOTES",
+      "quote": "Margins slipped after the last freight rate increase.",
+      "inference": "Product-level price discounting erodes already strained product margins; addressing shipping as a explicit incentive aligns cost with perceived customer friction."
+     }
+    ],
+    "expected_effect_absolute": 0.009,
+    "mde_contribution_per_customer_inr": 1.25,
+    "success_condition": "Treatment group achieves a conversion rate of >= 5.94% (ideally 6.10%+), yielding net positive incremental contribution per customer above the Rs. 45.97 baseline.",
+    "failure_condition": "Treatment group conversion rate stays below 5.94%, meaning the lift in completed orders fails to compensate for the Rs. 110 shipping fee cost per order.",
+    "selection_rationale": "Baseline contribution per customer is Rs. 45.97 (5.2% * Rs. 884). 1) int_shipping (Rs. 110 cost): Post-discount order contribution Rs. 774; break-even conversion = 5.94% (+0.74% lift). 2) int_flat (Rs. 110 cost): Post-discount order contribution Rs. 774; break-even conversion = 5.94% (+0.74% lift). 3) int_pct (6% off = Rs. 156.18): Post-discount order contribution Rs. 727.82; break-even conversion = 6.32% (+1.12% lift). 4) int_bundle (9% off Rs. 2,949 = Rs. 265.41 discount): Post-discount order contribution Rs. 737.25; break-even conversion = 6.24% (+1.04% lift). int_shipping and int_flat tie for the lowest required conversion hurdle (+0.74%). int_shipping requires the lowest break-even conversion lift (+0.74% absolute) along with int_flat, but unlike generic discounts, free shipping directly targets the explicit friction documented in support tickets for the merchant's largest user segment (44% Cart Abandoners).",
+    "created_at": "2026-08-28T20:47:35.717729+00:00"
+   }
+  },
+  {
+   "world_id": "world_20020",
+   "decision": "run",
+   "chosen": "int_shipping",
+   "truth_best": "int_bundle",
+   "history_best": "int_pct",
+   "true_net_of_choice": -12275.249999999998,
+   "true_net_of_best": 111697.28957199976,
+   "assessment": {
+    "decision": "run",
+    "hypothesis_id": "hyp_world_20020_c0",
+    "intervention_id": "int_shipping",
+    "prediction": "Waiving the Rs.160 shipping fee will increase conversion from 5.60% to at least 7.10% (+1.50% absolute lift), generating incremental contribution per visitor above the Rs.160 cost per order.",
+    "reasoning": "44% of Nestwell Studio's audience are Cart Abandoners who drop off at checkout explicitly citing shipping costs. Customer support tickets consistently highlight questions regarding free shipping thresholds. A previous trial showed strong conversion lift from free shipping but failed to measure contribution. Because cart abandoners form such a massive share of total traffic, eliminating shipping friction addresses the primary drop-off point in the funnel and can unlock sufficient volume to exceed the 1.27% conversion lift required to break even on contribution.",
+    "citations": [
+     {
+      "field": "SEGMENTS",
+      "quote": "Cart abandoners (44%): Reach checkout and stop. Support tickets from this group mention shipping cost more than product price.",
+      "inference": "The largest single customer segment (44%) fails to convert specifically due to shipping fee friction at checkout."
+     },
+     {
+      "field": "CUSTOMER SERVICE THEMES",
+      "quote": "Repeated questions about whether shipping is free above a threshold.",
+      "inference": "Shipping costs are the primary recurring point of inquiry and hesitation for prospective buyers."
+     },
+     {
+      "field": "TRADING NOTES",
+      "quote": "A previous free-shipping trial was called a success on conversion; nobody checked contribution.",
+      "inference": "The merchant has proven conversion responsiveness to free shipping but requires a controlled experiment to verify contribution profitability."
+     }
+    ],
+    "expected_effect_absolute": 0.015,
+    "mde_contribution_per_customer_inr": 1.5,
+    "success_condition": "Observed conversion rate under int_shipping exceeds 6.87% (an absolute lift > +1.27%), resulting in net contribution per visitor higher than the baseline Rs.48.38.",
+    "failure_condition": "Observed conversion rate under int_shipping remains below 6.87%, indicating that conversion volume lift fails to offset the Rs.160 per-order margin reduction.",
+    "selection_rationale": "Baseline conversion is 5.60%, AOV is Rs.3,086, contribution margin is 28.0% (Rs.864 per order), generating Rs.48.38 contribution per visitor. Break-even thresholds for interventions: 1) int_bundle: AOV increases by Rs.139 to Rs.3,225, 4% discount = Rs.129, net contribution = Rs.774; requires CR of 6.25% (+0.65% lift). Most affordable. 2) int_flat: Rs.100 off, net contribution = Rs.764; requires CR of 6.33% (+0.73% lift). 3) int_pct: 4% off (Rs.123.44), net contribution = Rs.740.56; requires CR of 6.53% (+0.93% lift). 4) int_shipping: Rs.160 fee waived, net contribution = Rs.704; requires CR of 6.87% (+1.27% lift). While int_bundle is mathematically the most affordable with a +0.65% required lift, int_shipping targets the specific friction point responsible for 44% of cart abandonments and directly addresses customer support feedback. Testing int_shipping validates the merchant's core unmeasured historical assumption with maximum potential conversion upside across the largest pool of lost buyers.",
+    "created_at": "2026-08-28T20:48:41.938737+00:00"
+   }
+  }
+ ]
+}

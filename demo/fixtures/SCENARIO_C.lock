@@ -1,0 +1,4 @@
+# Scenario C fixture lock.
+# Committed BEFORE the first execution. If this no longer matches,
+# the fixture parameters or seed were changed after the fact.
+1d06bd56b5b1968b3e8d6a8ec1ea5943c5c2da5bad8dd37fd93376deb1d742cb

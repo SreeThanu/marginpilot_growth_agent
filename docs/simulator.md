@@ -519,6 +519,372 @@ Zero policy violations and zero budget overruns across all six strategies.
 
 **Hypothesis calibration: 74% coverage against a nominal 95%** (135/183). The intervals are too narrow. This was measured after the freeze and nothing was adjusted in response; it is a known defect in the reported results, not a finding about the world. Any future work should start here, because an overconfident interval feeding a scaling rule is a systematic error rather than noise.
 
+## 4j. Cycle 2 pre-registration — dated 28 August 2026, before anything was changed or generated
+
+Cycle 1 is complete and tagged `v1-preregistered`. Its result stands unmodified; this is a **labelled follow-up, not a replacement**, and §4i's numbers are never overwritten by anything below.
+
+**Absolute constraint: the agent changes, the world does not.** `promo_response_scale`, the depth bands, semantic fidelity, the saturation form, the bundle uplift ratio and every other generator parameter stay frozen at their Cycle 1 values. Only the generation *seeds* change, to produce a corpus the agent has never seen. If Cycle 2 looks better because the world got easier, the comparison is worthless — so the world is held fixed and only the seeds move.
+
+### The diagnosed cause
+
+§4g and §4i established it: the agent reads the merchant accurately and selects on signals that predict **response** — shipping-threshold support tickets, segment friction notes — when profitability is decided by **margin against incentive cost**. It chose `int_shipping` in 7 of 9 holdout runs and lost money in most of them. The failure is not hallucination and not poor reading; it is a correctly-read cue pointing at the wrong quantity.
+
+### The two fixes
+
+**Fix A — direct the agent at the ratio, not the response.** The prompt asks which intervention will move customers. It should ask which will move them *at a cost the margin can absorb*. Both numbers are already in the merchant view — contribution per order and cost per treated order — and nothing directed attention to their ratio. The revised prompt states the break-even arithmetic explicitly: an intervention pays only when the share of treated orders that are genuinely incremental exceeds `cost per treated order ÷ contribution per order`. This addresses the diagnosed cause directly, because it names the quantity the agent was substituting a proxy for.
+
+**Fix B — supply margin-adjusted historical performance per intervention.** The agent currently reasons about interventions from their descriptions. A merchant with any promotional history would know which offer types have paid before. The view now carries, per intervention, the realized net contribution per treated customer from a **small past campaign** on that merchant.
+
+The size of that past campaign matters and is stated in advance: **300 treated customers per intervention**, which at these conversion rates and basket variances leaves a standard error large enough that the historical figure is *informative but not decisive*. This is deliberate. A large enough history would make selection arithmetic and the agent would win by reading one number, which would measure nothing about reasoning. The history is drawn from the same generative process as the live world, so it reflects that world's true affinities through the noise — as a real merchant's history would.
+
+**Honest risk, recorded now:** Fix B supplies evidence that points at the answer. If Cycle 2 improves, the improvement may be "the agent can read a table" rather than "the agent reasons better about economics". Cycle 2 therefore reports selection accuracy *and* how often the agent's choice simply matches the best historical performer — if those two are the same number, Fix B replaced reasoning rather than informing it, and that is the finding.
+
+### What I predict
+
+- **Against Baseline 1 (do nothing):** MarginPilot still loses, but by less than Cycle 1's −₹85,430. The binding constraint measured in §4d is that one experiment costs ~2.8× the profit pool of the world it runs in; better selection does not change that arithmetic. Predicted range: a loss between ₹0 and ₹85,430.
+- **Against Baseline 5 (engine without LLM):** MarginPilot still wins, and by more than Cycle 1's margin, because better selection compounds with the restraint that already drove that gap.
+- **Selection accuracy:** rises from 2/9 to at least 5 of the worlds it runs. Below that, the fixes did not work.
+- **Intervention mix:** `int_shipping` falls below 4 of 9 runs, and `int_bundle` rises.
+
+### What would falsify the prediction
+
+- Selection accuracy stays at or below 3 of the worlds run — the fixes changed the prose and not the choices.
+- `int_shipping` remains the modal choice.
+- MarginPilot beats Baseline 1 outright. That would falsify the cost-of-learning claim in §4d, and would be the more interesting outcome of the two.
+
+### Stopping rule, committed in advance
+
+**If the dev-world ablation shows no change in selection behaviour, the new holdout is not opened.** There is no point spending a sealed set on a fix that did nothing, and opening it anyway would burn the only unbiased measurement Cycle 2 has.
+
+### Commitment
+
+Nothing changes in response to Cycle 2's holdout — not a prompt, not a threshold, not a parameter, not a strategy. Cycle 2 reports whichever way it lands, and a fix that does not work is a result (CLAUDE.md invariant 9).
+
+## 4k. Cycle 2 dev result — dated 28 August 2026. The sealed holdout was NOT opened.
+
+Reported as measured, against the predictions in §4j. Nothing below was tuned in response to anything below.
+
+### Corpus
+
+Seeds moved from `1-80`/`9001-9020` to `20001-20080`/`29001-29020`; every generator parameter unchanged. Cycle 1's corpus stays at `worlds/` so §4i remains reproducible from disk; Cycle 2 generates into `worlds_cycle2/`.
+
+Dev medians, Cycle 1 -> Cycle 2: conversion 0.124 -> 0.126, AOV Rs.1,858 -> Rs.1,814, margin 0.289 -> 0.295, elasticity -2.742 -> -2.573, budget Rs.404,500 -> Rs.369,000. Designed effects: flat 3.835 -> 2.867pp, pct 2.537 -> 2.123pp, shipping 3.144 -> 3.010pp, bundle 2.948 -> 2.650pp. Every effect is *smaller* at the median, so the new corpus is marginally harder. It cannot manufacture an improvement.
+
+### A defect in Fix B, found before any result was read
+
+The past-campaign history seeded its RNG with `abs(hash(world.world_id))`. Python salts string hashing per interpreter, so the same world produced a different history in every process — `world_20001` returned `int_shipping`, `int_bundle` and `int_pct` on three consecutive runs. Fix B's evidence was irreproducible. Re-derived via `blake2b`, the convention `src/experiment/randomize.py` already uses and for the same reason. The first dev run was discarded and re-run.
+
+`tests/eval/test_history_determinism.py` starts a second interpreter under a different `PYTHONHASHSEED`; a same-process assertion cannot catch this, which is why the earlier verification missed it. The test was confirmed to fail against the reverted code.
+
+### The measurement, run as a 2x2 ablation
+
+§4j proposed two fixes together. Measuring them together would not have said which one worked, so both were made switchable and all four combinations were run over the same 20 dev worlds. The `neither` arm is the Cycle 1 prompt byte-for-byte, and is the control: without it, a change measured on a fresh corpus cannot be attributed to the fixes rather than to the worlds.
+
+| arm | ran | skipped | selection accuracy | history-match | correct where history disagreed | int_shipping | realized net |
+|---|---|---|---|---|---|---|---|
+| neither (Cycle 1 prompt) | 12 | 8 | 3/12 | 4/12 | 0 | 9 | -Rs.701,329 |
+| Fix A only (break-even) | 15 | 5 | 3/15 | 2/15 | 2 | 9 | -Rs.894,588 |
+| Fix B only (history) | 6 | 14 | 3/6 | 6/6 | 0 | 2 | -Rs.287,901 |
+| both fixes | 8 | 12 | 1/8 | 6/8 | 0 | 3 | -Rs.259,265 |
+
+> **Superseded, 28 August 2026 (Cycle 3, Step 1).** The `selection accuracy` column above is reported on a moving denominator — each arm's own run count, which is exactly the quantity the fixes change — so `3/12` and `3/6` are not a like-for-like rate. It has the same defect this section already retracted in `net_if_always_best_inr`. The corrected fixed-denominator decomposition is below and supersedes that column. The table is left in place because the error is part of the record.
+
+Realized net is comparable across arms (a skip contributes zero). The per-arm "always-best ceiling" in `results/cycle2_dev_*.json` is **not** comparable across arms — it sums only over the worlds that arm chose to run.
+
+### Correction: the same decomposition on a fixed denominator
+
+Re-derived from the committed `results/cycle2_dev_*.json`. No new runs.
+
+The optimal action is a property of the world, not of the arm: **run** where the best available intervention has positive population net, **skip** otherwise. Over the 20 dev worlds that is 12 run, 8 skip. This definition is deliberately *generous to running* — it ignores the pilot's own cost of learning, so it under-counts false-act and over-counts false-skip relative to a full accounting. Realized net, which includes every real cost, is the ground truth that does not have that thumb on the scale.
+
+| arm | ran | correct action | false-act | false-skip | correct skip | cwhd | int_shipping | realized net |
+|---|---|---|---|---|---|---|---|---|
+| neither (Cycle 1 prompt) | 12 | 0/20 | 5/20 | 5/20 | 3/20 | 0 | 9 | -Rs.701,329 |
+| Fix A only (break-even) | 15 | 2/20 | 5/20 | 2/20 | 3/20 | 2 | 9 | -Rs.894,588 |
+| Fix B only (history) | 6 | 1/20 | 3/20 | 9/20 | 5/20 | 0 | 2 | -Rs.287,901 |
+| both fixes | 8 | 1/20 | 2/20 | 6/20 | 6/20 | 0 | 3 | -Rs.259,265 |
+
+A **correct action** is the strict one: ran on a world where running was right, *and* picked the best intervention. Decision-level agreement alone (run/skip, ignoring which intervention) is 10, 13, 8 and 12 of 20 respectively.
+
+**The corrected numbers are not a rescaling of the old ones.** On a fixed denominator the control lands **0** correct actions out of 20, not 3. Its old `3/12` counted worlds where it picked the best intervention while running at all destroyed value — credit for choosing well inside a decision that should not have been made. No arm landed 3 correct actions; the strict counts are 0, 2, 1, 1.
+
+Against a fixed ceiling of **Rs.1,132,582** (take the best intervention wherever it pays, skip elsewhere), regret is Rs.1,833,910 / Rs.2,027,170 / Rs.1,420,482 / Rs.1,391,847 for neither / Fix A / Fix B / both. Decomposing realized net by action class:
+
+| arm | net from false-act | net from correct-act |
+|---|---|---|
+| neither | -Rs.522,493 | -Rs.178,836 |
+| Fix A only | -Rs.905,403 | +Rs.10,815 |
+| Fix B only | -Rs.304,072 | +Rs.16,171 |
+| both | -Rs.233,213 | -Rs.26,052 |
+
+Every arm's loss is dominated by acting where it should have skipped. That is the same conclusion §4d reached about cost of learning, arrived at from the decision side.
+
+**This also corrects Cycle 2's reading of Fix A.** Under the running-generous optimality definition Fix A has the *best* decision-level agreement (13/20) and the *lowest* false-skip (2/20) — because that definition rewards running and Fix A runs more. It simultaneously has the worst realized net and the worst regret of any arm. The claim that Fix A is harmful stands, but it rests on realized net and regret, not on any accuracy rate. The accuracy rate was never the evidence.
+
+### What survives the noise floor, and what does not
+
+Given the 6-of-16 paired flip rate measured below, at n=20:
+
+- **Unresolved: selection accuracy.** Strict correct actions are 0, 2, 1, 1 out of 20. Those numerators are smaller than the number of decisions that flip between two identical runs of the same arm. No ordering among the arms is established, in either direction.
+- **Survives: run-rate.** 12, 15, 6, 8 of 20. Run *counts* matched exactly (6/16 and 6/16) across the two identical replicate runs even as *which* worlds were run changed, so the count is the more stable statistic and the spread across arms is large.
+- **Survives: `correct_where_history_disagreed`.** It is 0 in both arms carrying Fix B. Zero is robust to flip in a way a small positive count is not: no reshuffling of which worlds were run can turn "never right when the table disagreed" into evidence of reasoning.
+- **Directionally supported, not resolved: realized net and regret.** Both are sums over per-world outcomes and inherit the flip noise, but the spread (Rs.259k to Rs.895k) is wide and the loss decomposition points the same way in every arm.
+
+### The instability that governs how much of the table can be believed
+
+Two runs of the **same** arm (`both`), same code, same worlds, temperature 0.0, disagreed on the run/skip decision for **6 of 16** worlds — 38%. Run *counts* matched (6/16 and 6/16); *which* worlds were run did not.
+
+That is the same order of magnitude as the between-arm differences above. So:
+
+- The large run-rate differences (12 and 15 versus 6 and 8) are plausibly real.
+- The selection-accuracy column is **not resolved**. Every numerator is 1 or 3, on top of a 38% per-world flip rate.
+
+This project computes a minimum detectable effect before it runs a merchant experiment, and then ran its own 20-world comparison without asking whether 20 worlds could resolve the difference. That is the same error, committed by the evaluation rather than by the agent, and it is recorded here rather than quietly fixed.
+
+The claim in `src/agent/reasoner.py` that temperature 0.0 makes paired runs reproducible was false. It has been withdrawn at the source.
+
+### Against §4j's predictions
+
+**Fix A failed, and appears actively harmful.** §4j predicted the break-even framing would raise selection accuracy and cut `int_shipping`. `int_shipping` did not move (9 in both arms), experimentation *rose* from 12 to 15 of 20 worlds, and realized net fell from -Rs.701,329 to -Rs.894,588 — the worst of any arm, with the worst regret against the fixed ceiling. The **accuracy** half of that prediction is unresolved at n=20 and neither confirmed nor refuted: see the correction above. The verdict on Fix A rests on run-rate and net, which survive the noise floor, not on the accuracy rate, which does not.
+
+The likely mechanism is legible in the prompt itself: break-even shares render as 12-17%, which reads as easy to clear. Stating the arithmetic argued the agent into *more* spending, not better spending. This is the opposite of the prediction and it is Fix A's own failure — the control ran on the same worlds.
+
+**Fix B changed behaviour, by lookup rather than by reasoning.** It is the only arm that cut experimentation (12 -> 6) and the only one that cut `int_shipping` (9 -> 2). But `correct_where_history_disagreed` is **0** in both arms that carry it: the agent never once identified the best intervention when the history table did not already point at it. §4j named this outcome in advance — *"if those two are the same number, Fix B replaced reasoning rather than informing it, and that is the finding."* It is the finding.
+
+**Falsification conditions from §4j:** `int_shipping` did not remain the modal choice in the Fix B arms, so that condition is not met. §4j's other condition — "selection accuracy stays at or below 3 of the worlds run" — cannot be evaluated as written: it is stated on the moving denominator this section retracts, and on a fixed denominator the strict counts (0, 2, 1, 1 of 20) sit below the instrument's own noise floor. It is recorded as unresolved rather than met, which is the weaker and more honest reading.
+
+### Decision on the pre-committed stopping rule
+
+§4j committed: *"If the dev-world ablation shows no change in selection behaviour, the new holdout is not opened."*
+
+Selection behaviour did change, so the rule's literal condition for stopping is not met. Its *purpose* is still not served by opening. Opening the sealed set would measure whether the agent can read a table it was handed — a question §4j states in advance measures nothing about reasoning — at a per-world noise level that cannot resolve the accuracy differences anyway. A holdout is opened once; spending it on that is the one thing the rule exists to prevent.
+
+**The Cycle 2 holdout (`worlds_cycle2/holdout/`) has not been opened.** It remains sealed. No parameter, prompt, threshold or strategy was changed in response to any number in this section.
+
+## 4l. Cycle 3 pre-registration — dated 29 August 2026, before any new measurement code was written
+
+Cycle 3 repairs the **evaluation instrument**, not the world and not the agent. Cycle 1 stays tagged and unmodified. Cycle 2's dev-stage result stands as corrected in §4k. `worlds_cycle2/holdout/` stays sealed and nothing in Cycle 3 opens it.
+
+**Absolute constraint: change the instrument, not the world and not the agent.** Every generator parameter stays frozen. The four prompt configurations (`neither` / `break_even_only` / `history_only` / `both`) stay exactly as committed in `3cc802c`; they are measured more precisely, not edited. Fix A is not dropped or altered — that is a separate later decision, to be taken on resolved numbers. Drawing additional dev worlds from the frozen generator under new seeds is sampling the world, not changing it, and is permitted **only if** the power calculation in Step 3 requires it.
+
+### Why this cycle exists
+
+§4k established that Cycle 2 committed the project's own central error. It ran a four-arm, 20-world comparison and read differences off it without ever asking whether 20 worlds could resolve those differences — while two runs of the *same* arm, identical code and worlds at temperature 0.0, disagreed on 6 of 16 run/skip decisions. The agent is held to a pre-computed minimum detectable effect before it is allowed to spend; the evaluation was not.
+
+The reasoner's retracted claim that temperature 0.0 makes paired runs reproducible is the direct cause. That assumption is not re-made anywhere in Cycle 3: every quantity that depends on it is measured.
+
+### The target MDE, and how it was derived
+
+**Primary contrast:** the **false-act rate** — the share of worlds, out of a fixed denominator, on which an arm runs an experiment where the optimal action was to skip. §4k's loss decomposition shows this is where every arm's money goes.
+
+The threshold is derived from what would change a decision, in this chain:
+
+1. A prompt fix is worth keeping only if it improves expected realized net **per merchant** by a material amount. Materiality is fixed at **5% of the median dev promotion budget**. The median is Rs.369,000 across the 80 frozen Cycle 2 dev worlds, so the threshold is **Rs.18,450 per merchant**.
+2. The cost of one false act, pooled across all four arms, is **Rs.131,012** (15 false acts, Rs.1,965,180 destroyed).
+3. Therefore the smallest worth-resolving difference in false-act rate is `18,450 / 131,012` = **14 percentage points**, which is the target MDE. On a 20-world denominator that is 2.8 worlds.
+
+**Certification.** The MDE was derived from the chain above and **not** from the observed between-arm gaps. Only step 2 touches Cycle 2's runs, and it uses a quantity **pooled across all four arms** — a cost scale in rupees per event, carrying no arm-to-arm contrast, in the same role a pooled variance plays in any power calculation. Steps 1 and 3 use only the frozen generator's budget distribution and arithmetic.
+
+**Disclosed coincidence.** The observed false-act rates are 25%, 25%, 15% and 10%, so the largest observed gap is 15 points and sits just above the 14-point MDE. This is disclosed rather than hidden. It was not the source of the threshold: had materiality been set at 3% or 10% of budget the MDE would have been 8 or 28 points, and the derivation would have been written the same way. A reader who thinks 5% is the wrong materiality bar should read the feasibility result in Step 3 against their own number, which is why every input above is stated.
+
+### The variance input, and how it will be measured
+
+The variance that matters is **instrument noise**: how much an arm's measured metric moves when nothing about the arm changes. It will be measured by **replicating the control arm alone** — `neither`, the Cycle 1 prompt — K times over the same dev worlds. Deriving it from the spread *across* arms would confound noise with the very signal being tested; taking it from one arm makes it manifestly noise.
+
+Method, fixed now:
+
+- Replicate `neither` on the same fixed world set, K₀ ≥ 8 times, changing nothing between replicates.
+- Report, per world, the proportion of replicates that chose `run`, and the resulting per-world flip probability.
+- Report the **standard deviation across replicates of the arm-level false-act count**. That SD, not the per-world flip rate, is the standard error that enters the power calculation, because the metric being compared is arm-level.
+- Report the same SD for run-rate, `int_shipping` rate, `cwhd` and realized net.
+
+The existing 6-of-16 figure is a single paired comparison and is treated as a rough prior to be superseded, not as the variance input.
+
+### The design that will be computed, and the commitment to report feasibility
+
+The comparison is **paired**: every arm runs on the identical world set, so world-to-world variation cancels in the between-arm contrast and only replicate noise and the pairing remain. Required replicates K per arm will be computed from (MDE = 14 points, measured SD) for a two-sided paired comparison at α = 0.05 and power 0.80, by the stated normal-approximation formula, with the arithmetic shown. If the world-level base rate rather than replicate noise turns out to dominate, N will be recomputed too and fresh dev worlds drawn from the frozen generator under new seeds.
+
+**Feasibility will be reported honestly whether or not the design is runnable.** If the required K·N exceeds what the budget allows, that is the result: the accuracy contrast is below this evaluation's feasible resolution, and the conclusion rests on the columns that do resolve. No oversized run will be launched to chase significance, and no threshold will be relaxed after seeing the required K.
+
+### Metrics, each reported with a standard error or interval across replicates
+
+- False-act and false-skip counts, on the fixed all-worlds denominator of §4k
+- `correct_where_history_disagreed`
+- Run-rate
+- `int_shipping` share of runs
+- Realized net contribution, and regret against the fixed ceiling
+
+### What I predict
+
+- **Run-rate contrasts resolve.** Run counts matched exactly (6/16 and 6/16) across the two identical replicate runs even as which worlds were run changed, so the count should prove the low-variance statistic and the 12/15/6/8 spread should survive.
+- **`cwhd` stays 0 in both Fix B arms.** A zero cannot be reshuffled into evidence by flip noise.
+- **The accuracy contrast does not resolve at feasible scale.** I expect the required K to exceed the budget, and expect to report the accuracy comparison as below this instrument's resolution.
+- **Fix A's run-rate increase survives; its accuracy effect resolves to zero-or-negative, or does not resolve at all.**
+
+### Commitment
+
+Nothing is tuned to what the powered re-run shows. Not a prompt, not a threshold, not a generator parameter, not the MDE, not the materiality bar. Cycle 3 ends at the dev boundary: §4j's disqualifying condition for Fix B (`cwhd` = 0) is already met and is robust to flip noise, so there is nothing about reasoning left for a sealed set to validate even once accuracy resolves. Whether to drop Fix A, and whether any new fix warrants a fresh holdout, is a separate pre-registered decision after this one.
+
+## 4m. Cycle 3, Step 3 — the measured noise floor and the required design, dated 29 August 2026
+
+The control arm (`neither`, the Cycle 1 prompt) was replicated **K₀ = 8** times over the same 20 dev worlds, changing nothing between replicates. Noise is taken from this one arm, never from the spread across arms, so it is manifestly noise rather than the signal under test. Zero errored world-runs across the replicates that recorded the field.
+
+### Decision stability
+
+| quantity | value |
+|---|---|
+| worlds whose decision is not stable across 8 replicates | **12 / 20 (60%)** |
+| expected per-world disagreement between two runs | **20.3%** |
+
+This supersedes both earlier estimates: the single paired comparison in §4k (6 of 16, 38%) and the interim five-replicate figure (12.8%). Neither was reliable, in opposite directions.
+
+### Per-metric noise and the required replicates
+
+MDE for counts is the pre-registered 14.1% of worlds = 2.82 of 20; for realized net it is the materiality bar of Rs.18,450 per merchant across 20 worlds = Rs.369,000.
+
+| metric | mean | SD | K (point) | K (SD 95% upper) |
+|---|---|---|---|---|
+| false_act | 4.50 | 0.93 | 2 | 8 |
+| false_skip | 5.25 | 0.89 | 2 | 7 |
+| run_count | 11.25 | 1.49 | 5 | 19 |
+| **correct_action** | **0.00** | **0.00** | 1 | 1 |
+| **cwhd** | **0.00** | **0.00** | 1 | 1 |
+| int_shipping | 9.38 | 1.69 | 6 | 24 |
+| realized_net | -Rs.824,814 | Rs.256,872 | 8 | 32 |
+
+An SD estimated from 8 replicates is itself noisy: the 95% interval on the false-act SD is [0.612, 1.884]. Required K scales with SD², so the interval on K is wider still. Both columns are reported because quoting only the point estimate would repeat this cycle's founding error one level up.
+
+### The interim report at K₀ = 5 was wrong, and how
+
+At five replicates the same computation gave SD 0.55 for false-act and 0.55 for run-count, implying **K = 1** for both, and I reported the design as comfortably feasible. At eight replicates those SDs are 0.93 and 1.49, implying K = 2 and K = 5. A variance estimated from a handful of replicates is biased low and unstable, and reporting a required sample size off five points was the same species of error as reading arm differences off one run each. The K₀ = 8 figures supersede it.
+
+### What is settled regardless of K
+
+`correct_action` and `cwhd` are **0.00 with SD 0.00 across all eight replicates** of the control. §4k's `0/20` is a property of the arm, not a sampling accident, and no increase in replicates can move a statistic that has never once been non-zero. §4j's disqualifying condition for Fix B — that the agent is never right where the history table disagreed — rests on this and is not at risk from instrument noise.
+
+### Feasibility
+
+Measured throughput is **38.3 s per world-run**, from the replication itself; a token-based estimate gave 0.7 hours against a measured 4.3, six times optimistic, and is not used.
+
+| design | world-runs | wall clock | verdict |
+|---|---|---|---|
+| K = 2, primary metric (false-act) only | 3 further passes, 60 | **0.6 h** | feasible |
+| K = 8, all metrics, point-estimate SD | 21 further passes, 420 | **4.5 h** | affordable but large |
+| K = 32, conservative SD upper bound | 117 further passes, 2,340 | **25 h** | **infeasible** |
+
+The pre-registered primary contrast is affordable. The realized-net and `int_shipping` contrasts are **not resolvable at feasible scale** once the uncertainty in the variance estimate is carried through, and §4l committed in advance to reporting exactly that rather than launching an oversized run to chase significance.
+
+### Instrument defects found, and fixed, during the measurement
+
+Three, each surfaced by a failure rather than by inspection, all recorded because an evaluation that silently loses runs produces biased results:
+
+1. An empty reply (`finish_reason=MAX_TOKENS`) aborted a three-replicate job, discarding 17 completed world-runs. Worlds are now retried a bounded number of times and then recorded as `decision: "error"` — excluded from every denominator, reported, never replaced by a guessed decision. The retry keys on exception type only, never on what the model decided, so it cannot select for outcomes.
+2. `httpx.RemoteProtocolError` was not retried at all, and killed the next attempt. Dropped connections now join 429s and 5xx in the reasoner's backoff.
+3. Writing the test for (2) exposed a third: retry exhaustion raises `RateLimitExceededError`, which is not a subclass of `ReasonerError`, so a harness catching only the latter would still lose a multi-hour run to one dropped connection. Both are caught now, and a test asserts it stays that way.
+
+None of these touched a prompt, an arm, or a generator parameter.
+
+## 4n. Cycle 2 final — dated 31 August 2026. The holdout was never opened.
+
+### Step A: does the primary contrast need the treatment arms replicated?
+
+The question, asked because §4m measured variance on the **control arm only** while the primary finding is a **contrast** — Fix A's false-act count against the control's — whose power depends on both arms, and Fix A stands at n = 1.
+
+**The control's measured variance does not bound the treatment arms'.** Nothing about observing SD = 0.926 for the Cycle 1 prompt constrains what a differently-prompted arm does; a prompt that pushes per-world run probabilities toward one half would be noisier, and Fix A demonstrably shifts those probabilities (it ran 15 of 20 worlds against the control's 12). Any argument from the control's number alone would be hand-waving.
+
+**A structural bound does hold, for every arm, without replicating any of them.** `false_act` counts, among the **8** worlds whose optimal action is skip, how many the arm ran. Within a replicate those worlds are separate calls sharing no state, so the count is a sum of 8 independent Bernoulli indicators and
+
+    Var(false_act) = Σ p_w(1 - p_w) ≤ n/4 = 2,   SD ≤ √2 = 1.414
+
+for **any** arm, whatever its per-world probabilities — the maximum falling at p = ½ throughout. This is distribution-free and arm-independent, which is exactly the property the control's measured SD lacks.
+
+Two consequences:
+
+1. The chi-square 95% upper bound on the control's SD, **1.884**, exceeds a value the statistic cannot structurally reach. §4m's conservative K = 8 for false-act was inflated by a bound that ignored an analytic constraint — a misspecified ceiling, not merely a wide interval. Corrected to the √2 ceiling below.
+2. At the worst-case SD of 1.414 and the §4l MDE of 2.82 worlds, `K ≥ 2 σ² (z_α + z_β)² / MDE²` gives **K = 4** per arm.
+
+**Conclusion: the treatment arms do need replication.** The control holds K = 8; Fix A holds K = 1, below the worst-case requirement of 4. The bound removes the need to *measure* Fix A's variance before trusting the contrast, but it does not remove the need for replicates. Fix A was replicated to K = 8, matching §4m's conservative column — deliberately above the K = 4 the bound requires, and reported as such rather than presented as the minimum.
+
+The bound is a property of the frozen corpus (8 skip-optimal worlds of 20) and the metric's definition. It is not derived from any observed between-arm difference; `structural_sd_bound` and its tests carry the argument in code.
+
+### The required K is 4, not 8. Fix A was run to 8, and that is over-powering, not a requirement
+
+The structural bound gives SD ≤ √2 for any arm, and at §4l's MDE of 2.82 worlds that needs **K = 4** per arm under equal allocation. Fix A was specified for K = 8 before the bound was derived, and the run was carried to completion rather than truncated mid-flight.
+
+**K = 8 exceeds the K = 4 the bound requires.** It is retained because it was specified in advance and because a run already under way is not improved by stopping it early — not because the statistics call for it. Reporting 8 as the number the analysis demands would be presenting a figure as justified by a bound that no longer justifies it, which is the precise failure this project exists to expose and must not appear in the report that exposes it. **The required conservative K is 4.**
+
+### §4m's chi-square upper bound was misspecified, not merely wide
+
+§4m computed a 95% chi-square upper limit of **1.884** on the control's false-act SD. The structural maximum the statistic can attain is **1.414**. The chi-square upper therefore extended past what the quantity can structurally reach: it was misspecified at the ceiling, and it inflated the conservative K from 4 to 8 by ignoring an analytic constraint. Corrected here to the √2 ceiling.
+
+This is the founding error of this cycle, one level up — a variance estimate running past its true limit. §4k caught it in the measurement of arms; it recurred in the measurement of the measurement. Recorded as an error found, not as harmless slack.
+
+### What was actually run, and why it stopped short
+
+Fix A reached **K = 3**, not 8: two fresh replicates plus the Cycle 2 run of the identical arm configuration. The remaining passes could not be run — the Gemini project's prepayment credits were exhausted mid-replicate (`429 RESOURCE_EXHAUSTED: Your prepayment credits are depleted`). The partial replicate was discarded rather than reported with a shortened denominator, and no world was ever assigned a substituted decision.
+
+**The primary contrast is nonetheless powered.** K = 4 per arm assumes equal allocation; the control holds K = 8. At K_A = 3 against K_C = 8, the standard error of the difference under the structural ceiling is `1.414 × √(1/3 + 1/8) = 0.957`, so the detectable difference at 80% power is `2.802 × 0.957 = 2.68` worlds, inside §4l's MDE of 2.82. Nothing below leans on a replicate that was not run.
+
+### The primary contrast: Fix A's false-act rate does not differ from the control
+
+| | control (K = 8) | Fix A (K = 3) |
+|---|---|---|
+| false_act per replicate | 4, 5, 4, 5, 5, 3, 6, 4 | 5, 5, 5 |
+| mean | 4.500 | 5.000 |
+
+Difference **+0.500 worlds** (+6.2 points over the 8 skip-optimal worlds), 95% CI under the structural ceiling **[−1.377, +2.377]**. The interval contains zero and the whole interval sits inside the 14.1-point MDE.
+
+This is a **resolved null**, not an unresolved contrast: the design was powered to detect a 2.82-world difference and the observed difference is 0.5. **Fix A does not cause the agent to act where it should have skipped.**
+
+### Two further contrasts resolve, and they revise Cycle 2's verdict on Fix A
+
+Computed under the same worst-case structural SD, so the intervals are conservative:
+
+| metric | control (K = 8) | Fix A (K = 3) | difference | 95% CI | |
+|---|---|---|---|---|---|
+| run_count | 11.250 | 15.333 | **+4.083** | [+1.116, +7.050] | excludes zero |
+| false_skip | 5.250 | 1.667 | **−3.583** | [−5.882, −1.285] | excludes zero |
+| false_act | 4.500 | 5.000 | +0.500 | [−1.377, +2.377] | contains zero |
+
+An interval that excludes zero is a positive finding whether or not the design was powered for a difference of MDE size; power governs the risk of missing an effect, not the validity of one that is found.
+
+Decomposing Fix A's extra experimentation: of roughly four additional runs per replicate, **+0.5 became false acts and −3.58 were false skips avoided**. Fix A is not spending indiscriminately. It is converting decisions the control got wrong in the *skip* direction into actions, at almost no cost in wrong actions.
+
+**This revises §4k's reading.** Cycle 2 concluded Fix A was harmful, resting that on run-rate, net and regret. Run-rate is now resolved as an increase — but an increase composed almost entirely of avoided false skips, which is an improvement in decision quality, not a harm. Realized net remains directionally worse (−Rs.898,820 against −Rs.824,814) and is **not resolved**. The reconciliation is §4k's own caveat: the optimal-action definition ignores the pilot's cost, so an action can be correct against ground truth and still lose money once the pilot is paid for. **On this evidence "Fix A is harmful" is not supported.** What is supported: Fix A acts more, acts better by the ground-truth decision criterion, does not raise false acts, and has directionally worse but unresolved realized net.
+
+### Beyond feasible resolution, as pre-registered
+
+| metric | K (structural) | further passes | wall clock | verdict |
+|---|---|---|---|---|
+| realized_net | 32 (chi-sq) / — | 117 | ~25 h | beyond resolution |
+| int_shipping | 24 | 88 | ~19 h | beyond resolution |
+| run_count (for an MDE-sized effect) | 19 | 68 | ~14 h | beyond resolution for a *small* effect |
+
+At the measured 38.3 s per world-run these are 14 to 25 hours of model time, and §4l committed in advance to reporting them as beyond this evaluation's feasible resolution rather than launching an oversized run to chase significance. `int_shipping` shows a difference of −0.042 worlds — indistinguishable from zero and not a near miss. `run_count`'s large effect resolved anyway, as above; that is a property of the effect, not of the design.
+
+### The settled spine, stated with its actual support
+
+`correct_action` and `cwhd` have **zero variance in every arm measured**: the control returns 0 in all 8 replicates, Fix A returns exactly 2 in all 3. Required K = 1 for these, and it is a floor rather than an optimistic small-sample estimate — there is no variance to overcome. Under the conservative structural interval the +2.0 difference formally contains zero; empirically neither arm has varied once across 11 replicates, so a sampling explanation for it is implausible.
+
+**One correction to how this spine has been described.** The eight zero-variance replicates are of the **control**, which does not carry Fix B at all. The arms that do carry Fix B — `history_only` and `both` — were measured at **K = 1 each**, in Cycle 2. Their `cwhd = 0` is therefore supported by one replicate apiece, corroborated by their history-match rates of 6/6 and 6/8, and **not** by eight replicates. It cannot be strengthened now that credits are exhausted.
+
+With that stated honestly, the finding stands and carries the cycle: in the arms that were handed the table, the agent never once identified the best intervention on a world where the table pointed elsewhere. §4j's disqualifying condition for Fix B is met. Note too that `cwhd = 2` for Fix A, an arm shown **no** table — so the quantity is achievable on this corpus, and the Fix B arms' zero is not a corpus artefact.
+
+### The MDE is corpus-dependent and must not be carried forward
+
+§4l's MDE rides on this corpus's median promotion budget of Rs.369,000 — a **corpus property**, which drifted about 9% from Cycle 1's Rs.404,500. It is legitimate here **because the corpus was frozen before §4l was written**, so the threshold could not have been tuned to the result. It is **not corpus-invariant**. Any future cycle that changes the corpus must **re-derive** the MDE from that corpus's own budget distribution, never carry this number across. Carrying it would let a threshold float with a corpus while presenting itself as fixed.
+
+### Verdict
+
+**Cycle 2's two fixes did not produce a reasoning improvement.**
+
+- **Fix B** changed behaviour by lookup and by suppressing action. `cwhd` is 0 in both arms carrying it: it never found an answer the table did not already hold. §4j's disqualifying condition is met.
+- **Fix A** is not the harm §4k reported. Its false-act rate is a resolved null against the control; its run-rate increase is real and is composed almost entirely of avoided false skips; its realized net is directionally worse and unresolved. It moves decisions without evidence that it improves the economics.
+
+**The holdout stays sealed, and not opening it is the pre-registered outcome** — over-determined by two independent reasons: `cwhd = 0` disqualifies what opening it would measure, and the primary contrast resolved on dev worlds without it.
+
+Nothing in Cycle 2 or Cycle 3 was tuned in response to any result. `worlds_cycle2/holdout/` has never been read.
+
 ## 5. What this model does *not* claim
 
 - It is not a calibrated model of any real merchant. It is a generator of plausible retail economies whose parameter ranges are anchored where literature exists and openly labelled where it does not.

@@ -1,0 +1,1652 @@
+[
+ {
+  "world": "world_20051",
+  "iv": "int_pct",
+  "kind": "percentage_discount",
+  "n": 20317,
+  "budget": 287000.0,
+  "observed_margin": 0.3716936488785376,
+  "levels": {
+   "A": {
+    "ceiling_plugin": 0.0,
+    "ceiling_crossfit": 0.0,
+    "treat_everyone_expected": -14483.301890907518,
+    "n_selected": 0,
+    "share_selected": 0.0,
+    "expected_spend_selected": 0.0,
+    "mc_halfgap": 0.02585071878048903
+   },
+   "B": {
+    "ceiling_plugin": 7175.48715949329,
+    "ceiling_crossfit": 7175.487159493294,
+    "treat_everyone_expected": -6768.313919651289,
+    "n_selected": 11688,
+    "share_selected": 0.5752817837279126,
+    "expected_spend_selected": 27134.466799898895,
+    "mc_halfgap": 0.007074275565891227
+   },
+   "C1": {
+    "ceiling_plugin": 15388.382381874477,
+    "ceiling_crossfit": 15388.38238187447,
+    "treat_everyone_expected": 4957.568467107189,
+    "n_selected": 11688,
+    "share_selected": 0.5752817837279126,
+    "expected_spend_selected": 26583.729724227112,
+    "mc_halfgap": 0.0074285107576792615
+   },
+   "C2": {
+    "ceiling_plugin": 13454.692176547183,
+    "ceiling_crossfit": 13454.692176547185,
+    "treat_everyone_expected": 2106.2777571634238,
+    "n_selected": 11688,
+    "share_selected": 0.5752817837279126,
+    "expected_spend_selected": 26298.84657033912,
+    "mc_halfgap": 0.010169899126899702
+   },
+   "C3": {
+    "ceiling_plugin": 6520.04011773752,
+    "ceiling_crossfit": 6520.025588348544,
+    "treat_everyone_expected": -7625.388707930194,
+    "n_selected": 11688,
+    "share_selected": 0.5752817837279126,
+    "expected_spend_selected": 24880.01361511933,
+    "mc_halfgap": 0.0067199776844654845
+   }
+  }
+ },
+ {
+  "world": "world_20052",
+  "iv": "int_flat",
+  "kind": "flat_discount",
+  "n": 17361,
+  "budget": 129000.0,
+  "observed_margin": 0.31141466509251736,
+  "levels": {
+   "A": {
+    "ceiling_plugin": 0.0,
+    "ceiling_crossfit": 0.0,
+    "treat_everyone_expected": -12223.557718763675,
+    "n_selected": 0,
+    "share_selected": 0.0,
+    "expected_spend_selected": 0.0,
+    "mc_halfgap": 0.007377072839081935
+   },
+   "B": {
+    "ceiling_plugin": 9840.258140328333,
+    "ceiling_crossfit": 9840.21751423645,
+    "treat_everyone_expected": -8295.348015179246,
+    "n_selected": 7525,
+    "share_selected": 0.4334427740337538,
+    "expected_spend_selected": 17160.218677229765,
+    "mc_halfgap": 0.010551603668516839
+   },
+   "C1": {
+    "ceiling_plugin": 10603.729982681481,
+    "ceiling_crossfit": 10603.729718400049,
+    "treat_everyone_expected": -5211.551693855294,
+    "n_selected": 7653,
+    "share_selected": 0.4408156212199758,
+    "expected_spend_selected": 16672.72916171029,
+    "mc_halfgap": 0.0032457648106118844
+   },
+   "C2": {
+    "ceiling_plugin": 8983.227969299833,
+    "ceiling_crossfit": 8983.226970398602,
+    "treat_everyone_expected": -7633.7600244143605,
+    "n_selected": 7588,
+    "share_selected": 0.4370715972582225,
+    "expected_spend_selected": 16153.754043756968,
+    "mc_halfgap": 0.003518883801168549
+   },
+   "C3": {
+    "ceiling_plugin": 28590.530524318092,
+    "ceiling_crossfit": 28590.267375289874,
+    "treat_everyone_expected": 19116.986385089116,
+    "n_selected": 12090,
+    "share_selected": 0.696388456886124,
+    "expected_spend_selected": 42740.31673729614,
+    "mc_halfgap": 0.01557915285027277
+   }
+  }
+ },
+ {
+  "world": "world_20053",
+  "iv": "int_pct",
+  "kind": "percentage_discount",
+  "n": 21419,
+  "budget": 342000.0,
+  "observed_margin": 0.24216205457423448,
+  "levels": {
+   "A": {
+    "ceiling_plugin": 0.0,
+    "ceiling_crossfit": 0.0,
+    "treat_everyone_expected": -8789.052373279072,
+    "n_selected": 0,
+    "share_selected": 0.0,
+    "expected_spend_selected": 0.0,
+    "mc_halfgap": 0.0075831553114797485
+   },
+   "B": {
+    "ceiling_plugin": 18096.168432759976,
+    "ceiling_crossfit": 18096.16843275998,
+    "treat_everyone_expected": 450.3137354210446,
+    "n_selected": 15873,
+    "share_selected": 0.7410710117185676,
+    "expected_spend_selected": 33920.70195839283,
+    "mc_halfgap": 0.0037172394773702135
+   },
+   "C1": {
+    "ceiling_plugin": 10632.665251437138,
+    "ceiling_crossfit": 10632.66525143713,
+    "treat_everyone_expected": -16664.088446876412,
+    "n_selected": 6951,
+    "share_selected": 0.32452495447966756,
+    "expected_spend_selected": 18164.218531945335,
+    "mc_halfgap": 0.009831444350534726
+   },
+   "C2": {
+    "ceiling_plugin": 9820.07200063641,
+    "ceiling_crossfit": 9820.072000636414,
+    "treat_everyone_expected": -19377.782185506003,
+    "n_selected": 6951,
+    "share_selected": 0.32452495447966756,
+    "expected_spend_selected": 18039.4142171883,
+    "mc_halfgap": 0.007347343664370082
+   },
+   "C3": {
+    "ceiling_plugin": 14351.10643565867,
+    "ceiling_crossfit": 14351.18649380121,
+    "treat_everyone_expected": -11153.762689548219,
+    "n_selected": 15873,
+    "share_selected": 0.7410710117185676,
+    "expected_spend_selected": 45737.349848649974,
+    "mc_halfgap": 0.017655912772261223
+   }
+  }
+ },
+ {
+  "world": "world_20054",
+  "iv": "int_shipping",
+  "kind": "free_shipping",
+  "n": 19485,
+  "budget": 265000.0,
+  "observed_margin": 0.24741435142159054,
+  "levels": {
+   "A": {
+    "ceiling_plugin": 0.0,
+    "ceiling_crossfit": 0.0,
+    "treat_everyone_expected": -10531.331224469272,
+    "n_selected": 0,
+    "share_selected": 0.0,
+    "expected_spend_selected": 0.0,
+    "mc_halfgap": 0.0012468495789368034
+   },
+   "B": {
+    "ceiling_plugin": 1221.6706031290032,
+    "ceiling_crossfit": 1221.6692050568404,
+    "treat_everyone_expected": -40152.29556717829,
+    "n_selected": 1988,
+    "share_selected": 0.10202720041057224,
+    "expected_spend_selected": 3769.5317376001253,
+    "mc_halfgap": 0.004152138886883138
+   },
+   "C1": {
+    "ceiling_plugin": 486.44648993777247,
+    "ceiling_crossfit": 486.4357348272122,
+    "treat_everyone_expected": -50396.88602300244,
+    "n_selected": 1489,
+    "share_selected": 0.07641775724916602,
+    "expected_spend_selected": 3083.276452731002,
+    "mc_halfgap": 0.0020423105257720954
+   },
+   "C2": {
+    "ceiling_plugin": 312.8537341309111,
+    "ceiling_crossfit": 312.85373413091116,
+    "treat_everyone_expected": -51425.23082710176,
+    "n_selected": 1325,
+    "share_selected": 0.06800102643058763,
+    "expected_spend_selected": 2679.4458069037537,
+    "mc_halfgap": 0.0019916024203310936
+   },
+   "C3": {
+    "ceiling_plugin": 428.2766333656585,
+    "ceiling_crossfit": 428.2714537433837,
+    "treat_everyone_expected": -48790.14076575551,
+    "n_selected": 1467,
+    "share_selected": 0.07528868360277136,
+    "expected_spend_selected": 2924.9889657589542,
+    "mc_halfgap": 0.0032876441300915367
+   }
+  }
+ },
+ {
+  "world": "world_20055",
+  "iv": "int_flat",
+  "kind": "flat_discount",
+  "n": 24056,
+  "budget": 1434000.0,
+  "observed_margin": 0.23812819595946916,
+  "levels": {
+   "A": {
+    "ceiling_plugin": 0.0,
+    "ceiling_crossfit": 0.0,
+    "treat_everyone_expected": -67582.14958321501,
+    "n_selected": 0,
+    "share_selected": 0.0,
+    "expected_spend_selected": 0.0,
+    "mc_halfgap": 0.040146070326653904
+   },
+   "B": {
+    "ceiling_plugin": 22276.428258604778,
+    "ceiling_crossfit": 22276.42314216429,
+    "treat_everyone_expected": -124261.26130362536,
+    "n_selected": 7431,
+    "share_selected": 0.30890422347855007,
+    "expected_spend_selected": 79582.12793642156,
+    "mc_halfgap": 0.0073131319442453335
+   },
+   "C1": {
+    "ceiling_plugin": 7547.365353839551,
+    "ceiling_crossfit": 7547.304506511264,
+    "treat_everyone_expected": -185541.28664483468,
+    "n_selected": 3456,
+    "share_selected": 0.14366478217492518,
+    "expected_spend_selected": 35657.886606340224,
+    "mc_halfgap": 0.0069667924662896365
+   },
+   "C2": {
+    "ceiling_plugin": 3078.4855283067172,
+    "ceiling_crossfit": 3078.4590435746154,
+    "treat_everyone_expected": -208898.83414006486,
+    "n_selected": 1709,
+    "share_selected": 0.07104256734286664,
+    "expected_spend_selected": 17323.17352089197,
+    "mc_halfgap": 0.004642259229402744
+   },
+   "C3": {
+    "ceiling_plugin": 2520.959965291813,
+    "ceiling_crossfit": 2520.889274338867,
+    "treat_everyone_expected": -212532.69616563176,
+    "n_selected": 1358,
+    "share_selected": 0.056451612903225805,
+    "expected_spend_selected": 13985.854579370794,
+    "mc_halfgap": 0.006417764833732466
+   }
+  }
+ },
+ {
+  "world": "world_20056",
+  "iv": "int_pct",
+  "kind": "percentage_discount",
+  "n": 22200,
+  "budget": 609000.0,
+  "observed_margin": 0.30255119497067273,
+  "levels": {
+   "A": {
+    "ceiling_plugin": 0.0,
+    "ceiling_crossfit": 0.0,
+    "treat_everyone_expected": -77991.28534152967,
+    "n_selected": 0,
+    "share_selected": 0.0,
+    "expected_spend_selected": 0.0,
+    "mc_halfgap": 0.04261072585354863
+   },
+   "B": {
+    "ceiling_plugin": 37703.55975552183,
+    "ceiling_crossfit": 37703.55975552181,
+    "treat_everyone_expected": -20911.716876795304,
+    "n_selected": 15401,
+    "share_selected": 0.6937387387387387,
+    "expected_spend_selected": 187598.41830805727,
+    "mc_halfgap": 0.06161235363747773
+   },
+   "C1": {
+    "ceiling_plugin": 48553.29009319153,
+    "ceiling_crossfit": 48553.290093191514,
+    "treat_everyone_expected": -35384.11149050175,
+    "n_selected": 15401,
+    "share_selected": 0.6937387387387387,
+    "expected_spend_selected": 261565.9672721771,
+    "mc_halfgap": 0.0029902627692623765
+   },
+   "C2": {
+    "ceiling_plugin": 67081.2736344518,
+    "ceiling_crossfit": 67081.2736344518,
+    "treat_everyone_expected": -10299.799406211285,
+    "n_selected": 15401,
+    "share_selected": 0.6937387387387387,
+    "expected_spend_selected": 266342.95338129986,
+    "mc_halfgap": 0.02837793955007285
+   },
+   "C3": {
+    "ceiling_plugin": 26243.260567167235,
+    "ceiling_crossfit": 26243.205344506594,
+    "treat_everyone_expected": -73917.91022394589,
+    "n_selected": 5387,
+    "share_selected": 0.24265765765765765,
+    "expected_spend_selected": 78124.41530236902,
+    "mc_halfgap": 0.04677231326843592
+   }
+  }
+ },
+ {
+  "world": "world_20057",
+  "iv": "int_shipping",
+  "kind": "free_shipping",
+  "n": 13799,
+  "budget": 264000.0,
+  "observed_margin": 0.27202216493995446,
+  "levels": {
+   "A": {
+    "ceiling_plugin": 0.0,
+    "ceiling_crossfit": 0.0,
+    "treat_everyone_expected": -61800.66220103075,
+    "n_selected": 0,
+    "share_selected": 0.0,
+    "expected_spend_selected": 0.0,
+    "mc_halfgap": 0.014274429507074799
+   },
+   "B": {
+    "ceiling_plugin": 7672.088020240482,
+    "ceiling_crossfit": 7672.077067525964,
+    "treat_everyone_expected": -78688.37465623632,
+    "n_selected": 1985,
+    "share_selected": 0.14385100369592,
+    "expected_spend_selected": 19461.010452335355,
+    "mc_halfgap": 0.02231008007238418
+   },
+   "C1": {
+    "ceiling_plugin": 4548.779109339583,
+    "ceiling_crossfit": 4548.769249407813,
+    "treat_everyone_expected": -68966.90731108964,
+    "n_selected": 1744,
+    "share_selected": 0.12638596999782592,
+    "expected_spend_selected": 13508.378821566259,
+    "mc_halfgap": 0.009443175739271892
+   },
+   "C2": {
+    "ceiling_plugin": 2703.045080353758,
+    "ceiling_crossfit": 2703.043341876628,
+    "treat_everyone_expected": -75748.01591079311,
+    "n_selected": 1472,
+    "share_selected": 0.1066743966954127,
+    "expected_spend_selected": 10750.291730330111,
+    "mc_halfgap": 0.010291312550761345
+   },
+   "C3": {
+    "ceiling_plugin": 3194.163085644711,
+    "ceiling_crossfit": 3194.1329090989198,
+    "treat_everyone_expected": -73679.28450308609,
+    "n_selected": 1567,
+    "share_selected": 0.11355895354735851,
+    "expected_spend_selected": 11610.598995198401,
+    "mc_halfgap": 0.005612165715548835
+   }
+  }
+ },
+ {
+  "world": "world_20058",
+  "iv": "int_flat",
+  "kind": "flat_discount",
+  "n": 21384,
+  "budget": 180000.0,
+  "observed_margin": 0.38603009624205753,
+  "levels": {
+   "A": {
+    "ceiling_plugin": 0.0,
+    "ceiling_crossfit": 0.0,
+    "treat_everyone_expected": -47946.05407446003,
+    "n_selected": 0,
+    "share_selected": 0.0,
+    "expected_spend_selected": 0.0,
+    "mc_halfgap": 0.006240665689253533
+   },
+   "B": {
+    "ceiling_plugin": 9802.76975835493,
+    "ceiling_crossfit": 9802.767980631685,
+    "treat_everyone_expected": -108063.52264461675,
+    "n_selected": 3630,
+    "share_selected": 0.1697530864197531,
+    "expected_spend_selected": 22987.88924014505,
+    "mc_halfgap": 0.0034281099156148968
+   },
+   "C1": {
+    "ceiling_plugin": 13614.202939221617,
+    "ceiling_crossfit": 13614.165089429665,
+    "treat_everyone_expected": -39836.5405057609,
+    "n_selected": 6112,
+    "share_selected": 0.2858211747100636,
+    "expected_spend_selected": 27221.3207239973,
+    "mc_halfgap": 0.004365027100912183
+   },
+   "C2": {
+    "ceiling_plugin": 19043.679536262644,
+    "ceiling_crossfit": 19043.67529508001,
+    "treat_everyone_expected": -30363.305287851996,
+    "n_selected": 7705,
+    "share_selected": 0.3603161242050131,
+    "expected_spend_selected": 35173.78740772547,
+    "mc_halfgap": 0.005696152041207823
+   },
+   "C3": {
+    "ceiling_plugin": 21225.603720589606,
+    "ceiling_crossfit": 21225.54130166539,
+    "treat_everyone_expected": -27075.467520897568,
+    "n_selected": 8117,
+    "share_selected": 0.3795828656939768,
+    "expected_spend_selected": 37739.57458019427,
+    "mc_halfgap": 0.013830956614175412
+   }
+  }
+ },
+ {
+  "world": "world_20059",
+  "iv": "int_pct",
+  "kind": "percentage_discount",
+  "n": 24103,
+  "budget": 1016000.0,
+  "observed_margin": 0.33102994000700225,
+  "levels": {
+   "A": {
+    "ceiling_plugin": 0.0,
+    "ceiling_crossfit": 0.0,
+    "treat_everyone_expected": -119802.54797766655,
+    "n_selected": 0,
+    "share_selected": 0.0,
+    "expected_spend_selected": 0.0,
+    "mc_halfgap": 0.06831497718822456
+   },
+   "B": {
+    "ceiling_plugin": 0.0,
+    "ceiling_crossfit": 0.0,
+    "treat_everyone_expected": -136326.46109430864,
+    "n_selected": 0,
+    "share_selected": 0.0,
+    "expected_spend_selected": 0.0,
+    "mc_halfgap": 0.01494984995462302
+   },
+   "C1": {
+    "ceiling_plugin": 13986.893926856563,
+    "ceiling_crossfit": 13986.893926856572,
+    "treat_everyone_expected": -126382.15050769896,
+    "n_selected": 8396,
+    "share_selected": 0.3483383811143841,
+    "expected_spend_selected": 158476.53648163084,
+    "mc_halfgap": 0.018060570243534312
+   },
+   "C2": {
+    "ceiling_plugin": 25184.954501135777,
+    "ceiling_crossfit": 25184.95450113577,
+    "treat_everyone_expected": -96969.96424493963,
+    "n_selected": 8396,
+    "share_selected": 0.3483383811143841,
+    "expected_spend_selected": 161989.90305956142,
+    "mc_halfgap": 0.012000640892003943
+   },
+   "C3": {
+    "ceiling_plugin": 21957.930892550965,
+    "ceiling_crossfit": 21958.622438658465,
+    "treat_everyone_expected": -105038.45638005421,
+    "n_selected": 8396,
+    "share_selected": 0.3483383811143841,
+    "expected_spend_selected": 158526.98803340385,
+    "mc_halfgap": 0.10914839122756848
+   }
+  }
+ },
+ {
+  "world": "world_20060",
+  "iv": "int_shipping",
+  "kind": "free_shipping",
+  "n": 27311,
+  "budget": 1337000.0,
+  "observed_margin": 0.3789856693097109,
+  "levels": {
+   "A": {
+    "ceiling_plugin": 0.0,
+    "ceiling_crossfit": 0.0,
+    "treat_everyone_expected": -68878.50586086148,
+    "n_selected": 0,
+    "share_selected": 0.0,
+    "expected_spend_selected": 0.0,
+    "mc_halfgap": 0.02287304763880094
+   },
+   "B": {
+    "ceiling_plugin": 17595.930696848875,
+    "ceiling_crossfit": 17595.90524269136,
+    "treat_everyone_expected": -211738.8458677944,
+    "n_selected": 4234,
+    "share_selected": 0.15502910915015927,
+    "expected_spend_selected": 42922.59464524692,
+    "mc_halfgap": 0.008676047180345599
+   },
+   "C1": {
+    "ceiling_plugin": 46584.89026774735,
+    "ceiling_crossfit": 46584.798136999874,
+    "treat_everyone_expected": -245016.69526297285,
+    "n_selected": 5185,
+    "share_selected": 0.1898502434916334,
+    "expected_spend_selected": 77192.7201460324,
+    "mc_halfgap": 0.02745461236470791
+   },
+   "C2": {
+    "ceiling_plugin": 30435.681728903313,
+    "ceiling_crossfit": 30435.605771079296,
+    "treat_everyone_expected": -286627.08529720316,
+    "n_selected": 4730,
+    "share_selected": 0.17319028962689026,
+    "expected_spend_selected": 65923.91687734195,
+    "mc_halfgap": 0.018559722202831357
+   },
+   "C3": {
+    "ceiling_plugin": 28189.515569018524,
+    "ceiling_crossfit": 28189.428886193513,
+    "treat_everyone_expected": -291828.14956293395,
+    "n_selected": 4627,
+    "share_selected": 0.16941891545531104,
+    "expected_spend_selected": 63558.69139617312,
+    "mc_halfgap": 0.01613483820660525
+   }
+  }
+ },
+ {
+  "world": "world_20061",
+  "iv": "int_flat",
+  "kind": "flat_discount",
+  "n": 12355,
+  "budget": 295000.0,
+  "observed_margin": 0.23336912055797035,
+  "levels": {
+   "A": {
+    "ceiling_plugin": 0.0,
+    "ceiling_crossfit": 0.0,
+    "treat_everyone_expected": -47510.34564176363,
+    "n_selected": 0,
+    "share_selected": 0.0,
+    "expected_spend_selected": 0.0,
+    "mc_halfgap": 0.009072872131549867
+   },
+   "B": {
+    "ceiling_plugin": 3622.1751158005914,
+    "ceiling_crossfit": 3622.1448046407168,
+    "treat_everyone_expected": -85580.62639886748,
+    "n_selected": 2257,
+    "share_selected": 0.18267907729664104,
+    "expected_spend_selected": 24999.903784741717,
+    "mc_halfgap": 0.018964834749491927
+   },
+   "C1": {
+    "ceiling_plugin": 297.4322002065371,
+    "ceiling_crossfit": 297.39712123599236,
+    "treat_everyone_expected": -117571.49067500944,
+    "n_selected": 396,
+    "share_selected": 0.0320518008903278,
+    "expected_spend_selected": 3576.599008741423,
+    "mc_halfgap": 0.005397709822869327
+   },
+   "C2": {
+    "ceiling_plugin": 6.280449770609548,
+    "ceiling_crossfit": 6.280449770609547,
+    "treat_everyone_expected": -126785.52232919681,
+    "n_selected": 34,
+    "share_selected": 0.0027519222986645085,
+    "expected_spend_selected": 271.3454348770153,
+    "mc_halfgap": 0.012440753286027235
+   },
+   "C3": {
+    "ceiling_plugin": 0.0,
+    "ceiling_crossfit": 0.0,
+    "treat_everyone_expected": -131794.16009347455,
+    "n_selected": 0,
+    "share_selected": 0.0,
+    "expected_spend_selected": 0.0,
+    "mc_halfgap": 0.009079255145767537
+   }
+  }
+ },
+ {
+  "world": "world_20062",
+  "iv": "int_shipping",
+  "kind": "free_shipping",
+  "n": 13220,
+  "budget": 186000.0,
+  "observed_margin": 0.22417237477627444,
+  "levels": {
+   "A": {
+    "ceiling_plugin": 0.0,
+    "ceiling_crossfit": 0.0,
+    "treat_everyone_expected": -14239.324458124289,
+    "n_selected": 0,
+    "share_selected": 0.0,
+    "expected_spend_selected": 0.0,
+    "mc_halfgap": 0.011301181903101722
+   },
+   "B": {
+    "ceiling_plugin": 15811.412244343413,
+    "ceiling_crossfit": 15811.412244343415,
+    "treat_everyone_expected": -13957.34165123559,
+    "n_selected": 5925,
+    "share_selected": 0.44818456883509833,
+    "expected_spend_selected": 24323.706291626466,
+    "mc_halfgap": 0.006821470023707819
+   },
+   "C1": {
+    "ceiling_plugin": 3244.300084418385,
+    "ceiling_crossfit": 3244.298052732306,
+    "treat_everyone_expected": -13671.034721575379,
+    "n_selected": 5303,
+    "share_selected": 0.4011346444780635,
+    "expected_spend_selected": 10297.514316325887,
+    "mc_halfgap": 0.0020168004588879073
+   },
+   "C2": {
+    "ceiling_plugin": 5254.977164951904,
+    "ceiling_crossfit": 5254.976044001376,
+    "treat_everyone_expected": -10244.662789623977,
+    "n_selected": 5695,
+    "share_selected": 0.43078668683812404,
+    "expected_spend_selected": 11568.962867045393,
+    "mc_halfgap": 0.005003746027256585
+   },
+   "C3": {
+    "ceiling_plugin": 8368.866902031781,
+    "ceiling_crossfit": 8367.516655044104,
+    "treat_everyone_expected": -3768.697321770478,
+    "n_selected": 6331,
+    "share_selected": 0.47889561270801817,
+    "expected_spend_selected": 14116.87947880143,
+    "mc_halfgap": 0.02587647376373735
+   }
+  }
+ },
+ {
+  "world": "world_20063",
+  "iv": "int_bundle",
+  "kind": "bundle",
+  "n": 19154,
+  "budget": 280000.0,
+  "observed_margin": 0.23954280849540188,
+  "levels": {
+   "A": {
+    "ceiling_plugin": 34549.09747532863,
+    "ceiling_crossfit": 34547.7879735242,
+    "treat_everyone_expected": 34282.97268183975,
+    "n_selected": 18784,
+    "share_selected": 0.9806828860812363,
+    "expected_spend_selected": 108865.84638918783,
+    "mc_halfgap": 0.03312341066035605
+   },
+   "B": {
+    "ceiling_plugin": 32195.31697103446,
+    "ceiling_crossfit": 32195.176407045637,
+    "treat_everyone_expected": -450.7628066550166,
+    "n_selected": 12489,
+    "share_selected": 0.65203090738227,
+    "expected_spend_selected": 43363.070365158725,
+    "mc_halfgap": 0.015430148622440819
+   },
+   "C1": {
+    "ceiling_plugin": 10831.819990967097,
+    "ceiling_crossfit": 10831.818149569057,
+    "treat_everyone_expected": -13094.34013166421,
+    "n_selected": 10529,
+    "share_selected": 0.5497024120288191,
+    "expected_spend_selected": 20238.927661637048,
+    "mc_halfgap": 0.0041606408101817925
+   },
+   "C2": {
+    "ceiling_plugin": 9850.61425388603,
+    "ceiling_crossfit": 9850.613969969292,
+    "treat_everyone_expected": -14768.660984014794,
+    "n_selected": 10352,
+    "share_selected": 0.5404615223974104,
+    "expected_spend_selected": 19780.170091557262,
+    "mc_halfgap": 0.0005832775162752632
+   },
+   "C3": {
+    "ceiling_plugin": 9350.88847839705,
+    "ceiling_crossfit": 9350.88631164275,
+    "treat_everyone_expected": -15594.581844374792,
+    "n_selected": 10270,
+    "share_selected": 0.5361804322856845,
+    "expected_spend_selected": 19542.31315083706,
+    "mc_halfgap": 0.005167706517402829
+   }
+  }
+ },
+ {
+  "world": "world_20064",
+  "iv": "int_pct",
+  "kind": "percentage_discount",
+  "n": 27862,
+  "budget": 250000.0,
+  "observed_margin": 0.33426844889018287,
+  "levels": {
+   "A": {
+    "ceiling_plugin": 0.0,
+    "ceiling_crossfit": 0.0,
+    "treat_everyone_expected": -21024.70711224979,
+    "n_selected": 0,
+    "share_selected": 0.0,
+    "expected_spend_selected": 0.0,
+    "mc_halfgap": 0.011305967663897992
+   },
+   "B": {
+    "ceiling_plugin": 39322.604309239454,
+    "ceiling_crossfit": 39322.60430923945,
+    "treat_everyone_expected": 35468.24096009118,
+    "n_selected": 23846,
+    "share_selected": 0.8558610293589836,
+    "expected_spend_selected": 90946.4331712042,
+    "mc_halfgap": 0.00736883657934621
+   },
+   "C1": {
+    "ceiling_plugin": 36963.587017115664,
+    "ceiling_crossfit": 36963.587017115664,
+    "treat_everyone_expected": 35364.33825092168,
+    "n_selected": 23846,
+    "share_selected": 0.8558610293589836,
+    "expected_spend_selected": 57345.76173413932,
+    "mc_halfgap": 0.01293858210754459
+   },
+   "C2": {
+    "ceiling_plugin": 32692.75556103559,
+    "ceiling_crossfit": 32692.755561035603,
+    "treat_everyone_expected": 30672.128405193213,
+    "n_selected": 23846,
+    "share_selected": 0.8558610293589836,
+    "expected_spend_selected": 56863.85715152263,
+    "mc_halfgap": 0.00871993564527887
+   },
+   "C3": {
+    "ceiling_plugin": 29316.411746154736,
+    "ceiling_crossfit": 29316.414498557126,
+    "treat_everyone_expected": 27016.366006025313,
+    "n_selected": 23846,
+    "share_selected": 0.8558610293589836,
+    "expected_spend_selected": 56291.22019838278,
+    "mc_halfgap": 0.0015151229611172822
+   }
+  }
+ },
+ {
+  "world": "world_20065",
+  "iv": "int_flat",
+  "kind": "flat_discount",
+  "n": 20228,
+  "budget": 253000.0,
+  "observed_margin": 0.36983455390199066,
+  "levels": {
+   "A": {
+    "ceiling_plugin": 0.0,
+    "ceiling_crossfit": 0.0,
+    "treat_everyone_expected": -17681.706183103975,
+    "n_selected": 0,
+    "share_selected": 0.0,
+    "expected_spend_selected": 0.0,
+    "mc_halfgap": 0.027540990403340928
+   },
+   "B": {
+    "ceiling_plugin": 13532.70472564031,
+    "ceiling_crossfit": 13532.703181635987,
+    "treat_everyone_expected": -31709.514899291702,
+    "n_selected": 7676,
+    "share_selected": 0.37947399644057744,
+    "expected_spend_selected": 23754.100253326687,
+    "mc_halfgap": 0.006026179795692956
+   },
+   "C1": {
+    "ceiling_plugin": 14705.855817244817,
+    "ceiling_crossfit": 14705.854229352346,
+    "treat_everyone_expected": -7694.702133343736,
+    "n_selected": 9332,
+    "share_selected": 0.4613407158394305,
+    "expected_spend_selected": 20059.04641062456,
+    "mc_halfgap": 0.0021217234872755973
+   },
+   "C2": {
+    "ceiling_plugin": 10117.492996784313,
+    "ceiling_crossfit": 10117.47930598007,
+    "treat_everyone_expected": -15216.0740659977,
+    "n_selected": 7988,
+    "share_selected": 0.394898160964999,
+    "expected_spend_selected": 14430.268626374585,
+    "mc_halfgap": 0.003350005491539695
+   },
+   "C3": {
+    "ceiling_plugin": 12179.083857169739,
+    "ceiling_crossfit": 12178.909425004094,
+    "treat_everyone_expected": -11711.259973920347,
+    "n_selected": 8624,
+    "share_selected": 0.4263397271109353,
+    "expected_spend_selected": 17000.65807099272,
+    "mc_halfgap": 0.009378094963716893
+   }
+  }
+ },
+ {
+  "world": "world_20066",
+  "iv": "int_flat",
+  "kind": "flat_discount",
+  "n": 17591,
+  "budget": 251000.0,
+  "observed_margin": 0.3394205595565185,
+  "levels": {
+   "A": {
+    "ceiling_plugin": 0.0,
+    "ceiling_crossfit": 0.0,
+    "treat_everyone_expected": -18649.308221807187,
+    "n_selected": 0,
+    "share_selected": 0.0,
+    "expected_spend_selected": 0.0,
+    "mc_halfgap": 0.012946246510355438
+   },
+   "B": {
+    "ceiling_plugin": 10905.694228605029,
+    "ceiling_crossfit": 10905.023829147802,
+    "treat_everyone_expected": -25199.430214689008,
+    "n_selected": 8333,
+    "share_selected": 0.47370814621113067,
+    "expected_spend_selected": 32829.23142281361,
+    "mc_halfgap": 0.015372508550958128
+   },
+   "C1": {
+    "ceiling_plugin": 19495.603691686214,
+    "ceiling_crossfit": 19495.599748776454,
+    "treat_everyone_expected": -19129.51427680875,
+    "n_selected": 10037,
+    "share_selected": 0.5705758626570405,
+    "expected_spend_selected": 47077.3607999441,
+    "mc_halfgap": 0.003203233014467604
+   },
+   "C2": {
+    "ceiling_plugin": 16271.64829028953,
+    "ceiling_crossfit": 16271.413227118352,
+    "treat_everyone_expected": -23155.812120186823,
+    "n_selected": 9734,
+    "share_selected": 0.5533511454721164,
+    "expected_spend_selected": 44676.57776336476,
+    "mc_halfgap": 0.01750431829978382
+   },
+   "C3": {
+    "ceiling_plugin": 28542.130414493273,
+    "ceiling_crossfit": 28541.804860645672,
+    "treat_everyone_expected": -7592.041138552654,
+    "n_selected": 10850,
+    "share_selected": 0.6167926780740152,
+    "expected_spend_selected": 54630.34224819053,
+    "mc_halfgap": 0.028784952420485222
+   }
+  }
+ },
+ {
+  "world": "world_20067",
+  "iv": "int_pct",
+  "kind": "percentage_discount",
+  "n": 25613,
+  "budget": 492000.0,
+  "observed_margin": 0.30081766183732384,
+  "levels": {
+   "A": {
+    "ceiling_plugin": 0.0,
+    "ceiling_crossfit": 0.0,
+    "treat_everyone_expected": -38893.50507023283,
+    "n_selected": 0,
+    "share_selected": 0.0,
+    "expected_spend_selected": 0.0,
+    "mc_halfgap": 0.05540293209273126
+   },
+   "B": {
+    "ceiling_plugin": 25621.860612451965,
+    "ceiling_crossfit": 25621.860612451972,
+    "treat_everyone_expected": -44705.90855503406,
+    "n_selected": 10256,
+    "share_selected": 0.40042166087533676,
+    "expected_spend_selected": 63403.14174287373,
+    "mc_halfgap": 0.004013662799998223
+   },
+   "C1": {
+    "ceiling_plugin": 15285.922242704724,
+    "ceiling_crossfit": 15285.922242704726,
+    "treat_everyone_expected": -20056.673241736902,
+    "n_selected": 10256,
+    "share_selected": 0.40042166087533676,
+    "expected_spend_selected": 33131.156775890544,
+    "mc_halfgap": 0.00536481163882167
+   },
+   "C2": {
+    "ceiling_plugin": 13266.87125799204,
+    "ceiling_crossfit": 13266.871257992034,
+    "treat_everyone_expected": -23964.90060273133,
+    "n_selected": 10256,
+    "share_selected": 0.40042166087533676,
+    "expected_spend_selected": 32841.73595685068,
+    "mc_halfgap": 0.0047623111998023665
+   },
+   "C3": {
+    "ceiling_plugin": 13417.28403327936,
+    "ceiling_crossfit": 13417.28424938309,
+    "treat_everyone_expected": -23519.71290461275,
+    "n_selected": 10256,
+    "share_selected": 0.40042166087533676,
+    "expected_spend_selected": 32695.0506453005,
+    "mc_halfgap": 0.0019788692839085614
+   }
+  }
+ },
+ {
+  "world": "world_20068",
+  "iv": "int_flat",
+  "kind": "flat_discount",
+  "n": 20012,
+  "budget": 585000.0,
+  "observed_margin": 0.2558616570003556,
+  "levels": {
+   "A": {
+    "ceiling_plugin": 0.0,
+    "ceiling_crossfit": 0.0,
+    "treat_everyone_expected": -45960.467847370215,
+    "n_selected": 0,
+    "share_selected": 0.0,
+    "expected_spend_selected": 0.0,
+    "mc_halfgap": 0.004993306754921477
+   },
+   "B": {
+    "ceiling_plugin": 7555.922068748359,
+    "ceiling_crossfit": 7555.907382298132,
+    "treat_everyone_expected": -55401.67727943834,
+    "n_selected": 4410,
+    "share_selected": 0.22036777933240057,
+    "expected_spend_selected": 28318.253628954066,
+    "mc_halfgap": 0.006072344966008755
+   },
+   "C1": {
+    "ceiling_plugin": 3834.045403613309,
+    "ceiling_crossfit": 3833.717305929439,
+    "treat_everyone_expected": -90382.11622855489,
+    "n_selected": 2446,
+    "share_selected": 0.12222666400159904,
+    "expected_spend_selected": 17290.98669010767,
+    "mc_halfgap": 0.019616633731589044
+   },
+   "C2": {
+    "ceiling_plugin": 11885.520328276994,
+    "ceiling_crossfit": 11885.443163009859,
+    "treat_everyone_expected": -64410.44482631648,
+    "n_selected": 4807,
+    "share_selected": 0.24020587647411554,
+    "expected_spend_selected": 41310.97600981063,
+    "mc_halfgap": 0.008752991137238087
+   },
+   "C3": {
+    "ceiling_plugin": 6973.8442453422485,
+    "ceiling_crossfit": 6973.840893296925,
+    "treat_everyone_expected": -80170.4994954079,
+    "n_selected": 3653,
+    "share_selected": 0.18254047571457127,
+    "expected_spend_selected": 28738.771002588677,
+    "mc_halfgap": 0.006713518637314188
+   }
+  }
+ },
+ {
+  "world": "world_20069",
+  "iv": "int_shipping",
+  "kind": "free_shipping",
+  "n": 27892,
+  "budget": 1087000.0,
+  "observed_margin": 0.3738031848035884,
+  "levels": {
+   "A": {
+    "ceiling_plugin": 0.0,
+    "ceiling_crossfit": 0.0,
+    "treat_everyone_expected": -79227.22854324368,
+    "n_selected": 0,
+    "share_selected": 0.0,
+    "expected_spend_selected": 0.0,
+    "mc_halfgap": 0.0030801120947908114
+   },
+   "B": {
+    "ceiling_plugin": 54242.82857213912,
+    "ceiling_crossfit": 54242.66017013295,
+    "treat_everyone_expected": -25244.312579809084,
+    "n_selected": 14108,
+    "share_selected": 0.5058081170228023,
+    "expected_spend_selected": 129956.11444412215,
+    "mc_halfgap": 0.02312441450695226
+   },
+   "C1": {
+    "ceiling_plugin": 83948.25623705877,
+    "ceiling_crossfit": 83948.24961154943,
+    "treat_everyone_expected": 36092.115424197546,
+    "n_selected": 16619,
+    "share_selected": 0.5958339308762369,
+    "expected_spend_selected": 125739.06002216077,
+    "mc_halfgap": 0.007230018014900311
+   },
+   "C2": {
+    "ceiling_plugin": 113215.39614768958,
+    "ceiling_crossfit": 113214.38320220186,
+    "treat_everyone_expected": 71009.75008834779,
+    "n_selected": 19550,
+    "share_selected": 0.7009178258998996,
+    "expected_spend_selected": 145727.59275270245,
+    "mc_halfgap": 0.03370424680550256
+   },
+   "C3": {
+    "ceiling_plugin": 112178.58672874811,
+    "ceiling_crossfit": 112178.1606667187,
+    "treat_everyone_expected": 69523.54120439048,
+    "n_selected": 19253,
+    "share_selected": 0.6902696113580955,
+    "expected_spend_selected": 144349.441178083,
+    "mc_halfgap": 0.021346685564016744
+   }
+  }
+ },
+ {
+  "world": "world_20070",
+  "iv": "int_shipping",
+  "kind": "free_shipping",
+  "n": 20282,
+  "budget": 219000.0,
+  "observed_margin": 0.25455228725365475,
+  "levels": {
+   "A": {
+    "ceiling_plugin": 0.0,
+    "ceiling_crossfit": 0.0,
+    "treat_everyone_expected": -42277.79826284615,
+    "n_selected": 0,
+    "share_selected": 0.0,
+    "expected_spend_selected": 0.0,
+    "mc_halfgap": 0.044447635780217244
+   },
+   "B": {
+    "ceiling_plugin": 14466.30072800154,
+    "ceiling_crossfit": 14465.715185145003,
+    "treat_everyone_expected": -16981.7903431233,
+    "n_selected": 9493,
+    "share_selected": 0.46805048811754263,
+    "expected_spend_selected": 47351.22783194718,
+    "mc_halfgap": 0.032840168004069845
+   },
+   "C1": {
+    "ceiling_plugin": 4881.972020081684,
+    "ceiling_crossfit": 4881.965158129093,
+    "treat_everyone_expected": -23427.38725773832,
+    "n_selected": 7449,
+    "share_selected": 0.36727147224139634,
+    "expected_spend_selected": 25314.92641309224,
+    "mc_halfgap": 0.0036528668110366322
+   },
+   "C2": {
+    "ceiling_plugin": 14054.316936985195,
+    "ceiling_crossfit": 14053.90551962486,
+    "treat_everyone_expected": -6282.895023637539,
+    "n_selected": 9914,
+    "share_selected": 0.4888078098806824,
+    "expected_spend_selected": 39606.25124450752,
+    "mc_halfgap": 0.019572629397529646
+   },
+   "C3": {
+    "ceiling_plugin": 28451.356107071064,
+    "ceiling_crossfit": 28451.01217206265,
+    "treat_everyone_expected": 14213.926151834225,
+    "n_selected": 13177,
+    "share_selected": 0.6496893797455873,
+    "expected_spend_selected": 63074.97013111472,
+    "mc_halfgap": 0.01342278248988687
+   }
+  }
+ },
+ {
+  "world": "world_20071",
+  "iv": "int_flat",
+  "kind": "flat_discount",
+  "n": 24876,
+  "budget": 582000.0,
+  "observed_margin": 0.39529582272188296,
+  "levels": {
+   "A": {
+    "ceiling_plugin": 0.0,
+    "ceiling_crossfit": 0.0,
+    "treat_everyone_expected": -91736.8752404219,
+    "n_selected": 0,
+    "share_selected": 0.0,
+    "expected_spend_selected": 0.0,
+    "mc_halfgap": 0.01069601005380746
+   },
+   "B": {
+    "ceiling_plugin": 46813.95040366853,
+    "ceiling_crossfit": 46813.608978851786,
+    "treat_everyone_expected": -34083.02955275908,
+    "n_selected": 10760,
+    "share_selected": 0.43254542530953527,
+    "expected_spend_selected": 109173.9643745941,
+    "mc_halfgap": 0.022451777908368657
+   },
+   "C1": {
+    "ceiling_plugin": 101233.30645841382,
+    "ceiling_crossfit": 101233.26091812956,
+    "treat_everyone_expected": 64590.655164252355,
+    "n_selected": 15244,
+    "share_selected": 0.6127994854478211,
+    "expected_spend_selected": 171234.3210071674,
+    "mc_halfgap": 0.01664942845753528
+   },
+   "C2": {
+    "ceiling_plugin": 88507.9172394377,
+    "ceiling_crossfit": 88507.51533581913,
+    "treat_everyone_expected": 49020.64381682342,
+    "n_selected": 14467,
+    "share_selected": 0.5815645602186846,
+    "expected_spend_selected": 155406.96960660396,
+    "mc_halfgap": 0.023173080722606914
+   },
+   "C3": {
+    "ceiling_plugin": 166951.548962984,
+    "ceiling_crossfit": 166949.33862188106,
+    "treat_everyone_expected": 145905.45132746894,
+    "n_selected": 18922,
+    "share_selected": 0.7606528380768612,
+    "expected_spend_selected": 261718.05094742676,
+    "mc_halfgap": 0.05936824347694223
+   }
+  }
+ },
+ {
+  "world": "world_20072",
+  "iv": "int_flat",
+  "kind": "flat_discount",
+  "n": 22262,
+  "budget": 247000.0,
+  "observed_margin": 0.27769396744904284,
+  "levels": {
+   "A": {
+    "ceiling_plugin": 0.0,
+    "ceiling_crossfit": 0.0,
+    "treat_everyone_expected": -61053.30490149482,
+    "n_selected": 0,
+    "share_selected": 0.0,
+    "expected_spend_selected": 0.0,
+    "mc_halfgap": 0.004320177728751501
+   },
+   "B": {
+    "ceiling_plugin": 5310.680155526188,
+    "ceiling_crossfit": 5310.301767064484,
+    "treat_everyone_expected": -43847.92988006183,
+    "n_selected": 4906,
+    "share_selected": 0.22037552780522865,
+    "expected_spend_selected": 23426.037858386488,
+    "mc_halfgap": 0.016370071368927323
+   },
+   "C1": {
+    "ceiling_plugin": 3417.864504666416,
+    "ceiling_crossfit": 3417.839877728934,
+    "treat_everyone_expected": -47559.61315620354,
+    "n_selected": 3900,
+    "share_selected": 0.1751864163147965,
+    "expected_spend_selected": 16762.490366069247,
+    "mc_halfgap": 0.0033543576862442768
+   },
+   "C2": {
+    "ceiling_plugin": 9445.43861521617,
+    "ceiling_crossfit": 9445.35550976844,
+    "treat_everyone_expected": -32673.580158898345,
+    "n_selected": 6432,
+    "share_selected": 0.28892282813763365,
+    "expected_spend_selected": 33577.44496826298,
+    "mc_halfgap": 0.006801721808788752
+   },
+   "C3": {
+    "ceiling_plugin": 1685.0756628584195,
+    "ceiling_crossfit": 1685.0578401541616,
+    "treat_everyone_expected": -54333.03984501753,
+    "n_selected": 2394,
+    "share_selected": 0.10753750786092894,
+    "expected_spend_selected": 9285.39623483456,
+    "mc_halfgap": 0.004360180085052496
+   }
+  }
+ },
+ {
+  "world": "world_20073",
+  "iv": "int_shipping",
+  "kind": "free_shipping",
+  "n": 12487,
+  "budget": 298000.0,
+  "observed_margin": 0.2207833631682586,
+  "levels": {
+   "A": {
+    "ceiling_plugin": 0.0,
+    "ceiling_crossfit": 0.0,
+    "treat_everyone_expected": -16692.693555369424,
+    "n_selected": 0,
+    "share_selected": 0.0,
+    "expected_spend_selected": 0.0,
+    "mc_halfgap": 0.001017274215624256
+   },
+   "B": {
+    "ceiling_plugin": 13497.361389232312,
+    "ceiling_crossfit": 13497.328980983952,
+    "treat_everyone_expected": -20888.843956503275,
+    "n_selected": 5066,
+    "share_selected": 0.4057019300072075,
+    "expected_spend_selected": 24774.96456993404,
+    "mc_halfgap": 0.021871524615065224
+   },
+   "C1": {
+    "ceiling_plugin": 2482.2989708844643,
+    "ceiling_crossfit": 2482.260669737503,
+    "treat_everyone_expected": -19294.168746354655,
+    "n_selected": 4018,
+    "share_selected": 0.3217746456314567,
+    "expected_spend_selected": 10006.861716668556,
+    "mc_halfgap": 0.005132824888573259
+   },
+   "C2": {
+    "ceiling_plugin": 5981.353162002984,
+    "ceiling_crossfit": 5981.346736398891,
+    "treat_everyone_expected": -12050.829191784493,
+    "n_selected": 4837,
+    "share_selected": 0.38736285737166654,
+    "expected_spend_selected": 13139.88573226261,
+    "mc_halfgap": 0.00564171731842562
+   },
+   "C3": {
+    "ceiling_plugin": 8365.332872824449,
+    "ceiling_crossfit": 8365.243418358325,
+    "treat_everyone_expected": -7103.781232389205,
+    "n_selected": 5481,
+    "share_selected": 0.43893649395371187,
+    "expected_spend_selected": 16680.78181846594,
+    "mc_halfgap": 0.010928967238643792
+   }
+  }
+ },
+ {
+  "world": "world_20074",
+  "iv": "int_shipping",
+  "kind": "free_shipping",
+  "n": 13884,
+  "budget": 334000.0,
+  "observed_margin": 0.2880690040001086,
+  "levels": {
+   "A": {
+    "ceiling_plugin": 0.0,
+    "ceiling_crossfit": 0.0,
+    "treat_everyone_expected": -32423.33709368108,
+    "n_selected": 0,
+    "share_selected": 0.0,
+    "expected_spend_selected": 0.0,
+    "mc_halfgap": 0.013522384793469653
+   },
+   "B": {
+    "ceiling_plugin": 15369.909119702359,
+    "ceiling_crossfit": 15369.906611074479,
+    "treat_everyone_expected": -43862.68755311456,
+    "n_selected": 3542,
+    "share_selected": 0.2551138000576203,
+    "expected_spend_selected": 30521.29521157196,
+    "mc_halfgap": 0.012136185175308607
+   },
+   "C1": {
+    "ceiling_plugin": 10050.014248589618,
+    "ceiling_crossfit": 10050.014248589612,
+    "treat_everyone_expected": -30826.38769134124,
+    "n_selected": 3519,
+    "share_selected": 0.253457216940363,
+    "expected_spend_selected": 21010.62832407612,
+    "mc_halfgap": 0.005229505029581728
+   },
+   "C2": {
+    "ceiling_plugin": 8383.382426317865,
+    "ceiling_crossfit": 8383.378653081043,
+    "treat_everyone_expected": -33527.112708977766,
+    "n_selected": 3484,
+    "share_selected": 0.250936329588015,
+    "expected_spend_selected": 20277.71306838448,
+    "mc_halfgap": 0.0039117853591231
+   },
+   "C3": {
+    "ceiling_plugin": 10376.375735470338,
+    "ceiling_crossfit": 10376.306438843305,
+    "treat_everyone_expected": -29709.018322801137,
+    "n_selected": 3532,
+    "share_selected": 0.254393546528378,
+    "expected_spend_selected": 21436.45003016634,
+    "mc_halfgap": 0.03358754088318954
+   }
+  }
+ },
+ {
+  "world": "world_20075",
+  "iv": "int_bundle",
+  "kind": "bundle",
+  "n": 13082,
+  "budget": 283000.0,
+  "observed_margin": 0.2862620890955616,
+  "levels": {
+   "A": {
+    "ceiling_plugin": 15583.565682946786,
+    "ceiling_crossfit": 15583.560108123878,
+    "treat_everyone_expected": 15308.962579259214,
+    "n_selected": 12555,
+    "share_selected": 0.9597156398104265,
+    "expected_spend_selected": 61587.1993175906,
+    "mc_halfgap": 0.0012626006505961262
+   },
+   "B": {
+    "ceiling_plugin": 27733.777332111968,
+    "ceiling_crossfit": 27733.77733211196,
+    "treat_everyone_expected": 2620.6312408265385,
+    "n_selected": 8668,
+    "share_selected": 0.6625898180706314,
+    "expected_spend_selected": 26637.08476949462,
+    "mc_halfgap": 0.016006166598184872
+   },
+   "C1": {
+    "ceiling_plugin": 23944.33756378809,
+    "ceiling_crossfit": 23944.33756378807,
+    "treat_everyone_expected": -403.58724035842386,
+    "n_selected": 8612,
+    "share_selected": 0.6583091270447944,
+    "expected_spend_selected": 24714.54388192171,
+    "mc_halfgap": 0.0017018224992178942
+   },
+   "C2": {
+    "ceiling_plugin": 22624.462206957218,
+    "ceiling_crossfit": 22624.45928682948,
+    "treat_everyone_expected": -2275.8967763383953,
+    "n_selected": 8591,
+    "share_selected": 0.6567038679101055,
+    "expected_spend_selected": 24421.460293715336,
+    "mc_halfgap": 0.008265041579103065
+   },
+   "C3": {
+    "ceiling_plugin": 22808.886631671543,
+    "ceiling_crossfit": 22808.884071431254,
+    "treat_everyone_expected": -1876.362107923257,
+    "n_selected": 8594,
+    "share_selected": 0.6569331906436324,
+    "expected_spend_selected": 24345.722282086834,
+    "mc_halfgap": 0.004509263739273655
+   }
+  }
+ },
+ {
+  "world": "world_20076",
+  "iv": "int_pct",
+  "kind": "percentage_discount",
+  "n": 25292,
+  "budget": 821000.0,
+  "observed_margin": 0.36321368628984035,
+  "levels": {
+   "A": {
+    "ceiling_plugin": 0.0,
+    "ceiling_crossfit": 0.0,
+    "treat_everyone_expected": -44603.59089292919,
+    "n_selected": 0,
+    "share_selected": 0.0,
+    "expected_spend_selected": 0.0,
+    "mc_halfgap": 0.070198933557709
+   },
+   "B": {
+    "ceiling_plugin": 35945.08991199756,
+    "ceiling_crossfit": 35945.08991199757,
+    "treat_everyone_expected": -18629.832372590623,
+    "n_selected": 15117,
+    "share_selected": 0.5976988771152933,
+    "expected_spend_selected": 95216.00296652323,
+    "mc_halfgap": 0.006343944638923419
+   },
+   "C1": {
+    "ceiling_plugin": 56404.313708948306,
+    "ceiling_crossfit": 56404.313708948306,
+    "treat_everyone_expected": 20248.335889530514,
+    "n_selected": 16875,
+    "share_selected": 0.6672070219832358,
+    "expected_spend_selected": 91861.35243189741,
+    "mc_halfgap": 0.009617667548072185
+   },
+   "C2": {
+    "ceiling_plugin": 66417.60113143154,
+    "ceiling_crossfit": 66417.60113143153,
+    "treat_everyone_expected": 33687.63097978622,
+    "n_selected": 16875,
+    "share_selected": 0.6672070219832358,
+    "expected_spend_selected": 93319.42231991333,
+    "mc_halfgap": 0.015619311172393074
+   },
+   "C3": {
+    "ceiling_plugin": 61466.50853508665,
+    "ceiling_crossfit": 61466.43774690887,
+    "treat_everyone_expected": 26932.89400960578,
+    "n_selected": 16875,
+    "share_selected": 0.6672070219832358,
+    "expected_spend_selected": 92363.50701354071,
+    "mc_halfgap": 0.031167563653417756
+   }
+  }
+ },
+ {
+  "world": "world_20077",
+  "iv": "int_pct",
+  "kind": "percentage_discount",
+  "n": 18172,
+  "budget": 767000.0,
+  "observed_margin": 0.24697331618441373,
+  "levels": {
+   "A": {
+    "ceiling_plugin": 0.0,
+    "ceiling_crossfit": 0.0,
+    "treat_everyone_expected": -27319.663871586443,
+    "n_selected": 0,
+    "share_selected": 0.0,
+    "expected_spend_selected": 0.0,
+    "mc_halfgap": 0.02845450754590785
+   },
+   "B": {
+    "ceiling_plugin": 18446.85312946801,
+    "ceiling_crossfit": 18446.85312946801,
+    "treat_everyone_expected": -51837.85947006174,
+    "n_selected": 6610,
+    "share_selected": 0.36374642306845695,
+    "expected_spend_selected": 32819.8261456747,
+    "mc_halfgap": 0.007063286350570321
+   },
+   "C1": {
+    "ceiling_plugin": 11996.353766432838,
+    "ceiling_crossfit": 11996.35376643284,
+    "treat_everyone_expected": -93739.08537573699,
+    "n_selected": 6610,
+    "share_selected": 0.36374642306845695,
+    "expected_spend_selected": 43943.044097377555,
+    "mc_halfgap": 0.01646679841523535
+   },
+   "C2": {
+    "ceiling_plugin": 15441.336913932311,
+    "ceiling_crossfit": 15441.336913932311,
+    "treat_everyone_expected": -86141.19582140629,
+    "n_selected": 6610,
+    "share_selected": 0.36374642306845695,
+    "expected_spend_selected": 44553.87985591012,
+    "mc_halfgap": 0.014180759680956934
+   },
+   "C3": {
+    "ceiling_plugin": 8449.346087754355,
+    "ceiling_crossfit": 8449.355397415946,
+    "treat_everyone_expected": -100464.70292937769,
+    "n_selected": 6610,
+    "share_selected": 0.36374642306845695,
+    "expected_spend_selected": 43254.116896372056,
+    "mc_halfgap": 0.013213458726031121
+   }
+  }
+ },
+ {
+  "world": "world_20078",
+  "iv": "int_pct",
+  "kind": "percentage_discount",
+  "n": 24892,
+  "budget": 375000.0,
+  "observed_margin": 0.24568087137026762,
+  "levels": {
+   "A": {
+    "ceiling_plugin": 0.0,
+    "ceiling_crossfit": 0.0,
+    "treat_everyone_expected": -28799.402009217356,
+    "n_selected": 0,
+    "share_selected": 0.0,
+    "expected_spend_selected": 0.0,
+    "mc_halfgap": 0.019056062618965842
+   },
+   "B": {
+    "ceiling_plugin": 10815.01794685053,
+    "ceiling_crossfit": 10815.017946850527,
+    "treat_everyone_expected": -36088.76039948075,
+    "n_selected": 6700,
+    "share_selected": 0.2691627832235256,
+    "expected_spend_selected": 24825.09619157514,
+    "mc_halfgap": 0.01555072345894688
+   },
+   "C1": {
+    "ceiling_plugin": 5075.833702116297,
+    "ceiling_crossfit": 5075.8337021162915,
+    "treat_everyone_expected": -46086.940688475486,
+    "n_selected": 4807,
+    "share_selected": 0.19311425357544593,
+    "expected_spend_selected": 15776.064947231353,
+    "mc_halfgap": 0.001814486492281756
+   },
+   "C2": {
+    "ceiling_plugin": 5845.391483862286,
+    "ceiling_crossfit": 5845.391483862289,
+    "treat_everyone_expected": -41900.9883263773,
+    "n_selected": 4807,
+    "share_selected": 0.19311425357544593,
+    "expected_spend_selected": 16033.625036099464,
+    "mc_halfgap": 0.005318644543130104
+   },
+   "C3": {
+    "ceiling_plugin": 4111.4829381104755,
+    "ceiling_crossfit": 4111.484226730448,
+    "treat_everyone_expected": -50492.81969793725,
+    "n_selected": 4807,
+    "share_selected": 0.19311425357544593,
+    "expected_spend_selected": 15693.466597120201,
+    "mc_halfgap": 0.011048116890224623
+   }
+  }
+ },
+ {
+  "world": "world_20079",
+  "iv": "int_flat",
+  "kind": "flat_discount",
+  "n": 21813,
+  "budget": 623000.0,
+  "observed_margin": 0.31157141754444645,
+  "levels": {
+   "A": {
+    "ceiling_plugin": 0.0,
+    "ceiling_crossfit": 0.0,
+    "treat_everyone_expected": -97403.24828132926,
+    "n_selected": 0,
+    "share_selected": 0.0,
+    "expected_spend_selected": 0.0,
+    "mc_halfgap": 0.05862475963636982
+   },
+   "B": {
+    "ceiling_plugin": 13123.058372717167,
+    "ceiling_crossfit": 13121.661656040149,
+    "treat_everyone_expected": -76081.83016863053,
+    "n_selected": 5640,
+    "share_selected": 0.25856140833447944,
+    "expected_spend_selected": 53447.2281756617,
+    "mc_halfgap": 0.03822586772918103
+   },
+   "C1": {
+    "ceiling_plugin": 15832.577379278711,
+    "ceiling_crossfit": 15832.420687149675,
+    "treat_everyone_expected": -60750.680096051976,
+    "n_selected": 6269,
+    "share_selected": 0.28739742355476094,
+    "expected_spend_selected": 58571.435951168154,
+    "mc_halfgap": 0.017997760542855453
+   },
+   "C2": {
+    "ceiling_plugin": 12441.004715486666,
+    "ceiling_crossfit": 12440.729803925975,
+    "treat_everyone_expected": -67953.20953497614,
+    "n_selected": 5865,
+    "share_selected": 0.26887635813505706,
+    "expected_spend_selected": 53065.163591637494,
+    "mc_halfgap": 0.02305630147855259
+   },
+   "C3": {
+    "ceiling_plugin": 3088.5617942322274,
+    "ceiling_crossfit": 3088.482817297997,
+    "treat_everyone_expected": -107780.41698052295,
+    "n_selected": 2460,
+    "share_selected": 0.1127767844863155,
+    "expected_spend_selected": 17953.16529640308,
+    "mc_halfgap": 0.017242090131085446
+   }
+  }
+ },
+ {
+  "world": "world_20080",
+  "iv": "int_pct",
+  "kind": "percentage_discount",
+  "n": 21705,
+  "budget": 1775000.0,
+  "observed_margin": 0.3301563430033594,
+  "levels": {
+   "A": {
+    "ceiling_plugin": 0.0,
+    "ceiling_crossfit": 0.0,
+    "treat_everyone_expected": -35276.97159160243,
+    "n_selected": 0,
+    "share_selected": 0.0,
+    "expected_spend_selected": 0.0,
+    "mc_halfgap": 0.04997856074310014
+   },
+   "B": {
+    "ceiling_plugin": 51241.38094005971,
+    "ceiling_crossfit": 51241.38094005971,
+    "treat_everyone_expected": 24636.01529999971,
+    "n_selected": 13091,
+    "share_selected": 0.6031329186823312,
+    "expected_spend_selected": 101053.50660320761,
+    "mc_halfgap": 0.010592885172016231
+   },
+   "C1": {
+    "ceiling_plugin": 101822.68261804688,
+    "ceiling_crossfit": 101822.68261804686,
+    "treat_everyone_expected": 57704.93494762201,
+    "n_selected": 13091,
+    "share_selected": 0.6031329186823312,
+    "expected_spend_selected": 171855.46583262942,
+    "mc_halfgap": 0.04501143865272571
+   },
+   "C2": {
+    "ceiling_plugin": 91338.4072318606,
+    "ceiling_crossfit": 91338.40723186062,
+    "treat_everyone_expected": 40950.99394051182,
+    "n_selected": 13091,
+    "share_selected": 0.6031329186823312,
+    "expected_spend_selected": 170377.65440377596,
+    "mc_halfgap": 0.05748927818441206
+   },
+   "C3": {
+    "ceiling_plugin": 69750.48338899724,
+    "ceiling_crossfit": 69750.58299743687,
+    "treat_everyone_expected": 9782.688165169968,
+    "n_selected": 13091,
+    "share_selected": 0.6031329186823312,
+    "expected_spend_selected": 166389.75041186984,
+    "mc_halfgap": 0.059723725550467635
+   }
+  }
+ }
+]

@@ -8,7 +8,7 @@ answer is enforced downstream by the experiment engine and the scaling rule.
 Three implementations behind one Protocol:
 
 * :class:`ClaudeReasoner` — Claude Opus 5.
-* :class:`GeminiReasoner` — Gemini 2.5 Flash, on the free tier.
+* :class:`GeminiReasoner` — Gemini 3.6 Flash.
 * :class:`HeuristicReasoner` — a deterministic stand-in with no model behind it,
   so the loop, the tests and CI run offline. It is **not** a substitute for a
   model in any result: it cannot read the merchant's situation, and any
@@ -35,7 +35,20 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol, Sequence, runtime_checkable
 
+import httpx
 from dotenv import load_dotenv
+
+#: Transport-level failures worth retrying. Connection drops and timeouts say
+#: nothing about the request; they say the network moved underneath it.
+_TRANSPORT_ERRORS = (
+    httpx.RemoteProtocolError,
+    httpx.ConnectError,
+    httpx.ReadError,
+    httpx.ReadTimeout,
+    httpx.WriteError,
+    httpx.ConnectTimeout,
+    httpx.PoolTimeout,
+)
 
 #: Resolved from this file rather than the caller's stack or cwd. python-dotenv's
 #: default find_dotenv() walks frames, which fails outright under `python -` and
@@ -105,14 +118,42 @@ class _RateLimiter:
             time.sleep(remaining)
         self._last_call = time.monotonic()
 
-SYSTEM_PROMPT = """You are MarginPilot, an autonomous growth agent for an Indian \
+#: Fix A's contribution, isolated so it can be switched off. Cycle 2 measures
+#: the two fixes as an ablation rather than as one lump: an improvement whose
+#: source is unknown is not a diagnosis, and §4j committed in advance to
+#: reporting whether Fix B replaced reasoning or informed it.
+_BREAK_EVEN_DOCTRINE = """THE QUESTION IS NOT WHICH OFFER MOVES CUSTOMERS. It is which offer moves them at a \
+cost the margin can absorb. Those are different questions and they often have \
+different answers. An offer that customers visibly want can still be the worst \
+choice available, because wanting it is not the same as it paying for itself.
+
+Work the break-even before you argue for anything. For each intervention:
+
+    break-even incremental share = cost per treated order / contribution per order
+
+That is the fraction of treated orders that must be genuinely NEW — orders that \
+would not have happened otherwise — just to cover the discount. An offer needing \
+40% of its orders to be incremental is a far harder bet than one needing 8%, \
+whatever the customers say they want. Compute this ratio for every option and say \
+what it is before you choose. A cheap offer on a healthy margin can pay while an \
+attractive offer on a thin one cannot.
+
+Signals about customer RESPONSE — support tickets, stated preferences, segment \
+friction — tell you who will react. They do not tell you whether reacting pays. \
+Use them to explain a number, never as a substitute for one.
+
+"""
+
+_SYSTEM_HEAD = """You are MarginPilot, an autonomous growth agent for an Indian \
 direct-to-consumer merchant.
 
 You optimise INCREMENTAL CONTRIBUTION, not conversion. A discount is paid to every \
 buyer who converts, including the ones who would have bought at full price, so a \
 campaign can lift conversion sharply and still destroy contribution.
 
-EXPERIMENTATION IS SCARCE. On merchants like this one, a single experiment costs \
+"""
+
+_SYSTEM_TAIL = """EXPERIMENTATION IS SCARCE. On merchants like this one, a single experiment costs \
 roughly 2.8x the entire annual profit pool that promotions could generate. You can \
 afford about ONE experiment per merchant. Your primary decision is therefore NOT \
 "which campaign" but "is any question here worth its cost at all".
@@ -132,6 +173,14 @@ Randomisation, the horizon and the decision rule are fixed by the system.
 
 Reply with a single JSON object and no other text."""
 
+#: The Cycle 2 prompt. Concatenated rather than formatted — the tail contains
+#: braces, and a format string here would be a parsing accident waiting to fail
+#: silently.
+SYSTEM_PROMPT = _SYSTEM_HEAD + _BREAK_EVEN_DOCTRINE + _SYSTEM_TAIL
+
+#: The Cycle 1 prompt, byte-for-byte, as the control arm of the ablation.
+SYSTEM_PROMPT_WITHOUT_BREAK_EVEN = _SYSTEM_HEAD + _SYSTEM_TAIL
+
 _RUN_SCHEMA = """{
   "decision": "run" | "skip",
 
@@ -144,7 +193,8 @@ _RUN_SCHEMA = """{
   "mde_contribution_per_customer_inr": <smallest per-customer rupee effect worth resolving>,
   "success_condition": "<observation that would confirm the prediction>",
   "failure_condition": "<observation that would refute it>",
-  "selection_rationale": "<why this question rather than the others>",
+  "break_even_analysis": "<the break-even incremental share for EVERY intervention, and which is most affordable>",
+  "selection_rationale": "<why this question rather than the others, in terms of that ratio>",
 
   // when "skip":
   "reasoning": "<why no experiment here is worth its cost>",
@@ -254,7 +304,12 @@ def _assessment_from_payload(
             ),
             success_condition=str(payload.get("success_condition", "")).strip(),
             failure_condition=str(payload.get("failure_condition", "")).strip(),
-            selection_rationale=str(payload.get("selection_rationale", "")),
+            selection_rationale=" ".join(
+                s for s in (
+                    str(payload.get("break_even_analysis", "")).strip(),
+                    str(payload.get("selection_rationale", "")).strip(),
+                ) if s
+            ),
         ),
     )
 
@@ -294,7 +349,7 @@ class ClaudeReasoner:
         response = self._client.messages.create(
             model=self.model,
             max_tokens=self.max_tokens,
-            system=SYSTEM_PROMPT,
+            system=self.system_prompt,
             thinking={"type": "adaptive"},
             output_config={"effort": self.effort},
             messages=[{"role": "user", "content": prompt}],
@@ -303,6 +358,16 @@ class ClaudeReasoner:
             raise RuntimeError(f"model declined: {response.stop_details}")
         text = "".join(b.text for b in response.content if b.type == "text")
         return _extract_json(text)
+
+    #: Cycle 2 ablation switches. Both fixes on by default; the ablation turns
+    #: them off one at a time so an improvement can be attributed rather than
+    #: just observed.
+    break_even: bool = True
+    merchant_history: bool = True
+
+    @property
+    def system_prompt(self) -> str:
+        return SYSTEM_PROMPT if self.break_even else SYSTEM_PROMPT_WITHOUT_BREAK_EVEN
 
     def assess(
         self,
@@ -317,6 +382,8 @@ class ClaudeReasoner:
             budget_remaining_inr=budget_remaining_inr,
             experiments_remaining=experiments_remaining,
             history=history,
+            show_break_even=self.break_even,
+            show_merchant_history=self.merchant_history,
         )
         return _assessment_from_payload(self._ask(prompt), view, len(history))
 
@@ -356,9 +423,15 @@ class GeminiReasoner:
     requests_per_minute: int = GEMINI_FREE_TIER_RPM
     max_retries: int = 5
     max_output_tokens: int = 8192
-    #: Zero temperature so a re-run of the same merchant gives the same
-    #: decision. The diagnostics compare paired runs, and a sampling difference
-    #: would be indistinguishable from a reasoning difference.
+    #: Zero temperature, which reduces run-to-run variation but does **not**
+    #: eliminate it. Measured in Cycle 2 (§4k): two runs of the same arm over
+    #: the same 20 dev worlds, identical code and prompts, disagreed on the
+    #: run/skip decision for 6 of 16 worlds. Any paired diagnostic built on a
+    #: single run per arm is therefore comparing reasoning differences against
+    #: a sampling floor of roughly that size, and must either replicate or say
+    #: it cannot resolve the effect. The temperature is kept at zero because
+    #: lower variance is still better than higher; the claim that it buys
+    #: reproducibility was wrong and is withdrawn.
     temperature: float = 0.0
     _client: Any = None
     _limiter: _RateLimiter = field(default_factory=lambda: _RateLimiter(GEMINI_FREE_TIER_RPM))
@@ -390,7 +463,7 @@ class GeminiReasoner:
         from google.genai import errors, types
 
         config = types.GenerateContentConfig(
-            system_instruction=SYSTEM_PROMPT,
+            system_instruction=self.system_prompt,
             temperature=self.temperature,
             max_output_tokens=self.max_output_tokens,
             # The prompts already specify a JSON object; asking the API to
@@ -410,6 +483,12 @@ class GeminiReasoner:
                     raise
                 last_error = exc
             except errors.ServerError as exc:  # 5xx — transient
+                last_error = exc
+            except _TRANSPORT_ERRORS as exc:
+                # A dropped connection is an infrastructure event, exactly like a
+                # 429 or a 5xx, and must not reach the loop looking like a
+                # decision. Measured in Cycle 3: an unretried
+                # RemoteProtocolError killed a three-replicate run outright.
                 last_error = exc
             else:
                 meta = getattr(response, "usage_metadata", None)
@@ -434,9 +513,20 @@ class GeminiReasoner:
             time.sleep(delay + random.uniform(0, 1.0))
 
         raise RateLimitExceededError(
-            f"{self.model} rate limit survived {self.max_retries} retries: {last_error}. "
-            "This is an infrastructure failure, not a decision, and is not recorded as one."
+            f"{self.model} failed {self.max_retries} retries "
+            f"({type(last_error).__name__}: {last_error}). This is an infrastructure "
+            "failure, not a decision, and is not recorded as one."
         )
+
+    #: Cycle 2 ablation switches. Both fixes on by default; the ablation turns
+    #: them off one at a time so an improvement can be attributed rather than
+    #: just observed.
+    break_even: bool = True
+    merchant_history: bool = True
+
+    @property
+    def system_prompt(self) -> str:
+        return SYSTEM_PROMPT if self.break_even else SYSTEM_PROMPT_WITHOUT_BREAK_EVEN
 
     def assess(
         self,
@@ -451,6 +541,8 @@ class GeminiReasoner:
             budget_remaining_inr=budget_remaining_inr,
             experiments_remaining=experiments_remaining,
             history=history,
+            show_break_even=self.break_even,
+            show_merchant_history=self.merchant_history,
         )
         return _assessment_from_payload(self._ask(prompt), view, len(history))
 
@@ -480,8 +572,15 @@ def build_assessment_prompt(
     budget_remaining_inr: float,
     experiments_remaining: int,
     history: Sequence[dict[str, Any]],
+    show_break_even: bool = True,
+    show_merchant_history: bool = True,
 ) -> str:
     """The merchant's situation, as the agent sees it.
+
+    ``show_break_even`` and ``show_merchant_history`` switch off Fix A's
+    arithmetic table and Fix B's campaign history respectively. Both default to
+    on; the Cycle 2 ablation turns them off one at a time to find out which of
+    the two fixes, if either, is doing the work.
 
     Semantic context is presented before the numbers, deliberately: the
     question is whether this merchant's *situation* justifies the spend, and
@@ -515,10 +614,25 @@ def build_assessment_prompt(
         "",
         "AVAILABLE INTERVENTIONS:",
         *(
-            f"  - {i.intervention_id} ({i.name}): {i.description} "
-            f"[costs about Rs.{i.incentive_cost_inr(view.observed_aov_inr):,.0f} per treated order]"
+            f"  - {i.intervention_id} ({i.name}): {i.description}"
             for i in view.interventions
         ),
+    ]
+    if show_break_even:
+        lines += [
+            "",
+            "BREAK-EVEN ARITHMETIC — the share of treated orders that must be genuinely",
+            "incremental just to cover the discount. Lower is an easier bet:",
+        ]
+        lines += [
+            f"  - {i.intervention_id:<14} costs Rs."
+            f"{i.incentive_cost_inr(view.observed_aov_inr):>7,.0f} per treated order "
+            f"against Rs.{view.observed_aov_inr * view.observed_margin:,.0f} contribution "
+            f"-> needs {i.incentive_cost_inr(view.observed_aov_inr) / max(view.observed_aov_inr * view.observed_margin, 1e-9):.0%} "
+            "of treated orders to be incremental"
+            for i in view.interventions
+        ]
+    lines += [
         "",
         "NUMBERS:",
         f"  customers: {view.population:,}",
@@ -529,6 +643,21 @@ def build_assessment_prompt(
         f"  promotion budget remaining: Rs.{budget_remaining_inr:,.0f}",
         f"  experiments you may still run: {experiments_remaining}",
     ]
+
+    if view.history and show_merchant_history:
+        lines += [
+            "",
+            "PAST CAMPAIGNS ON THIS MERCHANT — incremental net contribution per treated",
+            "customer, measured against a control group held back at the time. Small",
+            "samples, so read the standard error alongside the estimate: an effect",
+            "smaller than its own error is not evidence of anything.",
+        ]
+        for entry in view.history:
+            lines.append(
+                f"  - {entry.intervention_id:<14} Rs.{entry.net_per_treated_customer_inr:>7.2f} "
+                f"per treated customer  (+/- {entry.standard_error_inr:.2f}, "
+                f"n={entry.sample_size}, {entry.orders} orders)"
+            )
 
     if history:
         lines += ["", "WHAT YOU ALREADY LEARNED HERE:"]
