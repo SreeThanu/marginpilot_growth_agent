@@ -1,0 +1,119 @@
+{
+ "experiment": null,
+ "final": {
+  "assumptions": [],
+  "binding_constraints": [
+   "G2_NEGATIVE_EXPECTED_NET"
+  ],
+  "citations": [
+   "history",
+   "context",
+   "interventions"
+  ],
+  "cohort_id": "ALL",
+  "customers_treated": 30000,
+  "decision": "DO_NOT_PROMOTE",
+  "diagnosis": "Baseline conversion is 10.0%. This promotion needs a lift of 100.00% before it breaks even, because the incentive is charged on every treated order, not only the extra ones.",
+  "evidence_basis": "PRIOR",
+  "expected_incentive_cost_inr": 504000.0,
+  "expected_incremental_contribution_inr": 158400.0,
+  "expected_net_contribution_inr": -345600.0,
+  "experiment_cost_inr": 0.0,
+  "experiment_horizon_per_arm": 0,
+  "experiment_required": false,
+  "gates_passed": [
+   "G1"
+  ],
+  "intervention_id": "demo_flat_discount",
+  "model_requested": "PROMOTE",
+  "overruled_the_model": true,
+  "rationale": "G2 failed: at the proposed lift of 4.00% the campaign earns Rs.158,400 and costs Rs.504,000, a net of Rs.-345,600.",
+  "required_break_even_lift_absolute": 1.0,
+  "unresolved": []
+ },
+ "history": {
+  "intervention_id": "demo_flat_discount",
+  "net_per_treated_customer_inr": -11.4,
+  "orders": 33,
+  "standard_error_inr": 4.1,
+  "treated_customers": 300
+ },
+ "initial": {
+  "assumptions": [],
+  "binding_constraints": [
+   "G2_NEGATIVE_EXPECTED_NET"
+  ],
+  "citations": [
+   "history",
+   "context",
+   "interventions"
+  ],
+  "cohort_id": "ALL",
+  "customers_treated": 30000,
+  "decision": "DO_NOT_PROMOTE",
+  "diagnosis": "Baseline conversion is 10.0%. This promotion needs a lift of 100.00% before it breaks even, because the incentive is charged on every treated order, not only the extra ones.",
+  "evidence_basis": "PRIOR",
+  "expected_incentive_cost_inr": 504000.0,
+  "expected_incremental_contribution_inr": 158400.0,
+  "expected_net_contribution_inr": -345600.0,
+  "experiment_cost_inr": 0.0,
+  "experiment_horizon_per_arm": 0,
+  "experiment_required": false,
+  "gates_passed": [
+   "G1"
+  ],
+  "intervention_id": "demo_flat_discount",
+  "model_requested": "PROMOTE",
+  "overruled_the_model": true,
+  "rationale": "G2 failed: at the proposed lift of 4.00% the campaign earns Rs.158,400 and costs Rs.504,000, a net of Rs.-345,600.",
+  "required_break_even_lift_absolute": 1.0,
+  "unresolved": []
+ },
+ "intervention": {
+  "depth_at_observed_aov": 0.2,
+  "description": "A flat Rs.120 off the order. Deepest in relative terms for small baskets.",
+  "incentive_cost_per_order_inr": 120.0,
+  "intervention_id": "demo_flat_discount",
+  "kind": "flat_discount",
+  "name": "Rs.120 off"
+ },
+ "label": "DEMONSTRATION FIXTURE \u2014 NOT RESEARCH EVIDENCE",
+ "merchant": {
+  "budget_inr": 400000.0,
+  "context": [
+   "vertical: demonstration",
+   "season: A quiet stretch with no festival anchor",
+   "support: customers ask whether delivery is free above a threshold",
+   "inventory: No SKU is currently flagged for stock age.",
+   "trading: Trading is steady week on week."
+  ],
+  "contribution_per_order_inr": 132.0,
+  "experiment_window_days": 28,
+  "merchant_id": "demo_scenario_A",
+  "observed_aov_inr": 600.0,
+  "observed_conversion": 0.1,
+  "observed_margin": 0.22,
+  "population": 30000
+ },
+ "proposal": {
+  "accepted": true,
+  "proposal": {
+   "citations": [
+    "history",
+    "context",
+    "interventions"
+   ],
+   "cohort_id": "ALL",
+   "evidence_basis": "PRIOR",
+   "expected_lift_absolute": 0.04,
+   "hypothesis": "A flat discount will lift conversion in a soft month, as it did across the category last quarter.",
+   "intervention_id": "demo_flat_discount",
+   "mechanism": "Price-sensitive buyers convert when the effective price falls.",
+   "requested_decision": "PROMOTE"
+  },
+  "rejected_because": null
+ },
+ "scenario": "A",
+ "story": "A homeware merchant whose growth tool is recommending a flat Rs.120 off to lift a soft month. Conversion would almost certainly rise.",
+ "title": "Thin margin, deep discount"
+}

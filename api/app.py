@@ -16,9 +16,10 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
+from api import reprice as reprice_module
 from api import service
 from demo.fixtures import FIXTURE_LABEL, FIXTURES
 
@@ -85,6 +86,42 @@ def scenarios() -> dict[str, Any]:
 @app.get("/api/scenarios/{scenario_id}")
 def scenario(scenario_id: str) -> dict[str, Any]:
     return _guard(service.scenario_detail, scenario_id.upper())
+
+
+@app.get("/api/scenarios/{scenario_id}/reprice")
+def reprice(
+    scenario_id: str,
+    incentive_inr: float = Query(
+        ...,
+        description="What the merchant wants the incentive to cost, in rupees.",
+    ),
+) -> dict[str, Any]:
+    """Re-price this merchant's offer and return what the policy decides.
+
+    A GET, like everything else here, and for the same reason: asking what an
+    offer would be worth is a read. Nothing is launched, nothing is spent and
+    nothing is written to the audit chain — the pre-experiment path has no
+    branch that can return PROMOTE, so this route cannot authorise a rollout
+    even in principle.
+
+    Uncached. The incentive is user-supplied, and keying a cache on it would let
+    a dragged control grow one without bound for no benefit at ~3ms a call.
+
+    A request the policy will not price returns 422 rather than a decision. An
+    inadmissible *request* and a policy refusal are different events, and
+    collapsing them would let a refused ceiling breach read as an economic
+    verdict.
+    """
+    key = scenario_id.upper()
+    if key not in FIXTURES:
+        raise HTTPException(status_code=404, detail=f"unknown scenario '{scenario_id}'")
+    try:
+        return reprice_module.reprice(key, incentive_inr)
+    except reprice_module.RequestInadmissible as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=reprice_module.inadmissible_payload(key, incentive_inr, exc),
+        ) from exc
 
 
 @app.get("/api/scenarios/{scenario_id}/audit")

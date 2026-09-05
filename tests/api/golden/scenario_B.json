@@ -1,0 +1,133 @@
+{
+ "experiment": null,
+ "final": {
+  "assumptions": [
+   "The expected lift is the model's hypothesis, not a measurement.",
+   "Break-even assumes the incentive is redeemed on every treated order."
+  ],
+  "binding_constraints": [],
+  "citations": [
+   "history",
+   "context",
+   "interventions"
+  ],
+  "cohort_id": "ALL",
+  "customers_treated": 30000,
+  "decision": "RUN_EXPERIMENT_FIRST",
+  "diagnosis": "Baseline conversion is 9.0%. This promotion needs a lift of 6.00% before it breaks even, because the incentive is charged on every treated order, not only the extra ones.",
+  "evidence_basis": "HISTORY",
+  "expected_incentive_cost_inr": 550800.0,
+  "expected_incremental_contribution_inr": 648000.0,
+  "expected_net_contribution_inr": 97200.0,
+  "experiment_cost_inr": 47809.44,
+  "experiment_horizon_per_arm": 2604,
+  "experiment_required": true,
+  "gates_passed": [
+   "G1",
+   "G2",
+   "G3",
+   "G4",
+   "G5"
+  ],
+  "intervention_id": "demo_percentage_discount",
+  "model_requested": "PROMOTE",
+  "overruled_the_model": true,
+  "rationale": "The economics can work: at the proposed lift this earns Rs.97,200 net. But the confidence rests on history, not on a measurement on this merchant, so the honest next step is a controlled test of 2,604 customers per arm at a cost of Rs.47,809. Rollout stays closed until that test clears the scaling rule.",
+  "required_break_even_lift_absolute": 0.05999999999999999,
+  "unresolved": [
+   "G4_VALUE_OF_INFORMATION_UNRESOLVED"
+  ]
+ },
+ "history": {
+  "intervention_id": "demo_percentage_discount",
+  "net_per_treated_customer_inr": 3.9,
+  "orders": 29,
+  "standard_error_inr": 5.6,
+  "treated_customers": 300
+ },
+ "initial": {
+  "assumptions": [
+   "The expected lift is the model's hypothesis, not a measurement.",
+   "Break-even assumes the incentive is redeemed on every treated order."
+  ],
+  "binding_constraints": [],
+  "citations": [
+   "history",
+   "context",
+   "interventions"
+  ],
+  "cohort_id": "ALL",
+  "customers_treated": 30000,
+  "decision": "RUN_EXPERIMENT_FIRST",
+  "diagnosis": "Baseline conversion is 9.0%. This promotion needs a lift of 6.00% before it breaks even, because the incentive is charged on every treated order, not only the extra ones.",
+  "evidence_basis": "HISTORY",
+  "expected_incentive_cost_inr": 550800.0,
+  "expected_incremental_contribution_inr": 648000.0,
+  "expected_net_contribution_inr": 97200.0,
+  "experiment_cost_inr": 47809.44,
+  "experiment_horizon_per_arm": 2604,
+  "experiment_required": true,
+  "gates_passed": [
+   "G1",
+   "G2",
+   "G3",
+   "G4",
+   "G5"
+  ],
+  "intervention_id": "demo_percentage_discount",
+  "model_requested": "PROMOTE",
+  "overruled_the_model": true,
+  "rationale": "The economics can work: at the proposed lift this earns Rs.97,200 net. But the confidence rests on history, not on a measurement on this merchant, so the honest next step is a controlled test of 2,604 customers per arm at a cost of Rs.47,809. Rollout stays closed until that test clears the scaling rule.",
+  "required_break_even_lift_absolute": 0.05999999999999999,
+  "unresolved": [
+   "G4_VALUE_OF_INFORMATION_UNRESOLVED"
+  ]
+ },
+ "intervention": {
+  "depth_at_observed_aov": 0.12,
+  "description": "12% off the order value. Scales with basket size, so the cost is largest on the orders that were most likely to happen anyway.",
+  "incentive_cost_per_order_inr": 108.0,
+  "intervention_id": "demo_percentage_discount",
+  "kind": "percentage_discount",
+  "name": "12% off"
+ },
+ "label": "DEMONSTRATION FIXTURE \u2014 NOT RESEARCH EVIDENCE",
+ "merchant": {
+  "budget_inr": 400000.0,
+  "context": [
+   "vertical: demonstration",
+   "season: A quiet stretch with no festival anchor",
+   "support: customers ask whether delivery is free above a threshold",
+   "inventory: No SKU is currently flagged for stock age.",
+   "trading: Trading is steady week on week."
+  ],
+  "contribution_per_order_inr": 270.0,
+  "experiment_window_days": 28,
+  "merchant_id": "demo_scenario_B",
+  "observed_aov_inr": 900.0,
+  "observed_conversion": 0.09,
+  "observed_margin": 0.3,
+  "population": 30000
+ },
+ "proposal": {
+  "accepted": true,
+  "proposal": {
+   "citations": [
+    "history",
+    "context",
+    "interventions"
+   ],
+   "cohort_id": "ALL",
+   "evidence_basis": "HISTORY",
+   "expected_lift_absolute": 0.08,
+   "hypothesis": "12% off will lift conversion by around 8 points, in line with the last campaign's point estimate.",
+   "intervention_id": "demo_percentage_discount",
+   "mechanism": "The past campaign's incremental net per treated customer was positive.",
+   "requested_decision": "PROMOTE"
+  },
+  "rejected_because": null
+ },
+ "scenario": "B",
+ "story": "A speciality foods merchant considering 12% off. A past campaign looked positive, but it treated only 300 customers.",
+ "title": "Plausible offer, thin evidence"
+}

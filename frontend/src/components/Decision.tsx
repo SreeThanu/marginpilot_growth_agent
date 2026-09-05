@@ -549,34 +549,33 @@ export function Reasoning({
       </div>
 
       <div>
-        <DataRow
-          label="Break-even lift this offer must clear"
-          value={
-            breakEven === null ? (
-              <span className="t-small text-ink-subtle italic">
-                Unreachable at any lift
-              </span>
-            ) : (
-              percent(breakEven, 2)
-            )
-          }
-        />
+        {/*
+          Both rows are omitted rather than narrated when the engine has no
+          value for them.
+
+          `null` here means "not applicable to this answer", not "unreachable".
+          On a merchant whose experiment already ran, break-even is settled and
+          `experiment_required` is false because the test is *done* — so the
+          previous prose ("Unreachable at any lift", "No experiment
+          recommended") stated the opposite of what happened. An absent row
+          claims nothing; invented prose claims something false.
+        */}
+        {breakEven === null ? null : (
+          <DataRow
+            label="Break-even lift this offer must clear"
+            value={percent(breakEven, 2)}
+          />
+        )}
         <DataRow
           label="Customers covered"
           value={count(recommendation.customers_treated)}
         />
-        <DataRow
-          label="Experiment cost"
-          value={
-            recommendation.experiment_required ? (
-              rupees(recommendation.experiment_cost_inr)
-            ) : (
-              <span className="t-small text-ink-subtle italic">
-                No experiment recommended
-              </span>
-            )
-          }
-        />
+        {recommendation.experiment_required ? (
+          <DataRow
+            label="Experiment cost"
+            value={rupees(recommendation.experiment_cost_inr)}
+          />
+        ) : null}
         <DataRow
           label="Evidence basis"
           value={recommendation.evidence_basis.toLowerCase()}

@@ -25,6 +25,7 @@ import {
   NextAction,
   PriorEvidence,
 } from "@/components/Merchant";
+import { MerchantRequestPanel } from "@/components/Request";
 import { useScenarioId, withScenario } from "@/components/ScenarioContext";
 import { FixtureNotice } from "@/components/TopRail";
 import {
@@ -62,8 +63,24 @@ export default function OverviewPage() {
 
   return (
     <>
-      {/* -- premise, then the verdict it produces on this merchant --------- */}
+      {/* -- premise, then the request, then the verdict it produces -------- */}
       <PremiseBand />
+
+      {/*
+        The request comes before the answer, which is the order the product
+        actually runs in and the order the page failed to show. It stays on the
+        light ground and in small type: the dark band below is still the only
+        place a verdict is stated.
+      */}
+      <Shell className="pt-12 pb-14">
+        <MerchantRequestPanel
+          scenario={data.scenario}
+          merchant={data.merchant}
+          intervention={data.intervention}
+          proposal={data.proposal}
+        />
+      </Shell>
+
       <DecisionBand recommendation={final} scenarioKey={data.scenario} />
 
       <Shell className="pt-5">

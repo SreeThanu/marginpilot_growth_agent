@@ -19,6 +19,7 @@ import {
 
 import type {
   AuditTrail,
+  RepriceResult,
   Reproducibility,
   SafetyReport,
   ScenarioDetail,
@@ -30,11 +31,21 @@ export const API_BASE =
 
 export class ApiError extends Error {
   readonly status: number | null;
+  /**
+   * The engine's structured `detail`, when it sent one.
+   *
+   * A refused request is a finding, not a transport failure: `/reprice` answers
+   * 422 with the rule that fired and the numbers it fired on. Flattening that
+   * to a message string would leave the view unable to say which limit was
+   * breached, so the object is carried through untouched.
+   */
+  readonly detail: unknown;
 
-  constructor(message: string, status: number | null) {
+  constructor(message: string, status: number | null, detail: unknown = null) {
     super(message);
     this.name = "ApiError";
     this.status = status;
+    this.detail = detail;
   }
 }
 
@@ -53,14 +64,28 @@ async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
   }
 
   if (!response.ok) {
-    let detail = `${response.status} ${response.statusText}`;
+    let message = `${response.status} ${response.statusText}`;
+    let detail: unknown = null;
     try {
-      const body = (await response.json()) as { detail?: string };
-      if (body?.detail) detail = body.detail;
+      const body = (await response.json()) as { detail?: unknown };
+      if (body?.detail) {
+        detail = body.detail;
+        // A string detail is already the message. A structured one carries its
+        // own wording under `reason`, and the object is kept either way.
+        if (typeof detail === "string") message = detail;
+        else if (
+          typeof detail === "object" &&
+          detail !== null &&
+          "refusal" in detail
+        ) {
+          const refusal = (detail as { refusal?: { reason?: string } }).refusal;
+          if (refusal?.reason) message = refusal.reason;
+        }
+      }
     } catch {
       /* the body was not JSON; the status line is what we have */
     }
-    throw new ApiError(detail, response.status);
+    throw new ApiError(message, response.status, detail);
   }
 
   try {
@@ -182,3 +207,22 @@ export const useSafety = () => useApi<SafetyReport>("/api/safety");
 
 export const useReproducibility = () =>
   useApi<Reproducibility>("/api/reproducibility");
+
+/**
+ * Ask the engine what one merchant's offer is worth at a given incentive.
+ *
+ * `incentive` is the amount the merchant has *committed* to, not what they are
+ * typing: the caller holds the draft and moves this value on submit, so the
+ * request is made when an evaluation is asked for rather than on every
+ * keystroke. Passing `null` makes no request at all, which is how the
+ * read-only merchants render.
+ *
+ * A refused request arrives as an `ApiError` carrying the engine's `refusal`
+ * object on `.detail`. Nothing is computed here; the response is rendered.
+ */
+export const useReprice = (id: string | null, incentive: number | null) =>
+  useApi<RepriceResult>(
+    id !== null && incentive !== null
+      ? `/api/scenarios/${id}/reprice?incentive_inr=${encodeURIComponent(incentive)}`
+      : null,
+  );

@@ -200,19 +200,21 @@ export default function ExperimentPage() {
                   label="Pilot cost"
                   value={rupees(data.final.experiment_cost_inr)}
                 />
-                <DataRow
-                  label="Break-even lift the offer must clear"
-                  value={
-                    data.final.required_break_even_lift_absolute === null ? (
-                      <Unavailable reason="Unreachable at any lift" />
-                    ) : (
-                      percent(
-                        data.final.required_break_even_lift_absolute,
-                        2,
-                      )
-                    )
-                  }
-                />
+                {/*
+                  Omitted rather than narrated when absent, matching the
+                  reasoning block on Overview. "Unreachable at any lift" is a
+                  claim about the economics, and a missing value is not
+                  evidence for it.
+                */}
+                {data.final.required_break_even_lift_absolute === null ? null : (
+                  <DataRow
+                    label="Break-even lift the offer must clear"
+                    value={percent(
+                      data.final.required_break_even_lift_absolute,
+                      2,
+                    )}
+                  />
+                )}
                 <DataRow
                   label="Measured result"
                   value={<Unavailable reason="Not yet measured" />}

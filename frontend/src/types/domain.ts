@@ -223,3 +223,77 @@ export interface Badge {
 export interface Reproducibility {
   badges: Badge[];
 }
+
+/* -------------------------------------------------------------------------- */
+/* The merchant request                                                        */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * What the merchant asked for, as the decision path received it.
+ *
+ * Read off the brief by `api/reprice.py`, not off the fixture, so the panel
+ * shows exactly what the policy was given. `expected_lift_absolute` is the
+ * model's hypothesis carried through from the existing proposal — it is never
+ * read from the request, and it is never the fixture's declared response.
+ */
+export interface MerchantRequest {
+  scenario: string;
+  incentive_inr: number;
+  declared_incentive_inr: number;
+  is_declared_offer: boolean;
+  intervention_id: string;
+  offer_name: string;
+  offer_kind: string;
+  offer_description: string;
+  depth_at_observed_aov: number;
+  incentive_cost_per_order_inr: number;
+  contribution_per_order_inr: number;
+  cohort_id: string;
+  cohort_customers: number;
+  expected_lift_absolute: number;
+  evidence_basis: EvidenceBasis;
+  hypothesis: string;
+  observed_conversion: number;
+  observed_aov_inr: number;
+  observed_margin: number;
+  budget_inr: number;
+  population: number;
+}
+
+/**
+ * A request the policy declined to price at all.
+ *
+ * Deliberately not a `Decision`. `REQUEST_INADMISSIBLE` means the merchant
+ * asked something outside the standing limits, which is a different event from
+ * the policy pricing the offer and answering no — and the view must not let the
+ * two read alike.
+ */
+export interface RequestRefusal {
+  reason: string;
+  engine_message: string | null;
+  rule: string | null;
+  observed: number | null;
+  limit: number | null;
+  refused_by: string;
+}
+
+export interface RepriceResult {
+  status: "EVALUATED";
+  scenario: string;
+  label: string;
+  request: MerchantRequest;
+  recommendation: Recommendation;
+  refusal: null;
+  policy_limits: {
+    max_discount_pct: number;
+    min_contribution_margin: number;
+  };
+}
+
+export interface RepriceRefused {
+  status: "REQUEST_INADMISSIBLE";
+  scenario: string;
+  recommendation: null;
+  refusal: RequestRefusal;
+  requested_incentive_inr: number | null;
+}

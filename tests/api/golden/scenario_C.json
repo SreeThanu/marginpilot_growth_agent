@@ -1,0 +1,167 @@
+{
+ "experiment": {
+  "arms": [
+   {
+    "contribution_mean_inr": 45.0152,
+    "conversion_rate": 0.08336,
+    "n_assigned": 2963,
+    "n_converted": 247,
+    "name": "control"
+   },
+   {
+    "contribution_mean_inr": 55.5653,
+    "conversion_rate": 0.11576,
+    "n_assigned": 2963,
+    "n_converted": 343,
+    "name": "treatment"
+   }
+  ],
+  "comparison": {
+   "absolute_difference": 0.03239959500506244,
+   "contribution_ci_high": 54112.36341523974,
+   "contribution_ci_low": 8407.63658476024,
+   "contribution_se_inr": 11659.583336987966,
+   "conversion_control": 0.08336145798177523,
+   "conversion_treatment": 0.11576105298683767,
+   "difference_ci_high": 0.04762374079014289,
+   "difference_ci_low": 0.017175449219981986,
+   "net_contribution_inr": 31259.999999999993,
+   "net_per_treated_customer_inr": 10.550118123523454,
+   "p_value": 3.113115420116941e-05,
+   "probability_net_positive": 0.9963304922274435,
+   "scale_eligible": true
+  },
+  "depth": 0.05,
+  "experiment_id": "demo_scenario_C_demo",
+  "horizon_per_arm": 2963,
+  "intervention_id": "demo_free_shipping",
+  "pilot_spend_inr": 20580.0,
+  "verdict_eligible": true
+ },
+ "final": {
+  "assumptions": [
+   "The rollout population responds as the tested sample did."
+  ],
+  "binding_constraints": [],
+  "citations": [
+   "history",
+   "context",
+   "interventions"
+  ],
+  "cohort_id": "ALL",
+  "customers_treated": 14313,
+  "decision": "PROMOTE",
+  "diagnosis": "The test measured a lift of 3.24% and a net of Rs.10.55 per treated customer.",
+  "evidence_basis": "EXPERIMENT",
+  "expected_incentive_cost_inr": 99413.28,
+  "expected_incremental_contribution_inr": 250417.12,
+  "expected_net_contribution_inr": 151003.84,
+  "experiment_cost_inr": 0.0,
+  "experiment_horizon_per_arm": 0,
+  "experiment_required": false,
+  "gates_passed": [
+   "G1",
+   "G2",
+   "G3",
+   "G6"
+  ],
+  "intervention_id": "demo_free_shipping",
+  "model_requested": "PROMOTE",
+  "overruled_the_model": false,
+  "rationale": "scale: P(net>0)=1.00 >= 0.80 and 5th percentile Rs.138,937 above the tolerable loss of Rs.-2,400. Funded at 14,313 customers, the rollout is projected to earn Rs.151,004 net of Rs.99,413 in incentives.",
+  "required_break_even_lift_absolute": null,
+  "unresolved": []
+ },
+ "history": {
+  "intervention_id": "demo_free_shipping",
+  "net_per_treated_customer_inr": 6.2,
+  "orders": 27,
+  "standard_error_inr": 7.8,
+  "treated_customers": 300
+ },
+ "initial": {
+  "assumptions": [
+   "The expected lift is the model's hypothesis, not a measurement.",
+   "Break-even assumes the incentive is redeemed on every treated order."
+  ],
+  "binding_constraints": [],
+  "citations": [
+   "history",
+   "context",
+   "interventions"
+  ],
+  "cohort_id": "ALL",
+  "customers_treated": 40000,
+  "decision": "RUN_EXPERIMENT_FIRST",
+  "diagnosis": "Baseline conversion is 8.0%. This promotion needs a lift of 1.00% before it breaks even, because the incentive is charged on every treated order, not only the extra ones.",
+  "evidence_basis": "HISTORY",
+  "expected_incentive_cost_inr": 264000.0,
+  "expected_incremental_contribution_inr": 648000.0,
+  "expected_net_contribution_inr": 384000.0,
+  "experiment_cost_inr": 19555.8,
+  "experiment_horizon_per_arm": 2963,
+  "experiment_required": true,
+  "gates_passed": [
+   "G1",
+   "G2",
+   "G3",
+   "G4",
+   "G5"
+  ],
+  "intervention_id": "demo_free_shipping",
+  "model_requested": "PROMOTE",
+  "overruled_the_model": true,
+  "rationale": "The economics can work: at the proposed lift this earns Rs.384,000 net. But the confidence rests on history, not on a measurement on this merchant, so the honest next step is a controlled test of 2,963 customers per arm at a cost of Rs.19,556. Rollout stays closed until that test clears the scaling rule.",
+  "required_break_even_lift_absolute": 0.01,
+  "unresolved": [
+   "G4_VALUE_OF_INFORMATION_UNRESOLVED"
+  ]
+ },
+ "intervention": {
+  "depth_at_observed_aov": 0.05,
+  "description": "Waives the Rs.60 delivery fee. A genuine price cut to the customer, booked by the merchant as a cost line rather than a discount.",
+  "incentive_cost_per_order_inr": 60.0,
+  "intervention_id": "demo_free_shipping",
+  "kind": "free_shipping",
+  "name": "Free shipping"
+ },
+ "label": "DEMONSTRATION FIXTURE \u2014 NOT RESEARCH EVIDENCE",
+ "merchant": {
+  "budget_inr": 120000.0,
+  "context": [
+   "vertical: demonstration",
+   "season: A quiet stretch with no festival anchor",
+   "support: customers ask whether delivery is free above a threshold",
+   "inventory: No SKU is currently flagged for stock age.",
+   "trading: Trading is steady week on week."
+  ],
+  "contribution_per_order_inr": 540.0,
+  "experiment_window_days": 28,
+  "merchant_id": "demo_scenario_C",
+  "observed_aov_inr": 1200.0,
+  "observed_conversion": 0.08,
+  "observed_margin": 0.45,
+  "population": 40000
+ },
+ "proposal": {
+  "accepted": true,
+  "proposal": {
+   "citations": [
+    "history",
+    "context",
+    "interventions"
+   ],
+   "cohort_id": "ALL",
+   "evidence_basis": "HISTORY",
+   "expected_lift_absolute": 0.03,
+   "hypothesis": "Waiving the delivery fee lifts conversion by about 3 points among customers whose baskets already clear the threshold.",
+   "intervention_id": "demo_free_shipping",
+   "mechanism": "Support themes repeatedly name the delivery fee as the reason for abandoning a full cart.",
+   "requested_decision": "PROMOTE"
+  },
+  "rejected_because": null
+ },
+ "scenario": "C",
+ "story": "A premium accessories merchant with 45% margins. Support tickets keep mentioning the Rs.60 delivery fee. Waiving it is cheap \u2014 but nobody has measured whether it moves anyone.",
+ "title": "High margin, cheap offer, untested"
+}
