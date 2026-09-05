@@ -463,7 +463,7 @@ Python 3.11 · SQLite · pandas / NumPy · SciPy / statsmodels · Razorpay Test 
 ```bash
 conda create -n marginpilot python=3.11 && conda activate marginpilot
 pip install -r requirements.lock.txt   # exact frozen environment; use requirements.txt for the readable list
-cp .env.example .env          # add RAZORPAY_TEST_KEY_ID, RAZORPAY_TEST_KEY_SECRET, LLM API key
+cp archive/internal/.env.example .env   # add RAZORPAY_TEST_KEY_ID, RAZORPAY_TEST_KEY_SECRET, LLM API key
 
 make test                     # 243 tests, ~5 minutes. Needs no corpus.
 make adversarial              # the seven refusal scenarios. Needs no corpus.

@@ -19,6 +19,8 @@ import {
 
 import type {
   AuditTrail,
+  EvaluationResult,
+  OfferKind,
   RepriceResult,
   Reproducibility,
   SafetyReport,
@@ -81,6 +83,57 @@ async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
           const refusal = (detail as { refusal?: { reason?: string } }).refusal;
           if (refusal?.reason) message = refusal.reason;
         }
+      }
+    } catch {
+      /* the body was not JSON; the status line is what we have */
+    }
+    throw new ApiError(message, response.status, detail);
+  }
+
+  try {
+    return (await response.json()) as T;
+  } catch {
+    throw new ApiError(
+      "The engine returned a response this client could not read as JSON.",
+      response.status,
+    );
+  }
+}
+
+async function post<T>(
+  path: string,
+  body: unknown,
+  signal?: AbortSignal,
+): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      method: "POST",
+      signal,
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new ApiError(
+      "The MarginPilot engine is not reachable. Start it with `python -m api`.",
+      null,
+    );
+  }
+
+  if (!response.ok) {
+    let message = `${response.status} ${response.statusText}`;
+    let detail: unknown = null;
+    try {
+      const payload = (await response.json()) as { detail?: unknown };
+      detail = payload.detail ?? null;
+      if (typeof detail === "string") message = detail;
+      else if (
+        typeof detail === "object" &&
+        detail !== null &&
+        "refusal" in detail
+      ) {
+        const refusal = (detail as { refusal?: { reason?: string } }).refusal;
+        if (refusal?.reason) message = refusal.reason;
       }
     } catch {
       /* the body was not JSON; the status line is what we have */
@@ -220,9 +273,121 @@ export const useReproducibility = () =>
  * A refused request arrives as an `ApiError` carrying the engine's `refusal`
  * object on `.detail`. Nothing is computed here; the response is rendered.
  */
-export const useReprice = (id: string | null, incentive: number | null) =>
-  useApi<RepriceResult>(
-    id !== null && incentive !== null
-      ? `/api/scenarios/${id}/reprice?incentive_inr=${encodeURIComponent(incentive)}`
+export interface StatedConditions {
+  incentive_inr: number;
+  population: number;
+  aov_inr: number;
+  margin: number;
+  observed_conversion: number;
+  budget_inr: number;
+}
+
+/**
+ * Note what this type cannot express: an expected lift, or an evidence basis.
+ *
+ * The boundary is enforced in Python — those are not parameters of
+ * `reprice()` — and mirrored here so a caller cannot even write the request.
+ */
+export const useReprice = (
+  id: string | null,
+  conditions: StatedConditions | null,
+) => {
+  const query =
+    conditions === null
+      ? null
+      : new URLSearchParams(
+          Object.entries(conditions).map(([k, v]) => [k, String(v)]),
+        ).toString();
+
+  return useApi<RepriceResult>(
+    id !== null && query !== null
+      ? `/api/scenarios/${id}/reprice?${query}`
       : null,
   );
+};
+
+/** The scenario-independent request sent to ``POST /api/evaluate``. */
+export interface EvaluationRequest {
+  offer_kind: OfferKind;
+  flat_discount_inr: number | null;
+  discount_pct: number | null;
+  shipping_fee_waived_inr: number | null;
+  bundle_added_value_inr: number | null;
+  cohort_id: string;
+  population: number;
+  aov_inr: number;
+  margin: number;
+  observed_conversion: number;
+  budget_inr: number;
+}
+
+/**
+ * Submit a standalone merchant evaluation only after the merchant asks for it.
+ *
+ * The state key is the submitted request itself, never a recorded scenario.
+ */
+export function useEvaluate(
+  request: EvaluationRequest | null,
+): Query<EvaluationResult> {
+  const [settled, setSettled] = useState<Settled<EvaluationResult> | null>(null);
+  /*
+   * In-flight is tracked explicitly rather than inferred from `fresh`.
+   *
+   * Resubmitting the same conditions produces a new request object with an
+   * identical key, so `fresh` still matches the previous result and would
+   * report `loading: false` while a second POST was open — leaving the submit
+   * button live and firing another model call per click. This flag closes that
+   * window: it is the only thing standing between a double-click and two
+   * concurrent billed calls.
+   */
+  const [pending, setPending] = useState(false);
+  const nonce = useSyncExternalStore(
+    subscribeAttempt,
+    readAttempt,
+    serverAttempt,
+  );
+  const retry = useCallback(() => retryAll(), []);
+  const serialized = request === null ? null : JSON.stringify(request);
+  const key = serialized === null ? null : `${serialized}#${nonce}`;
+
+  useEffect(() => {
+    if (request === null || key === null) return;
+    const controller = new AbortController();
+    setPending(true);
+
+    post<EvaluationResult>("/api/evaluate", request, controller.signal)
+      .then((payload) => {
+        if (!controller.signal.aborted) {
+          setSettled({ key, data: payload, error: null });
+        }
+      })
+      .catch((cause: unknown) => {
+        if (!controller.signal.aborted) {
+          setSettled({
+            key,
+            data: null,
+            error:
+              cause instanceof ApiError
+                ? cause
+                : new ApiError("Unexpected client error.", null),
+          });
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setPending(false);
+      });
+
+    return () => {
+      controller.abort();
+      setPending(false);
+    };
+  }, [request, key]);
+
+  const fresh = key !== null && settled?.key === key ? settled : null;
+  return {
+    data: fresh?.data ?? null,
+    error: fresh?.error ?? null,
+    loading: pending || (key !== null && fresh === null),
+    retry,
+  };
+}

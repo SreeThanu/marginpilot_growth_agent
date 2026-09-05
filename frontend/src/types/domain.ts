@@ -236,11 +236,36 @@ export interface Reproducibility {
  * model's hypothesis carried through from the existing proposal — it is never
  * read from the request, and it is never the fixture's declared response.
  */
+export interface DeclaredConditions {
+  incentive_inr: number;
+  population: number;
+  aov_inr: number;
+  margin: number;
+  observed_conversion: number;
+  budget_inr: number;
+}
+
+/** The six fields a merchant may state. Never an outcome variable. */
+export type ConditionField =
+  | "intervention_magnitude"
+  | "population"
+  | "aov_inr"
+  | "margin"
+  | "observed_conversion"
+  | "budget_inr";
+
 export interface MerchantRequest {
   scenario: string;
   incentive_inr: number;
   declared_incentive_inr: number;
   is_declared_offer: boolean;
+  /** The record's own figures, so a view can show what was restated. */
+  declared: DeclaredConditions;
+  /** Which conditions this request named. */
+  stated: ConditionField[];
+  /** True when every condition is the merchant record's own value. */
+  is_declared_request: boolean;
+  max_population: number;
   intervention_id: string;
   offer_name: string;
   offer_kind: string;
@@ -296,4 +321,64 @@ export interface RepriceRefused {
   recommendation: null;
   refusal: RequestRefusal;
   requested_incentive_inr: number | null;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Standalone promotion evaluation                                             */
+/* -------------------------------------------------------------------------- */
+
+export type OfferKind =
+  | "flat_discount"
+  | "percentage_discount"
+  | "free_shipping"
+  | "bundle";
+
+export interface EvaluatedOffer {
+  intervention_id: string;
+  kind: OfferKind;
+  name: string;
+  description: string;
+  depth_at_observed_aov: number;
+  incentive_cost_per_order_inr: number;
+  contribution_per_order_inr: number;
+  cohort_id: string;
+  cohort_customers: number;
+}
+
+/**
+ * MarginPilot's own half of the request, and the only half the merchant
+ * cannot write. `AVAILABLE` means a reasoner stated a hypothesis and the
+ * proposal validator accepted it; `UNAVAILABLE` means nothing legitimate
+ * produced one, and `reason` says what was missing. There is no third state
+ * where a number appears without a source.
+ */
+export interface EvaluationAssessment {
+  status: "AVAILABLE" | "UNAVAILABLE";
+  expected_lift_absolute: number | null;
+  evidence_basis: EvidenceBasis;
+  hypothesis: string | null;
+  mechanism: string | null;
+  citations: string[];
+  /** Which reasoner answered, when one did. */
+  source: string | null;
+  reason: string | null;
+}
+
+export interface EvaluationResult {
+  status: "EVALUATED" | "ASSESSMENT_UNAVAILABLE";
+  offer: EvaluatedOffer;
+  merchant: {
+    population: number;
+    budget_inr: number;
+    observed_conversion: number;
+    observed_aov_inr: number;
+    observed_margin: number;
+    cohort_id: string;
+  };
+  assessment: EvaluationAssessment;
+  recommendation: Recommendation;
+  policy_limits: {
+    max_discount_pct: number;
+    min_contribution_margin: number;
+  };
 }

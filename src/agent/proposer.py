@@ -56,6 +56,11 @@ Rules:
   been run on this merchant yet.
 - Do not mention customer response parameters, segment names, or any outcome
   you were not shown. You have not been shown them.
+- Do not use the words "responsiveness", "affinity", "cannibalization",
+  "archetype", "ground truth" or "potential outcome". Each names an internal
+  quantity you have not been shown, and a reply containing one is discarded
+  unread. Say "price sensitivity", "category fit", or "overlap with demand you
+  would have had anyway" instead.
 """
 
 

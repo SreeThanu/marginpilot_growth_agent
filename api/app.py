@@ -19,6 +19,7 @@ from typing import Any
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
+from api import evaluate as evaluate_module
 from api import reprice as reprice_module
 from api import service
 from demo.fixtures import FIXTURE_LABEL, FIXTURES
@@ -48,7 +49,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=list(ALLOWED_ORIGINS),
     allow_credentials=False,
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
@@ -95,8 +96,25 @@ def reprice(
         ...,
         description="What the merchant wants the incentive to cost, in rupees.",
     ),
+    population: int | None = Query(None, description="Eligible customers."),
+    aov_inr: float | None = Query(None, description="Average order value."),
+    margin: float | None = Query(None, description="Contribution margin, 0-1."),
+    observed_conversion: float | None = Query(
+        None, description="Baseline conversion rate, 0-1."
+    ),
+    budget_inr: float | None = Query(None, description="Budget for this promotion."),
 ) -> dict[str, Any]:
-    """Re-price this merchant's offer and return what the policy decides.
+    """Price this merchant's promotion under stated conditions, and decide.
+
+    Every parameter is a business condition the merchant knows about their own
+    shop. Conspicuously absent, and absent by design: the expected lift and the
+    evidence basis. Those are MarginPilot's hypothesis about customer response,
+    they are read from the existing proposal, and there is no query parameter
+    that can move them — a merchant able to state the expected lift would be
+    supplying the answer, not the question.
+
+    Omitting a condition uses the merchant record's own figure, so the
+    single-parameter call remains exactly what it was.
 
     A GET, like everything else here, and for the same reason: asking what an
     offer would be worth is a read. Nothing is launched, nothing is spent and
@@ -116,11 +134,31 @@ def reprice(
     if key not in FIXTURES:
         raise HTTPException(status_code=404, detail=f"unknown scenario '{scenario_id}'")
     try:
-        return reprice_module.reprice(key, incentive_inr)
+        return reprice_module.reprice(
+            key,
+            incentive_inr,
+            population=population,
+            aov_inr=aov_inr,
+            margin=margin,
+            observed_conversion=observed_conversion,
+            budget_inr=budget_inr,
+        )
     except reprice_module.RequestInadmissible as exc:
         raise HTTPException(
             status_code=422,
             detail=reprice_module.inadmissible_payload(key, incentive_inr, exc),
+        ) from exc
+
+
+@app.post("/api/evaluate")
+def evaluate(request: evaluate_module.EvaluationInput) -> dict[str, Any]:
+    """Evaluate one merchant-stated promotion without a recorded scenario."""
+    try:
+        return evaluate_module.evaluate(request)
+    except evaluate_module.EvaluationInadmissible as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=evaluate_module.inadmissible_payload(exc),
         ) from exc
 
 

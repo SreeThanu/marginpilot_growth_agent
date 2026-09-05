@@ -242,15 +242,30 @@ def test_the_cached_view_is_copied_not_edited() -> None:
     assert reprice_module._view("A") is view
 
 
-def test_repricing_preserves_the_arity_of_the_intervention_tuple() -> None:
-    """The brief the policy reads is the fixture's brief with one number moved."""
-    view = reprice_module._view("A")
-    brief = reprice_module._repriced_brief(FIXTURES["A"], 55.0)
+def test_repricing_preserves_the_shape_of_the_brief() -> None:
+    """The stated brief is the fixture's brief with numbers moved, not a variant.
 
-    assert len(brief.interventions) == len(view.interventions)
-    assert [i.intervention_id for i in brief.interventions] == [
-        i.intervention_id for i in view.interventions
+    Both are built by ``build_view`` from a ``FixtureSpec``, so the intervention
+    tuple, the cohort split and every other structural feature come from one
+    constructor. A brief the policy reads must not differ in shape from the one
+    the fixture path produces, or the two are not comparable.
+    """
+    from src.agent.brief import build_brief
+
+    fixture = build_brief(reprice_module._view("A"))
+    stated = reprice_module._stated_brief(
+        FIXTURES["A"],
+        reprice_module.MerchantConditions(incentive_inr=55.0),
+    )
+
+    assert [i.intervention_id for i in stated.interventions] == [
+        i.intervention_id for i in fixture.interventions
     ]
+    assert [c.cohort_id for c in stated.cohorts] == [
+        c.cohort_id for c in fixture.cohorts
+    ]
+    assert len(stated.cohort_economics) == len(fixture.cohort_economics)
+    assert len(stated.history) == len(fixture.history)
 
 
 def test_repricing_writes_no_audit_entry() -> None:
@@ -384,3 +399,298 @@ def test_every_admissible_response_is_json_serialisable(amount: float) -> None:
 
     payload = json.loads(json.dumps(reprice("A", amount)))
     assert math.isfinite(payload["recommendation"]["expected_net_contribution_inr"])
+
+
+# --------------------------------------------------------------------------- #
+# Merchant-stated business conditions
+# --------------------------------------------------------------------------- #
+
+#: The five conditions beyond the incentive, with a value that differs from
+#: Scenario A's own figure, and the brief field each must land on.
+STATED_CONDITIONS = {
+    "population": (10_000, "population"),
+    "aov_inr": (1_200.0, "observed_aov_inr"),
+    "margin": (0.45, "observed_margin"),
+    "observed_conversion": (0.05, "observed_conversion"),
+    "budget_inr": (250_000.0, "budget_inr"),
+}
+
+
+@pytest.mark.parametrize("field,value_and_target", sorted(STATED_CONDITIONS.items()))
+def test_a_stated_condition_reaches_the_brief(field, value_and_target) -> None:
+    """Each condition must arrive at the merchant record the policy reads."""
+    value, brief_field = value_and_target
+    request = reprice("A", 120.0, **{field: value})["request"]
+
+    assert request[brief_field] == pytest.approx(value)
+    assert field in request["stated"]
+    assert request["is_declared_request"] is False
+
+
+def test_omitting_every_condition_is_the_declared_request() -> None:
+    """The default panel state must still be the shipped Scenario A request."""
+    from api import service
+
+    result = reprice("A", SCENARIO_A.intervention_magnitude)
+
+    assert result["request"]["is_declared_request"] is True
+    assert result["recommendation"] == service.scenario_detail("A")["initial"]
+
+
+def test_stating_a_condition_at_its_declared_value_changes_nothing() -> None:
+    """Restating the record's own figure is not a change to it."""
+    explicit = reprice(
+        "A",
+        SCENARIO_A.intervention_magnitude,
+        population=SCENARIO_A.population,
+        aov_inr=SCENARIO_A.aov_inr,
+        margin=SCENARIO_A.margin,
+        observed_conversion=SCENARIO_A.observed_conversion,
+        budget_inr=SCENARIO_A.budget_inr,
+    )
+    assert explicit["request"]["is_declared_request"] is True
+    assert explicit["recommendation"] == reprice("A", 120.0)["recommendation"]
+
+
+def test_aov_moves_contribution_per_order() -> None:
+    """Contribution per order is AOV times margin, computed by the engine."""
+    at600 = reprice("A", 120.0, aov_inr=600.0)["request"]
+    at1200 = reprice("A", 120.0, aov_inr=1_200.0)["request"]
+
+    assert at600["contribution_per_order_inr"] == pytest.approx(132.0)
+    assert at1200["contribution_per_order_inr"] == pytest.approx(264.0)
+    # A richer basket earns more per order against the same flat incentive, so
+    # the lift needed to break even falls. Asserted as a direction, not a value.
+    a = reprice("A", 120.0, aov_inr=600.0)["recommendation"]
+    b = reprice("A", 120.0, aov_inr=1_200.0)["recommendation"]
+    assert (
+        b["required_break_even_lift_absolute"]
+        < a["required_break_even_lift_absolute"]
+    )
+
+
+def test_margin_moves_contribution_per_order() -> None:
+    thin = reprice("A", 120.0, margin=0.22)["request"]
+    fat = reprice("A", 120.0, margin=0.45)["request"]
+
+    assert thin["contribution_per_order_inr"] == pytest.approx(132.0)
+    assert fat["contribution_per_order_inr"] == pytest.approx(270.0)
+    assert fat["incentive_cost_per_order_inr"] == thin["incentive_cost_per_order_inr"]
+
+
+def test_eligible_customers_scale_the_campaign_not_its_unit_economics() -> None:
+    """Population scales totals. Per-order figures and break-even do not move."""
+    big = reprice("A", 120.0, population=30_000)
+    small = reprice("A", 120.0, population=10_000)
+
+    assert small["request"]["cohort_customers"] == 10_000
+    assert (
+        small["recommendation"]["required_break_even_lift_absolute"]
+        == big["recommendation"]["required_break_even_lift_absolute"]
+    )
+    assert small["recommendation"]["expected_net_contribution_inr"] == pytest.approx(
+        big["recommendation"]["expected_net_contribution_inr"] / 3.0
+    )
+
+
+def test_budget_is_a_deterministic_constraint_not_an_economic_input() -> None:
+    """Budget cannot change what a promotion earns, only whether it may be tested."""
+    rich = reprice("A", 30.0, budget_inr=400_000.0)["recommendation"]
+    poor = reprice("A", 30.0, budget_inr=10_000.0)["recommendation"]
+
+    assert rich["expected_net_contribution_inr"] == poor["expected_net_contribution_inr"]
+    assert rich["decision"] == "RUN_EXPERIMENT_FIRST"
+    assert poor["decision"] == "DO_NOT_PROMOTE"
+    assert "G4_EXPERIMENT_UNAFFORDABLE" in poor["binding_constraints"]
+
+
+def test_baseline_conversion_moves_break_even_through_the_engine() -> None:
+    """Break-even is p0*I/(C-I); halving p0 halves it. The engine computes it."""
+    high = reprice("A", 120.0, observed_conversion=0.10)["recommendation"]
+    low = reprice("A", 120.0, observed_conversion=0.05)["recommendation"]
+
+    assert low["required_break_even_lift_absolute"] == pytest.approx(
+        high["required_break_even_lift_absolute"] / 2.0
+    )
+
+
+def test_stated_conditions_reach_the_policy_gates() -> None:
+    """Each gate must be reachable from a business condition, not just from G2."""
+    exposure = reprice("A", 30.0, population=8_000)["recommendation"]
+    assert "max_customer_exposure" in exposure["binding_constraints"]
+
+    floor = reprice("A", 5.0, margin=0.14)["recommendation"]
+    assert "min_contribution_margin" in floor["binding_constraints"]
+
+    unaffordable = reprice("A", 30.0, budget_inr=10_000.0)["recommendation"]
+    assert "G4_EXPERIMENT_UNAFFORDABLE" in unaffordable["binding_constraints"]
+
+
+# --------------------------------------------------------------------------- #
+# What the merchant may not state
+# --------------------------------------------------------------------------- #
+
+
+def test_expected_lift_is_not_a_parameter() -> None:
+    """There is no route through this surface that sets the demand hypothesis."""
+    import inspect
+
+    accepted = set(inspect.signature(reprice).parameters)
+    for forbidden in (
+        "expected_lift_absolute", "expected_lift", "lift",
+        "evidence_basis", "evidence", "declared_true_lift_absolute",
+    ):
+        assert forbidden not in accepted
+
+    with pytest.raises(TypeError):
+        reprice("A", 120.0, expected_lift_absolute=0.5)  # type: ignore[call-arg]
+
+
+def test_the_hypothesis_is_invariant_under_every_stated_condition() -> None:
+    """Business conditions move economics. They must never move the hypothesis."""
+    baseline = reprice("A", 120.0)["request"]
+
+    for field, (value, _) in STATED_CONDITIONS.items():
+        request = reprice("A", 37.0, **{field: value})["request"]
+        assert request["expected_lift_absolute"] == baseline["expected_lift_absolute"]
+        assert request["evidence_basis"] == baseline["evidence_basis"]
+        assert request["hypothesis"] == baseline["hypothesis"]
+
+
+def test_merchant_conditions_carries_no_outcome_field() -> None:
+    """The input object itself must not have somewhere to put an outcome."""
+    from dataclasses import fields as dataclass_fields
+
+    names = {f.name for f in dataclass_fields(reprice_module.MerchantConditions)}
+    assert names == {
+        "incentive_inr", "population", "aov_inr", "margin",
+        "observed_conversion", "budget_inr",
+    }
+
+
+# --------------------------------------------------------------------------- #
+# Admissibility of the stated conditions
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"population": 0},
+        {"population": -5},
+        {"population": 1.5},
+        {"population": reprice_module.MAX_POPULATION + 1},
+        {"aov_inr": 0.0},
+        {"aov_inr": -600.0},
+        {"aov_inr": float("inf")},
+        {"aov_inr": float("nan")},
+        {"margin": 1.5},
+        {"margin": -0.2},
+        {"margin": float("nan")},
+        {"observed_conversion": 0.0},
+        {"observed_conversion": 1.5},
+        {"observed_conversion": -0.1},
+        {"observed_conversion": float("nan")},
+        {"budget_inr": -1.0},
+        {"budget_inr": float("nan")},
+    ],
+)
+def test_an_impossible_condition_is_refused(kwargs) -> None:
+    with pytest.raises(RequestInadmissible):
+        reprice("A", 120.0, **kwargs)
+
+
+def test_a_refused_condition_is_never_clamped_into_range() -> None:
+    """The refusal must not be followed by an answer to a different question."""
+    with pytest.raises(RequestInadmissible) as caught:
+        reprice("A", 120.0, population=reprice_module.MAX_POPULATION * 10)
+
+    # And the cap is disclosed as a limit of the tool, not of the policy.
+    assert "not of the policy" in caught.value.reason
+    assert caught.value.violation is None
+
+
+def test_the_engine_states_its_own_bounds() -> None:
+    """Margin range is checked in src/economics, and its wording is reported."""
+    with pytest.raises(RequestInadmissible) as caught:
+        reprice("A", 120.0, margin=1.5)
+    assert "contribution_margin must be in [0, 1]" in caught.value.reason
+
+
+def test_the_boundary_values_are_admissible() -> None:
+    """Closed on the admissible side: 1 customer, 100% conversion, zero budget."""
+    assert reprice("A", 120.0, population=1)["status"] == "EVALUATED"
+    assert reprice("A", 120.0, observed_conversion=1.0)["status"] == "EVALUATED"
+    assert reprice("A", 120.0, budget_inr=0.0)["status"] == "EVALUATED"
+    assert (
+        reprice("A", 120.0, population=reprice_module.MAX_POPULATION)["status"]
+        == "EVALUATED"
+    )
+
+
+# --------------------------------------------------------------------------- #
+# The PROMOTE boundary, across the whole stated space
+# --------------------------------------------------------------------------- #
+
+
+def test_no_combination_of_stated_conditions_reaches_promote() -> None:
+    """A grid over every merchant-controlled input. PROMOTE must stay unreachable.
+
+    The single-variable sweep proves the incentive cannot buy a rollout. This
+    proves the other five cannot either, alone or together — spending still
+    requires a measured result at a pre-committed horizon, which this path has
+    no route to.
+    """
+    import itertools
+
+    grid = {
+        "incentive_inr": [0.0, 30.0, 120.0],
+        "aov_inr": [200.0, 600.0, 2_000.0],
+        "margin": [0.16, 0.45, 0.95],
+        "observed_conversion": [0.01, 0.10, 0.90],
+        "population": [1_000, 30_000],
+        "budget_inr": [0.0, 400_000.0],
+    }
+    keys = list(grid)
+    seen, evaluated = set(), 0
+
+    for combo in itertools.product(*(grid[k] for k in keys)):
+        kwargs = dict(zip(keys, combo))
+        incentive = kwargs.pop("incentive_inr")
+        try:
+            result = reprice("A", incentive, **kwargs)
+        except RequestInadmissible:
+            continue
+        seen.add(result["recommendation"]["decision"])
+        evaluated += 1
+
+    assert evaluated > 100, "the grid must actually reach the engine"
+    assert "PROMOTE" not in seen
+    assert seen <= {"DO_NOT_PROMOTE", "RUN_EXPERIMENT_FIRST", "INSUFFICIENT_EVIDENCE"}
+
+
+def test_stating_conditions_never_mutates_a_fixture() -> None:
+    before_a, before_c = SCENARIO_A.fingerprint(), SCENARIO_C.fingerprint()
+
+    reprice("A", 20.0, population=90_000, aov_inr=1_500.0, margin=0.6,
+            observed_conversion=0.25, budget_inr=1_000_000.0)
+
+    assert SCENARIO_A.fingerprint() == before_a
+    assert SCENARIO_C.fingerprint() == before_c == locked_fingerprint()
+    assert SCENARIO_A.population == 30_000
+    assert SCENARIO_A.aov_inr == 600.0
+    assert SCENARIO_A.margin == 0.22
+    assert reprice_module._view("A").population == 30_000
+
+
+def test_stating_conditions_writes_no_audit_entry() -> None:
+    from api import service
+
+    before = service.audit_trail("A")
+    reprice("A", 30.0, population=12_000, aov_inr=900.0, margin=0.4,
+            observed_conversion=0.2, budget_inr=99_000.0)
+    after = service.audit_trail("A")
+
+    assert len(after["entries"]) == len(before["entries"])
+    assert after["head_hash"] == before["head_hash"]
+    assert after["verified"] is True
